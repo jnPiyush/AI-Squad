@@ -81,8 +81,9 @@ class CodebaseSearch:
                 content = file.read_text(encoding='utf-8', errors='ignore')
                 if any(keyword.lower() in content.lower() for keyword in keywords):
                     similar.append(f"{file.name}: {keywords[0]} related")
-            except:
-                pass
+            except (OSError, IOError, UnicodeDecodeError):
+                # Skip files that can't be read
+                continue
         
         return similar[:5]
     

@@ -3,11 +3,14 @@ Architect Agent
 
 Creates Architecture Decision Records (ADRs) and technical specifications.
 """
+import logging
 from pathlib import Path
 from typing import Dict, Any
 
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.agent_comm import ClarificationMixin
+
+logger = logging.getLogger(__name__)
 
 
 class ArchitectAgent(BaseAgent, ClarificationMixin):
@@ -128,8 +131,8 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
                                prd_content: str, template: str) -> str:
         """Generate ADR using Copilot SDK"""
         
-        _ = self.get_system_prompt()  # Available for SDK calls
-        _ = f"""Create an Architecture Decision Record for this issue:
+        system_prompt = self.get_system_prompt()
+        user_prompt = f"""Create an Architecture Decision Record for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -145,9 +148,16 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
 {template}
 
 Generate a comprehensive ADR that documents the architectural decision and its rationale.
-"""  # Available for SDK calls
+"""
         
-        # Placeholder - actual SDK call would go here
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template
+        logger.warning("SDK call returned no result for ADR, falling back to template")
         return self.templates.render(template, {
             "issue_number": issue["number"],
             "title": issue["title"],
@@ -158,8 +168,8 @@ Generate a comprehensive ADR that documents the architectural decision and its r
                                 prd_content: str, template: str) -> str:
         """Generate technical spec using Copilot SDK"""
         
-        _ = self.get_system_prompt()  # Available for SDK calls
-        _ = f"""Create a detailed technical specification for this issue:
+        system_prompt = self.get_system_prompt()
+        user_prompt = f"""Create a detailed technical specification for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -175,9 +185,16 @@ Generate a comprehensive ADR that documents the architectural decision and its r
 {template}
 
 Generate a complete technical specification with architecture diagrams, API contracts, and data models.
-"""  # Available for SDK calls
+"""
         
-        # Placeholder - actual SDK call would go here
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template
+        logger.warning("SDK call returned no result for spec, falling back to template")
         return self.templates.render(template, {
             "issue_number": issue["number"],
             "title": issue["title"],

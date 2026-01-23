@@ -1,0 +1,35 @@
+name: bugfix
+description: Bug fix workflow with analysis and testing
+version: "1.0"
+labels:
+  - standard
+  - bugfix
+  - quick
+
+steps:
+  - name: analysis
+    agent: engineer
+    action: analyze_bug
+    description: Analyze the bug, identify root cause, and document findings
+    timeout_minutes: 15
+
+  - name: fix
+    agent: engineer
+    action: implement_fix
+    description: Implement the bug fix with regression tests
+    depends_on:
+      - analysis
+    timeout_minutes: 30
+
+  - name: review
+    agent: reviewer
+    action: review
+    description: Review the fix for correctness and potential side effects
+    depends_on:
+      - fix
+    outputs:
+      - "docs/reviews/REVIEW-{issue}.md"
+    timeout_minutes: 20
+
+variables:
+  require_regression_test: true

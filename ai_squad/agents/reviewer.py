@@ -3,13 +3,17 @@ Reviewer Agent
 
 Reviews code, checks quality, and ensures standards compliance.
 """
+import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
 from ai_squad.agents.base import BaseAgent
+from ai_squad.core.agent_comm import ClarificationMixin
+
+logger = logging.getLogger(__name__)
 
 
-class ReviewerAgent(BaseAgent):
+class ReviewerAgent(BaseAgent, ClarificationMixin):
     """Reviewer - Reviews code and ensures quality standards"""
     
     def get_system_prompt(self) -> str:
@@ -160,9 +164,9 @@ class ReviewerAgent(BaseAgent):
         """Generate review using Copilot SDK"""
         
         pr = context["pr"]
-        _ = self.get_system_prompt()  # Available for SDK calls
+        system_prompt = self.get_system_prompt()
         
-        _ = f"""Review this pull request:
+        user_prompt = f"""Review this pull request:
 
 **PR #{pr['number']}: {pr['title']}**
 
@@ -173,7 +177,7 @@ class ReviewerAgent(BaseAgent):
 
 **Diff (truncated):**
 ```
-{context['diff'][:5000]}
+{context['diff'][:5000] if context['diff'] else 'No diff available'}
 ```
 
 Perform a comprehensive code review covering:
@@ -185,9 +189,18 @@ Perform a comprehensive code review covering:
 6. Architecture compliance
 
 Provide specific, actionable feedback with line numbers where applicable.
-"""  # Available for SDK calls
+For each issue found, rate severity as: Critical, High, Medium, or Low.
+End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
+"""
         
-        # Placeholder - actual SDK call
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template
+        logger.warning("SDK call returned no result for review, falling back to template")
         template = self.templates.get_template("review")
         return self.templates.render(template, {
             "pr_number": pr["number"],

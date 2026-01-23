@@ -3,11 +3,14 @@ Engineer Agent
 
 Implements features with tests and documentation.
 """
+import logging
 from pathlib import Path
 from typing import Dict, Any
 
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.agent_comm import ClarificationMixin
+
+logger = logging.getLogger(__name__)
 
 
 class EngineerAgent(BaseAgent, ClarificationMixin):
@@ -112,9 +115,9 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
         """Generate implementation using Copilot SDK"""
         
         issue = context["issue"]
-        _ = self.get_system_prompt()  # Available for SDK calls
+        system_prompt = self.get_system_prompt()
         
-        _ = f"""Implement the feature for this issue:
+        user_prompt = f"""Implement the feature for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -135,14 +138,51 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
 6. Consider security and performance
 
 Generate the implementation files with complete code, tests, and documentation.
-"""  # Available for SDK calls
+Provide the output as a structured response with file paths and content.
+"""
         
-        # Placeholder - actual SDK implementation would generate files
-        return {
-            "success": True,
-            "files": [],
-            "message": "Implementation generated (SDK integration pending)"
-        }
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            # Parse SDK response and create files
+            files_created = self._parse_and_create_files(result, issue['number'])
+            return {
+                "success": True,
+                "files": files_created,
+                "message": "Implementation generated with SDK",
+                "sdk_response": result[:500] + "..." if len(result) > 500 else result
+            }
+        
+        # Fallback if SDK call failed
+        logger.warning("SDK call returned no result, falling back to guide generation")
+        return self._generate_implementation_fallback(context)
+    
+    def _parse_and_create_files(self, sdk_response: str, issue_number: int) -> list:
+        """
+        Parse SDK response and create implementation files
+        
+        Args:
+            sdk_response: Raw SDK response with code
+            issue_number: Issue number for file naming
+            
+        Returns:
+            List of created file paths
+        """
+        files_created = []
+        
+        # Save the raw SDK response as an implementation guide
+        guide_path = Path.cwd() / "docs" / f"IMPL-{issue_number}.md"
+        self._save_output(sdk_response, guide_path)
+        files_created.append(str(guide_path))
+        
+        # TODO: Parse code blocks from SDK response and create actual files
+        # This would involve:
+        # 1. Extract ```python ... ``` or ```csharp ... ``` blocks
+        # 2. Determine appropriate file paths from context
+        # 3. Create the files with proper structure
+        
+        return files_created
     
     def _generate_implementation_fallback(self, context: Dict[str, Any]) -> Dict[str, Any]:
         """Fallback implementation guidance"""

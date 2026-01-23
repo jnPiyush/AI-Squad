@@ -1,0 +1,738 @@
+"""
+Handoff Protocol
+
+Explicit work transfer between agents with context preservation.
+Ensures smooth transitions and accountability tracking.
+"""
+import json
+import logging
+import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from .workstate import WorkItem, WorkStateManager, WorkStatus
+from .mailbox import MailboxManager, MessagePriority
+
+logger = logging.getLogger(__name__)
+
+
+class HandoffStatus(str, Enum):
+    """Handoff status states"""
+    INITIATED = "initiated"       # Handoff started
+    PENDING = "pending"           # Waiting for acceptance
+    ACCEPTED = "accepted"         # Recipient accepted
+    REJECTED = "rejected"         # Recipient rejected
+    IN_PROGRESS = "in_progress"   # Transfer in progress
+    COMPLETED = "completed"       # Handoff complete
+    CANCELLED = "cancelled"       # Handoff cancelled
+    FAILED = "failed"             # Handoff failed
+
+
+class HandoffReason(str, Enum):
+    """Reasons for handoff"""
+    WORKFLOW = "workflow"          # Normal workflow transition
+    ESCALATION = "escalation"      # Escalation to higher authority
+    SPECIALIZATION = "specialization"  # Need specialist expertise
+    LOAD_BALANCING = "load_balancing"  # Redistribute work
+    BLOCKER = "blocker"            # Current agent blocked
+    COMPLETION = "completion"      # Work phase complete
+    ERROR = "error"                # Error requires different handling
+
+
+@dataclass
+class HandoffContext:
+    """
+    Context passed during a handoff.
+    Ensures recipient has all necessary information.
+    """
+    summary: str                         # Brief summary of work done
+    current_state: str                   # Current state description
+    next_steps: List[str] = field(default_factory=list)  # Recommended actions
+    blockers: List[str] = field(default_factory=list)    # Known blockers
+    artifacts: List[str] = field(default_factory=list)   # Created artifacts
+    notes: str = ""                      # Additional notes
+    data: Dict[str, Any] = field(default_factory=dict)   # Arbitrary data
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            "summary": self.summary,
+            "current_state": self.current_state,
+            "next_steps": self.next_steps,
+            "blockers": self.blockers,
+            "artifacts": self.artifacts,
+            "notes": self.notes,
+            "data": self.data
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "HandoffContext":
+        """Create from dictionary"""
+        return cls(**data)
+
+
+@dataclass
+class Handoff:
+    """
+    A handoff record tracking work transfer between agents.
+    """
+    id: str
+    work_item_id: str
+    from_agent: str
+    to_agent: str
+    reason: HandoffReason
+    status: HandoffStatus = HandoffStatus.INITIATED
+    
+    # Context
+    context: Optional[HandoffContext] = None
+    
+    # Metadata
+    priority: MessagePriority = MessagePriority.NORMAL
+    requires_ack: bool = True
+    
+    # Timestamps
+    initiated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    accepted_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    
+    # Response
+    acceptance_message: Optional[str] = None
+    rejection_reason: Optional[str] = None
+    
+    # Audit trail
+    audit_log: List[Dict[str, Any]] = field(default_factory=list)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "work_item_id": self.work_item_id,
+            "from_agent": self.from_agent,
+            "to_agent": self.to_agent,
+            "reason": self.reason.value,
+            "status": self.status.value,
+            "context": self.context.to_dict() if self.context else None,
+            "priority": self.priority.value,
+            "requires_ack": self.requires_ack,
+            "initiated_at": self.initiated_at,
+            "accepted_at": self.accepted_at,
+            "completed_at": self.completed_at,
+            "acceptance_message": self.acceptance_message,
+            "rejection_reason": self.rejection_reason,
+            "audit_log": self.audit_log
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "Handoff":
+        """Create from dictionary"""
+        data = data.copy()
+        if "reason" in data:
+            data["reason"] = HandoffReason(data["reason"])
+        if "status" in data:
+            data["status"] = HandoffStatus(data["status"])
+        if "priority" in data:
+            data["priority"] = MessagePriority(data["priority"])
+        if data.get("context"):
+            data["context"] = HandoffContext.from_dict(data["context"])
+        return cls(**data)
+    
+    def add_audit_entry(
+        self,
+        action: str,
+        agent: str,
+        details: Optional[str] = None
+    ) -> None:
+        """Add an entry to the audit log"""
+        self.audit_log.append({
+            "timestamp": datetime.now().isoformat(),
+            "action": action,
+            "agent": agent,
+            "details": details
+        })
+
+
+class HandoffManager:
+    """
+    Manages handoffs between agents.
+    
+    Persists handoffs to .squad/handoffs/ directory.
+    """
+    
+    HANDOFFS_DIR = "handoffs"
+    HANDOFFS_FILE = "handoffs.json"
+    
+    def __init__(
+        self,
+        work_state_manager: WorkStateManager,
+        mailbox_manager: Optional[MailboxManager] = None,
+        workspace_root: Optional[Path] = None
+    ):
+        """
+        Initialize handoff manager.
+        
+        Args:
+            work_state_manager: Work state manager instance
+            mailbox_manager: Optional mailbox manager for notifications
+            workspace_root: Workspace root directory
+        """
+        self.work_state_manager = work_state_manager
+        self.mailbox_manager = mailbox_manager
+        self.workspace_root = workspace_root or Path.cwd()
+        self.squad_dir = self.workspace_root / ".squad"
+        self.handoffs_dir = self.squad_dir / self.HANDOFFS_DIR
+        
+        self._handoffs: Dict[str, Handoff] = {}
+        self._load_state()
+    
+    def _ensure_handoffs_dir(self) -> None:
+        """Create handoffs directory if it doesn't exist"""
+        self.handoffs_dir.mkdir(parents=True, exist_ok=True)
+    
+    def _load_state(self) -> None:
+        """Load handoffs from disk"""
+        handoffs_file = self.handoffs_dir / self.HANDOFFS_FILE
+        if handoffs_file.exists():
+            try:
+                data = json.loads(handoffs_file.read_text(encoding="utf-8"))
+                self._handoffs = {
+                    h_id: Handoff.from_dict(h_data)
+                    for h_id, h_data in data.items()
+                }
+                logger.info("Loaded %d handoffs", len(self._handoffs))
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.error("Failed to load handoffs: %s", e)
+                self._handoffs = {}
+    
+    def _save_state(self) -> None:
+        """Save handoffs to disk"""
+        self._ensure_handoffs_dir()
+        
+        handoffs_file = self.handoffs_dir / self.HANDOFFS_FILE
+        data = {
+            h_id: h.to_dict()
+            for h_id, h in self._handoffs.items()
+        }
+        handoffs_file.write_text(
+            json.dumps(data, indent=2),
+            encoding="utf-8"
+        )
+    
+    # Handoff Operations
+    
+    def initiate_handoff(
+        self,
+        work_item_id: str,
+        from_agent: str,
+        to_agent: str,
+        reason: HandoffReason,
+        context: Optional[HandoffContext] = None,
+        priority: MessagePriority = MessagePriority.NORMAL,
+        requires_ack: bool = True
+    ) -> Optional[Handoff]:
+        """
+        Initiate a handoff from one agent to another.
+        
+        Args:
+            work_item_id: ID of work item being handed off
+            from_agent: Source agent
+            to_agent: Target agent
+            reason: Reason for handoff
+            context: Handoff context with details
+            priority: Priority level
+            requires_ack: Whether acknowledgment is required
+            
+        Returns:
+            Created Handoff or None if work item not found
+        """
+        # Verify work item exists
+        work_item = self.work_state_manager.get_work_item(work_item_id)
+        if not work_item:
+            logger.error("Work item not found: %s", work_item_id)
+            return None
+        
+        # Create handoff
+        handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"
+        
+        handoff = Handoff(
+            id=handoff_id,
+            work_item_id=work_item_id,
+            from_agent=from_agent,
+            to_agent=to_agent,
+            reason=reason,
+            context=context,
+            priority=priority,
+            requires_ack=requires_ack
+        )
+        
+        handoff.add_audit_entry(
+            action="initiated",
+            agent=from_agent,
+            details=f"Handoff initiated: {reason.value}"
+        )
+        
+        # Update status
+        handoff.status = HandoffStatus.PENDING
+        
+        self._handoffs[handoff_id] = handoff
+        self._save_state()
+        
+        # Send notification via mailbox
+        if self.mailbox_manager:
+            context_summary = ""
+            if context:
+                context_summary = f"\n\n**Summary**: {context.summary}\n**Current State**: {context.current_state}"
+                if context.next_steps:
+                    context_summary += f"\n**Next Steps**:\n" + "\n".join(
+                        f"- {step}" for step in context.next_steps
+                    )
+            
+            self.mailbox_manager.send_message(
+                sender=from_agent,
+                recipient=to_agent,
+                subject=f"Handoff Request: {work_item.title}",
+                body=f"Work item handoff request from {from_agent}.\n\n"
+                     f"**Reason**: {reason.value}\n"
+                     f"**Work Item**: {work_item.title} ({work_item_id})"
+                     f"{context_summary}",
+                priority=priority,
+                requires_ack=requires_ack,
+                work_item_id=work_item_id,
+                metadata={"handoff_id": handoff_id}
+            )
+        
+        logger.info(
+            "Handoff initiated: %s -> %s for %s (reason: %s)",
+            from_agent, to_agent, work_item_id, reason.value
+        )
+        
+        return handoff
+    
+    def accept_handoff(
+        self,
+        handoff_id: str,
+        accepting_agent: str,
+        message: Optional[str] = None
+    ) -> bool:
+        """
+        Accept a handoff.
+        
+        Args:
+            handoff_id: Handoff ID
+            accepting_agent: Agent accepting the handoff
+            message: Optional acceptance message
+            
+        Returns:
+            True if accepted successfully
+        """
+        handoff = self.get_handoff(handoff_id)
+        if not handoff:
+            return False
+        
+        # Verify accepting agent is the intended recipient
+        if handoff.to_agent != accepting_agent:
+            logger.warning(
+                "Agent %s cannot accept handoff intended for %s",
+                accepting_agent, handoff.to_agent
+            )
+            return False
+        
+        # Verify handoff is pending
+        if handoff.status != HandoffStatus.PENDING:
+            logger.warning(
+                "Cannot accept handoff in status %s",
+                handoff.status.value
+            )
+            return False
+        
+        # Update handoff
+        handoff.status = HandoffStatus.ACCEPTED
+        handoff.accepted_at = datetime.now().isoformat()
+        handoff.acceptance_message = message
+        
+        handoff.add_audit_entry(
+            action="accepted",
+            agent=accepting_agent,
+            details=message
+        )
+        
+        # Update work item assignment
+        self.work_state_manager.assign_to_agent(
+            handoff.work_item_id,
+            accepting_agent
+        )
+        
+        self._save_state()
+        
+        # Send confirmation via mailbox
+        if self.mailbox_manager:
+            self.mailbox_manager.send_message(
+                sender=accepting_agent,
+                recipient=handoff.from_agent,
+                subject=f"Handoff Accepted: {handoff.work_item_id}",
+                body=f"Handoff accepted by {accepting_agent}."
+                     + (f"\n\nMessage: {message}" if message else ""),
+                work_item_id=handoff.work_item_id,
+                metadata={"handoff_id": handoff_id}
+            )
+        
+        logger.info(
+            "Handoff accepted: %s by %s",
+            handoff_id, accepting_agent
+        )
+        
+        return True
+    
+    def reject_handoff(
+        self,
+        handoff_id: str,
+        rejecting_agent: str,
+        reason: str
+    ) -> bool:
+        """
+        Reject a handoff.
+        
+        Args:
+            handoff_id: Handoff ID
+            rejecting_agent: Agent rejecting the handoff
+            reason: Rejection reason
+            
+        Returns:
+            True if rejected successfully
+        """
+        handoff = self.get_handoff(handoff_id)
+        if not handoff:
+            return False
+        
+        if handoff.to_agent != rejecting_agent:
+            logger.warning(
+                "Agent %s cannot reject handoff intended for %s",
+                rejecting_agent, handoff.to_agent
+            )
+            return False
+        
+        if handoff.status != HandoffStatus.PENDING:
+            logger.warning(
+                "Cannot reject handoff in status %s",
+                handoff.status.value
+            )
+            return False
+        
+        handoff.status = HandoffStatus.REJECTED
+        handoff.rejection_reason = reason
+        
+        handoff.add_audit_entry(
+            action="rejected",
+            agent=rejecting_agent,
+            details=reason
+        )
+        
+        self._save_state()
+        
+        # Send notification via mailbox
+        if self.mailbox_manager:
+            self.mailbox_manager.send_message(
+                sender=rejecting_agent,
+                recipient=handoff.from_agent,
+                subject=f"Handoff Rejected: {handoff.work_item_id}",
+                body=f"Handoff rejected by {rejecting_agent}.\n\n"
+                     f"**Reason**: {reason}",
+                priority=MessagePriority.HIGH,
+                work_item_id=handoff.work_item_id,
+                metadata={"handoff_id": handoff_id}
+            )
+        
+        logger.info(
+            "Handoff rejected: %s by %s (reason: %s)",
+            handoff_id, rejecting_agent, reason
+        )
+        
+        return True
+    
+    def complete_handoff(
+        self,
+        handoff_id: str,
+        completing_agent: str
+    ) -> bool:
+        """
+        Mark a handoff as complete.
+        
+        Args:
+            handoff_id: Handoff ID
+            completing_agent: Agent completing the handoff
+            
+        Returns:
+            True if completed successfully
+        """
+        handoff = self.get_handoff(handoff_id)
+        if not handoff:
+            return False
+        
+        if handoff.to_agent != completing_agent:
+            return False
+        
+        if handoff.status != HandoffStatus.ACCEPTED:
+            return False
+        
+        handoff.status = HandoffStatus.COMPLETED
+        handoff.completed_at = datetime.now().isoformat()
+        
+        handoff.add_audit_entry(
+            action="completed",
+            agent=completing_agent,
+            details="Handoff completed"
+        )
+        
+        self._save_state()
+        
+        logger.info("Handoff completed: %s", handoff_id)
+        return True
+    
+    def cancel_handoff(
+        self,
+        handoff_id: str,
+        cancelling_agent: str,
+        reason: str
+    ) -> bool:
+        """
+        Cancel a handoff.
+        
+        Args:
+            handoff_id: Handoff ID
+            cancelling_agent: Agent cancelling the handoff
+            reason: Cancellation reason
+            
+        Returns:
+            True if cancelled successfully
+        """
+        handoff = self.get_handoff(handoff_id)
+        if not handoff:
+            return False
+        
+        # Only initiator can cancel
+        if handoff.from_agent != cancelling_agent:
+            return False
+        
+        if handoff.status not in (HandoffStatus.INITIATED, HandoffStatus.PENDING):
+            return False
+        
+        handoff.status = HandoffStatus.CANCELLED
+        handoff.add_audit_entry(
+            action="cancelled",
+            agent=cancelling_agent,
+            details=reason
+        )
+        
+        self._save_state()
+        
+        # Notify recipient
+        if self.mailbox_manager:
+            self.mailbox_manager.send_message(
+                sender=cancelling_agent,
+                recipient=handoff.to_agent,
+                subject=f"Handoff Cancelled: {handoff.work_item_id}",
+                body=f"Handoff cancelled by {cancelling_agent}.\n\n"
+                     f"**Reason**: {reason}",
+                work_item_id=handoff.work_item_id,
+                metadata={"handoff_id": handoff_id}
+            )
+        
+        logger.info(
+            "Handoff cancelled: %s by %s",
+            handoff_id, cancelling_agent
+        )
+        
+        return True
+    
+    # Query Methods
+    
+    def get_handoff(self, handoff_id: str) -> Optional[Handoff]:
+        """Get a handoff by ID"""
+        return self._handoffs.get(handoff_id)
+    
+    def get_handoffs_by_work_item(self, work_item_id: str) -> List[Handoff]:
+        """Get all handoffs for a work item"""
+        return [
+            h for h in self._handoffs.values()
+            if h.work_item_id == work_item_id
+        ]
+    
+    def get_pending_handoffs(self, to_agent: str) -> List[Handoff]:
+        """Get pending handoffs for an agent"""
+        return [
+            h for h in self._handoffs.values()
+            if h.to_agent == to_agent and h.status == HandoffStatus.PENDING
+        ]
+    
+    def get_outgoing_handoffs(
+        self,
+        from_agent: str,
+        status: Optional[HandoffStatus] = None
+    ) -> List[Handoff]:
+        """Get handoffs initiated by an agent"""
+        handoffs = [
+            h for h in self._handoffs.values()
+            if h.from_agent == from_agent
+        ]
+        
+        if status:
+            handoffs = [h for h in handoffs if h.status == status]
+        
+        return sorted(handoffs, key=lambda h: h.initiated_at, reverse=True)
+    
+    def get_handoff_history(self, work_item_id: str) -> List[Dict[str, Any]]:
+        """
+        Get complete handoff history for a work item.
+        
+        Returns chronological list of all handoff events.
+        """
+        handoffs = self.get_handoffs_by_work_item(work_item_id)
+        
+        history = []
+        for handoff in handoffs:
+            for entry in handoff.audit_log:
+                history.append({
+                    "handoff_id": handoff.id,
+                    "from_agent": handoff.from_agent,
+                    "to_agent": handoff.to_agent,
+                    **entry
+                })
+        
+        return sorted(history, key=lambda e: e["timestamp"])
+    
+    # Statistics
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get handoff statistics"""
+        handoffs = list(self._handoffs.values())
+        
+        status_counts = {}
+        for status in HandoffStatus:
+            status_counts[status.value] = len([
+                h for h in handoffs if h.status == status
+            ])
+        
+        reason_counts = {}
+        for reason in HandoffReason:
+            reason_counts[reason.value] = len([
+                h for h in handoffs if h.reason == reason
+            ])
+        
+        # Calculate average acceptance time
+        accepted_handoffs = [
+            h for h in handoffs
+            if h.accepted_at and h.initiated_at
+        ]
+        
+        avg_acceptance_time = None
+        if accepted_handoffs:
+            from datetime import datetime as dt
+            times = []
+            for h in accepted_handoffs:
+                initiated = dt.fromisoformat(h.initiated_at)
+                accepted = dt.fromisoformat(h.accepted_at)
+                times.append((accepted - initiated).total_seconds())
+            avg_acceptance_time = sum(times) / len(times)
+        
+        return {
+            "total": len(handoffs),
+            "by_status": status_counts,
+            "by_reason": reason_counts,
+            "pending": status_counts.get("pending", 0),
+            "completed": status_counts.get("completed", 0),
+            "rejected": status_counts.get("rejected", 0),
+            "avg_acceptance_time_seconds": avg_acceptance_time
+        }
+
+
+# Convenience functions for common handoff patterns
+
+def workflow_handoff(
+    handoff_manager: HandoffManager,
+    work_item_id: str,
+    from_agent: str,
+    to_agent: str,
+    summary: str,
+    next_steps: List[str],
+    artifacts: Optional[List[str]] = None
+) -> Optional[Handoff]:
+    """
+    Standard workflow handoff between agents.
+    
+    Used when work naturally flows from one agent to another.
+    """
+    context = HandoffContext(
+        summary=summary,
+        current_state="Phase complete, ready for next phase",
+        next_steps=next_steps,
+        artifacts=artifacts or []
+    )
+    
+    return handoff_manager.initiate_handoff(
+        work_item_id=work_item_id,
+        from_agent=from_agent,
+        to_agent=to_agent,
+        reason=HandoffReason.WORKFLOW,
+        context=context
+    )
+
+
+def escalation_handoff(
+    handoff_manager: HandoffManager,
+    work_item_id: str,
+    from_agent: str,
+    to_agent: str,
+    issue: str,
+    blockers: List[str]
+) -> Optional[Handoff]:
+    """
+    Escalation handoff for issues requiring higher authority.
+    """
+    context = HandoffContext(
+        summary=f"Escalation required: {issue}",
+        current_state="Blocked - requires escalation",
+        blockers=blockers,
+        notes="This work item requires attention from a higher authority or specialist."
+    )
+    
+    return handoff_manager.initiate_handoff(
+        work_item_id=work_item_id,
+        from_agent=from_agent,
+        to_agent=to_agent,
+        reason=HandoffReason.ESCALATION,
+        context=context,
+        priority=MessagePriority.URGENT
+    )
+
+
+def specialist_handoff(
+    handoff_manager: HandoffManager,
+    work_item_id: str,
+    from_agent: str,
+    specialist_agent: str,
+    specialty_needed: str,
+    current_progress: str
+) -> Optional[Handoff]:
+    """
+    Handoff to a specialist agent.
+    """
+    context = HandoffContext(
+        summary=f"Specialist needed: {specialty_needed}",
+        current_state=current_progress,
+        next_steps=[
+            f"Apply {specialty_needed} expertise",
+            "Complete specialized work",
+            "Hand back to original agent if needed"
+        ]
+    )
+    
+    return handoff_manager.initiate_handoff(
+        work_item_id=work_item_id,
+        from_agent=from_agent,
+        to_agent=specialist_agent,
+        reason=HandoffReason.SPECIALIZATION,
+        context=context,
+        priority=MessagePriority.HIGH
+    )

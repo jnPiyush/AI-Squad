@@ -1,0 +1,480 @@
+"""
+Work State Management
+
+Persistent work state tracking inspired by Gastown's Hooks/Beads pattern.
+Work items survive agent crashes and restarts, enabling reliable multi-agent workflows.
+"""
+import json
+import logging
+import uuid
+from dataclasses import dataclass, field, asdict
+from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
+
+
+class WorkStatus(str, Enum):
+    """Work item status states"""
+    BACKLOG = "backlog"          # Not started
+    READY = "ready"              # Prerequisites met, can be started
+    IN_PROGRESS = "in_progress"  # Agent working on it
+    HOOKED = "hooked"            # Attached to an agent's "hook"
+    BLOCKED = "blocked"          # Waiting on dependency
+    IN_REVIEW = "in_review"      # Under review
+    DONE = "done"                # Completed
+    FAILED = "failed"            # Failed, needs attention
+
+
+@dataclass
+class WorkItem:
+    """
+    A unit of work that can be assigned to agents.
+    Similar to Gastown's "Bead" concept.
+    """
+    id: str
+    title: str
+    description: str = ""
+    status: WorkStatus = WorkStatus.BACKLOG
+    issue_number: Optional[int] = None
+    agent_assignee: Optional[str] = None
+    created_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
+    
+    # Context preservation for agent restarts
+    context: Dict[str, Any] = field(default_factory=dict)
+    
+    # Related artifacts
+    artifacts: List[str] = field(default_factory=list)
+    
+    # Dependencies (other work item IDs)
+    depends_on: List[str] = field(default_factory=list)
+    blocks: List[str] = field(default_factory=list)
+    
+    # Convoy membership
+    convoy_id: Optional[str] = None
+    
+    # Metadata
+    labels: List[str] = field(default_factory=list)
+    priority: int = 0  # Higher = more important
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization"""
+        data = asdict(self)
+        data["status"] = self.status.value
+        return data
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "WorkItem":
+        """Create from dictionary"""
+        data = data.copy()
+        if "status" in data:
+            data["status"] = WorkStatus(data["status"])
+        return cls(**data)
+    
+    def update_status(self, new_status: WorkStatus) -> None:
+        """Update status with timestamp"""
+        self.status = new_status
+        self.updated_at = datetime.now().isoformat()
+    
+    def assign_to(self, agent: str) -> None:
+        """Assign work item to an agent"""
+        self.agent_assignee = agent
+        self.update_status(WorkStatus.HOOKED)
+    
+    def unassign(self) -> None:
+        """Remove agent assignment"""
+        self.agent_assignee = None
+        if self.status == WorkStatus.HOOKED:
+            self.update_status(WorkStatus.READY)
+    
+    def add_artifact(self, path: str) -> None:
+        """Add an artifact (output file) to this work item"""
+        if path not in self.artifacts:
+            self.artifacts.append(path)
+            self.updated_at = datetime.now().isoformat()
+    
+    def save_context(self, context: Dict[str, Any]) -> None:
+        """Save agent context for later resumption"""
+        self.context.update(context)
+        self.updated_at = datetime.now().isoformat()
+    
+    def is_ready(self) -> bool:
+        """Check if all dependencies are satisfied"""
+        # This would be checked by WorkStateManager with full state
+        return self.status == WorkStatus.READY
+    
+    def is_complete(self) -> bool:
+        """Check if work is done"""
+        return self.status in (WorkStatus.DONE, WorkStatus.FAILED)
+
+
+class WorkStateManager:
+    """
+    Manages persistent work state.
+    Stores state in .squad/ directory (git-trackable).
+    """
+    
+    SQUAD_DIR = ".squad"
+    WORKSTATE_FILE = "workstate.json"
+    
+    def __init__(self, workspace_root: Optional[Path] = None):
+        """
+        Initialize work state manager.
+        
+        Args:
+            workspace_root: Root directory of the workspace (defaults to cwd)
+        """
+        self.workspace_root = workspace_root or Path.cwd()
+        self.squad_dir = self.workspace_root / self.SQUAD_DIR
+        self.workstate_file = self.squad_dir / self.WORKSTATE_FILE
+        
+        self._work_items: Dict[str, WorkItem] = {}
+        self._load_state()
+    
+    def _ensure_squad_dir(self) -> None:
+        """Create .squad directory if it doesn't exist"""
+        self.squad_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create .gitignore for non-trackable files
+        gitignore = self.squad_dir / ".gitignore"
+        if not gitignore.exists():
+            gitignore.write_text("# AI-Squad runtime files\n*.lock\n*.tmp\n")
+    
+    def _load_state(self) -> None:
+        """Load work state from disk"""
+        if not self.workstate_file.exists():
+            self._work_items = {}
+            return
+        
+        try:
+            data = json.loads(self.workstate_file.read_text(encoding="utf-8"))
+            self._work_items = {
+                item_id: WorkItem.from_dict(item_data)
+                for item_id, item_data in data.get("work_items", {}).items()
+            }
+            logger.info("Loaded %d work items from state", len(self._work_items))
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error("Failed to load work state: %s", e)
+            self._work_items = {}
+    
+    def _save_state(self) -> None:
+        """Persist work state to disk"""
+        self._ensure_squad_dir()
+        
+        data = {
+            "version": "1.0",
+            "updated_at": datetime.now().isoformat(),
+            "work_items": {
+                item_id: item.to_dict()
+                for item_id, item in self._work_items.items()
+            }
+        }
+        
+        self.workstate_file.write_text(
+            json.dumps(data, indent=2),
+            encoding="utf-8"
+        )
+        logger.debug("Saved %d work items to state", len(self._work_items))
+    
+    def generate_id(self, prefix: str = "sq") -> str:
+        """Generate a unique work item ID"""
+        short_uuid = uuid.uuid4().hex[:5]
+        return f"{prefix}-{short_uuid}"
+    
+    # CRUD Operations
+    
+    def create_work_item(
+        self,
+        title: str,
+        description: str = "",
+        issue_number: Optional[int] = None,
+        depends_on: Optional[List[str]] = None,
+        labels: Optional[List[str]] = None,
+        priority: int = 0
+    ) -> WorkItem:
+        """Create a new work item"""
+        item = WorkItem(
+            id=self.generate_id(),
+            title=title,
+            description=description,
+            issue_number=issue_number,
+            depends_on=depends_on or [],
+            labels=labels or [],
+            priority=priority
+        )
+        
+        # Check if dependencies are satisfied
+        if item.depends_on:
+            if self._dependencies_satisfied(item):
+                item.status = WorkStatus.READY
+            else:
+                item.status = WorkStatus.BLOCKED
+        else:
+            # No dependencies, ready to start
+            item.status = WorkStatus.READY
+        
+        self._work_items[item.id] = item
+        self._save_state()
+        
+        logger.info("Created work item: %s (%s)", item.id, title)
+        return item
+    
+    def get_work_item(self, item_id: str) -> Optional[WorkItem]:
+        """Get a work item by ID"""
+        return self._work_items.get(item_id)
+    
+    def get_work_item_by_issue(self, issue_number: int) -> Optional[WorkItem]:
+        """Get a work item by GitHub issue number"""
+        for item in self._work_items.values():
+            if item.issue_number == issue_number:
+                return item
+        return None
+    
+    def update_work_item(self, item: WorkItem) -> None:
+        """Update a work item"""
+        item.updated_at = datetime.now().isoformat()
+        self._work_items[item.id] = item
+        self._save_state()
+    
+    def delete_work_item(self, item_id: str) -> bool:
+        """Delete a work item"""
+        if item_id in self._work_items:
+            del self._work_items[item_id]
+            self._save_state()
+            return True
+        return False
+    
+    def list_work_items(
+        self,
+        status: Optional[WorkStatus] = None,
+        agent: Optional[str] = None,
+        convoy_id: Optional[str] = None
+    ) -> List[WorkItem]:
+        """List work items with optional filters"""
+        items = list(self._work_items.values())
+        
+        if status:
+            items = [i for i in items if i.status == status]
+        if agent:
+            items = [i for i in items if i.agent_assignee == agent]
+        if convoy_id:
+            items = [i for i in items if i.convoy_id == convoy_id]
+        
+        # Sort by priority (descending) then created_at
+        items.sort(key=lambda x: (-x.priority, x.created_at))
+        return items
+    
+    # Agent Operations
+    
+    def assign_to_agent(self, item_id: str, agent: str) -> bool:
+        """Assign a work item to an agent (hook it)"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        item.assign_to(agent)
+        self._save_state()
+        
+        logger.info("Assigned %s to agent %s", item_id, agent)
+        return True
+    
+    def unassign_from_agent(self, item_id: str) -> bool:
+        """Remove agent assignment (unhook)"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        old_agent = item.agent_assignee
+        item.unassign()
+        self._save_state()
+        
+        logger.info("Unassigned %s from agent %s", item_id, old_agent)
+        return True
+    
+    def get_agent_work(self, agent: str) -> List[WorkItem]:
+        """Get all work items assigned to an agent"""
+        return self.list_work_items(agent=agent)
+    
+    def get_agent_hooked_work(self, agent: str) -> Optional[WorkItem]:
+        """Get the currently hooked work for an agent"""
+        items = self.list_work_items(status=WorkStatus.HOOKED, agent=agent)
+        return items[0] if items else None
+    
+    # Context Preservation
+    
+    def save_agent_context(
+        self,
+        item_id: str,
+        context: Dict[str, Any]
+    ) -> bool:
+        """Save agent context for later resumption"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        item.save_context(context)
+        self._save_state()
+        return True
+    
+    def restore_agent_context(self, item_id: str) -> Optional[Dict[str, Any]]:
+        """Restore previously saved agent context"""
+        item = self.get_work_item(item_id)
+        return item.context if item else None
+    
+    # Dependency Management
+    
+    def _dependencies_satisfied(self, item: WorkItem) -> bool:
+        """Check if all dependencies are completed"""
+        for dep_id in item.depends_on:
+            dep = self.get_work_item(dep_id)
+            if not dep or not dep.is_complete():
+                return False
+        return True
+    
+    def update_blocked_items(self) -> List[WorkItem]:
+        """Update status of blocked items whose dependencies are now satisfied"""
+        unblocked = []
+        
+        for item in self._work_items.values():
+            if item.status == WorkStatus.BLOCKED:
+                if self._dependencies_satisfied(item):
+                    item.update_status(WorkStatus.READY)
+                    unblocked.append(item)
+        
+        if unblocked:
+            self._save_state()
+            
+        return unblocked
+    
+    def add_dependency(self, item_id: str, depends_on_id: str) -> bool:
+        """Add a dependency to a work item"""
+        item = self.get_work_item(item_id)
+        dep = self.get_work_item(depends_on_id)
+        
+        if not item or not dep:
+            return False
+        
+        if depends_on_id not in item.depends_on:
+            item.depends_on.append(depends_on_id)
+            
+            # Also track reverse relationship
+            if item_id not in dep.blocks:
+                dep.blocks.append(item_id)
+            
+            # Update status if needed
+            if not self._dependencies_satisfied(item):
+                item.update_status(WorkStatus.BLOCKED)
+            
+            self._save_state()
+        
+        return True
+    
+    # Artifact Management
+    
+    def add_artifact(self, item_id: str, artifact_path: str) -> bool:
+        """Add an artifact (output file) to a work item"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        item.add_artifact(artifact_path)
+        self._save_state()
+        return True
+    
+    # Status Transitions
+    
+    def transition_status(
+        self,
+        item_id: str,
+        new_status: WorkStatus,
+        context: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Transition a work item to a new status"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        old_status = item.status
+        item.update_status(new_status)
+        
+        if context:
+            item.save_context(context)
+        
+        self._save_state()
+        
+        logger.info(
+            "Transitioned %s from %s to %s",
+            item_id, old_status.value, new_status.value
+        )
+        
+        # Check if this completion unblocks other items
+        if new_status == WorkStatus.DONE:
+            self.update_blocked_items()
+        
+        return True
+    
+    def complete_work(
+        self,
+        item_id: str,
+        artifacts: Optional[List[str]] = None
+    ) -> bool:
+        """Mark work as complete with optional artifacts"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        if artifacts:
+            for artifact in artifacts:
+                item.add_artifact(artifact)
+        
+        item.unassign()
+        item.update_status(WorkStatus.DONE)
+        self._save_state()
+        
+        # Unblock dependent items
+        self.update_blocked_items()
+        
+        return True
+    
+    # Convoy Support
+    
+    def set_convoy(self, item_id: str, convoy_id: str) -> bool:
+        """Associate a work item with a convoy"""
+        item = self.get_work_item(item_id)
+        if not item:
+            return False
+        
+        item.convoy_id = convoy_id
+        self._save_state()
+        return True
+    
+    # Statistics
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get work state statistics"""
+        items = list(self._work_items.values())
+        
+        status_counts = {}
+        for status in WorkStatus:
+            status_counts[status.value] = len([
+                i for i in items if i.status == status
+            ])
+        
+        agent_counts = {}
+        for item in items:
+            if item.agent_assignee:
+                agent_counts[item.agent_assignee] = (
+                    agent_counts.get(item.agent_assignee, 0) + 1
+                )
+        
+        return {
+            "total": len(items),
+            "by_status": status_counts,
+            "by_agent": agent_counts,
+            "blocked": status_counts.get("blocked", 0),
+            "in_progress": status_counts.get("in_progress", 0) + status_counts.get("hooked", 0),
+            "completed": status_counts.get("done", 0),
+        }

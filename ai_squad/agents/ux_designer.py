@@ -3,11 +3,14 @@ UX Designer Agent
 
 Creates wireframes, user flows, and design specifications.
 """
+import logging
 from pathlib import Path
 from typing import Dict, Any
 
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.agent_comm import ClarificationMixin
+
+logger = logging.getLogger(__name__)
 
 
 class UXDesignerAgent(BaseAgent, ClarificationMixin):
@@ -130,24 +133,37 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
         # Generate UX design
         if self.sdk:
             ux_content = self._generate_with_sdk(issue, context, prd_content, template)
+            # Also generate HTML prototype
+            html_prototype = self._generate_html_prototype(issue, context, prd_content)
         else:
             ux_content = self.templates.render(template, variables)
+            html_prototype = None
         
-        # Save output
+        # Save outputs
         output_path = self.get_output_path(issue["number"])
         self._save_output(ux_content, output_path)
         
+        files = [str(output_path)]
+        
+        # Save HTML prototype if generated
+        if html_prototype:
+            prototype_dir = self.config.ux_dir / "prototypes"
+            prototype_path = prototype_dir / f"prototype-{issue['number']}.html"
+            self._save_output(html_prototype, prototype_path)
+            files.append(str(prototype_path))
+        
         return {
             "success": True,
-            "file_path": str(output_path)
+            "file_path": str(output_path),
+            "files": files
         }
     
     def _generate_with_sdk(self, issue: Dict[str, Any], context: Dict[str, Any],
                           prd_content: str, template: str) -> str:
         """Generate UX design using Copilot SDK"""
         
-        _ = self.get_system_prompt()  # Available for SDK calls
-        _ = f"""Create a comprehensive UX design for this issue:
+        system_prompt = self.get_system_prompt()
+        user_prompt = f"""Create a comprehensive UX design for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -164,14 +180,56 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 
 Generate a complete UX design with wireframes, user flows, and accessibility checklist.
 Use ASCII art or Mermaid diagrams for wireframes.
-"""  # Available for SDK calls
+"""
         
-        # Placeholder - actual SDK call
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template
+        logger.warning("SDK call returned no result for UX design, falling back to template")
         return self.templates.render(template, {
             "issue_number": issue["number"],
             "title": issue["title"],
             "description": issue["body"] or "",
         })
+    
+    def _generate_html_prototype(self, issue: Dict[str, Any], context: Dict[str, Any],
+                                  prd_content: str) -> str:
+        """Generate HTML click-through prototype using Copilot SDK"""
+        
+        system_prompt = """You are an expert UX Designer creating HTML prototypes.
+Create self-contained, single-file HTML prototypes with:
+- Inline CSS for professional, modern styling
+- Interactive elements (buttons, forms, navigation)
+- Responsive layout using CSS Grid/Flexbox
+- Accessibility features (semantic HTML, ARIA labels)
+- Smooth transitions and hover states"""
+        
+        user_prompt = f"""Create a professional HTML click-through prototype for:
+
+**Issue #{issue['number']}: {issue['title']}**
+
+{issue['body'] or 'No description provided'}
+
+**Requirements from PRD:**
+{prd_content[:800] if prd_content else 'Create a general purpose prototype'}
+
+Generate a complete, self-contained HTML file with:
+1. Modern, professional styling (inline CSS)
+2. Multiple screens/states accessible via navigation
+3. Form elements and interactive components
+4. Responsive design for mobile and desktop
+5. WCAG 2.1 AA accessibility compliance
+6. Sample/placeholder content
+
+Output only the HTML code, starting with <!DOCTYPE html>.
+"""
+        
+        result = self._call_sdk(system_prompt, user_prompt)
+        return result
     
     def _format_ui_context(self, context: Dict[str, Any]) -> str:
         """Format UI context"""

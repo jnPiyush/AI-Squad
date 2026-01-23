@@ -3,13 +3,17 @@ Product Manager Agent
 
 Creates Product Requirements Documents (PRDs) and user stories.
 """
+import logging
 from pathlib import Path
 from typing import Dict, Any
 
 from ai_squad.agents.base import BaseAgent
+from ai_squad.core.agent_comm import ClarificationMixin
+
+logger = logging.getLogger(__name__)
 
 
-class ProductManagerAgent(BaseAgent):
+class ProductManagerAgent(BaseAgent, ClarificationMixin):
     """Product Manager - Creates PRDs and breaks down epics"""
     
     def get_system_prompt(self) -> str:
@@ -93,7 +97,7 @@ class ProductManagerAgent(BaseAgent):
             "codebase_context": self._format_context(context),
         }
         
-        # If using SDK, generate with AI
+        # Try SDK first, then fallback to template
         if self.sdk:
             prd_content = self._generate_with_sdk(issue, context, template)
         else:
@@ -134,31 +138,20 @@ class ProductManagerAgent(BaseAgent):
 Generate a complete, production-ready PRD following the template structure.
 """
         
-        # Call SDK (implementation depends on actual SDK API)
-        # This is a placeholder - actual implementation will use SDK's agent execution
-        try:
-            # result = self.sdk.execute_agent(
-            #     system_prompt=system_prompt,
-            #     user_prompt=user_prompt,
-            #     model=self.config.get("agents.pm.model", "gpt-4")
-            # )
-            # return result["content"]
-            
-            # Fallback for now
-            return self.templates.render(template, {
-                "issue_number": issue["number"],
-                "title": issue["title"],
-                "description": issue["body"] or "",
-                "codebase_context": self._format_context(context),
-            })
-        except Exception as e:
-            # Fallback on error
-            return self.templates.render(template, {
-                "issue_number": issue["number"],
-                "title": issue["title"],
-                "description": issue["body"] or "",
-                "codebase_context": self._format_context(context),
-            })
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template if SDK call failed
+        logger.warning("SDK call returned no result, falling back to template")
+        return self.templates.render(template, {
+            "issue_number": issue["number"],
+            "title": issue["title"],
+            "description": issue["body"] or "",
+            "codebase_context": self._format_context(context),
+        })
     
     def _format_context(self, context: Dict[str, Any]) -> str:
         """Format codebase context for prompt"""

@@ -11,25 +11,25 @@
 [![PyPI version](https://badge.fury.io/py/ai-squad.svg)](https://badge.fury.io/py/ai-squad)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Test Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](tests/)
+[![Test Coverage](https://img.shields.io/badge/coverage-49%25-yellow.svg)](tests/)
 [![Downloads](https://pepy.tech/badge/ai-squad)](https://pepy.tech/project/ai-squad)
 
 > **Your AI Development Squad, One Command Away**  
-> Five expert AI agents. Zero hosting costs. Production-ready.
+> Five expert AI agents. Zero hosting costs. Beta - Core features stable, orchestration in preview.
 
 ---
 
 ## 🎯 What is AI-Squad?
 
-AI-Squad is a **production-ready command-line tool** that brings five specialized AI agents to your project:
+AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agents to your project:
 
 - 🎨 **Product Manager** - Creates PRDs, breaks down epics into stories
 - 🏗️ **Architect** - Designs solutions, writes ADRs and technical specs
-- 💻 **Engineer** - Implements features with tests (80%+ coverage)
+- 💻 **Engineer** - Implements features with comprehensive tests
 - 🎭 **UX Designer** - Creates wireframes, HTML prototypes, accessibility guidelines
 - ✅ **Reviewer** - Reviews code, auto-closes issues, ensures quality
 
-**New in v0.4.0**: 80% test coverage, retry logic, rate limiting, persistent storage, performance benchmarks!
+**New in v0.4.0**: Advanced orchestration (Captain, Formulas, Convoys), retry logic, rate limiting, persistent storage, performance benchmarks!
 
 **Install once. Use everywhere. No hosting required.**
 

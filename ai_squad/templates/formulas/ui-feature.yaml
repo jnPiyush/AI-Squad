@@ -1,0 +1,61 @@
+name: ui-feature
+description: UI/Frontend feature development workflow
+version: "1.0"
+labels:
+  - ui
+  - frontend
+  - feature
+
+steps:
+  - name: requirements
+    agent: pm
+    action: create_prd
+    description: Define UI requirements and user stories
+    outputs:
+      - "docs/prd/PRD-{issue}.md"
+    timeout_minutes: 15
+
+  - name: ux_design
+    agent: ux
+    action: create_design
+    description: Create wireframes, user flows, and HTML prototype
+    depends_on:
+      - requirements
+    outputs:
+      - "docs/ux/UX-{issue}.md"
+      - "docs/ux/prototypes/prototype-{issue}.html"
+    timeout_minutes: 25
+
+  - name: implementation
+    agent: engineer
+    action: implement
+    description: Implement UI components with tests
+    depends_on:
+      - ux_design
+    timeout_minutes: 45
+
+  - name: accessibility_review
+    agent: ux
+    action: accessibility_audit
+    description: Review for WCAG 2.1 AA compliance
+    depends_on:
+      - implementation
+    timeout_minutes: 20
+
+  - name: code_review
+    agent: reviewer
+    action: review
+    description: Code review and quality check
+    depends_on:
+      - accessibility_review
+    outputs:
+      - "docs/reviews/REVIEW-{issue}.md"
+    timeout_minutes: 25
+
+variables:
+  accessibility_standard: "WCAG 2.1 AA"
+  responsive_breakpoints:
+    - 320
+    - 768
+    - 1024
+    - 1440

@@ -1,0 +1,38 @@
+name: tech-debt
+description: Technical debt resolution workflow
+version: "1.0"
+labels:
+  - standard
+  - tech-debt
+  - refactoring
+
+steps:
+  - name: assessment
+    agent: architect
+    action: assess_debt
+    description: Assess the technical debt and create remediation plan
+    outputs:
+      - "docs/adr/ADR-debt-{issue}.md"
+    timeout_minutes: 20
+
+  - name: refactor
+    agent: engineer
+    action: refactor
+    description: Refactor code according to remediation plan
+    depends_on:
+      - assessment
+    timeout_minutes: 45
+
+  - name: verify
+    agent: reviewer
+    action: review
+    description: Verify refactoring maintains functionality and improves quality
+    depends_on:
+      - refactor
+    outputs:
+      - "docs/reviews/REVIEW-{issue}.md"
+    timeout_minutes: 25
+
+variables:
+  preserve_api_compatibility: true
+  update_documentation: true

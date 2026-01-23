@@ -1,0 +1,56 @@
+name: api-design
+description: API design and implementation workflow
+version: "1.0"
+labels:
+  - api
+  - backend
+
+steps:
+  - name: requirements
+    agent: pm
+    action: create_prd
+    description: Define API requirements and use cases
+    outputs:
+      - "docs/prd/PRD-{issue}.md"
+    timeout_minutes: 15
+
+  - name: api_design
+    agent: architect
+    action: design_api
+    description: Design API contracts, endpoints, and data models
+    depends_on:
+      - requirements
+    outputs:
+      - "docs/specs/API-{issue}.md"
+      - "docs/adr/ADR-{issue}.md"
+    timeout_minutes: 25
+
+  - name: implementation
+    agent: engineer
+    action: implement
+    description: Implement API endpoints with validation and tests
+    depends_on:
+      - api_design
+    timeout_minutes: 45
+
+  - name: security_review
+    agent: reviewer
+    action: security_audit
+    description: Security audit of API endpoints
+    depends_on:
+      - implementation
+    timeout_minutes: 20
+
+  - name: documentation
+    agent: engineer
+    action: document_api
+    description: Generate OpenAPI documentation
+    depends_on:
+      - security_review
+    parallel_with: []
+    timeout_minutes: 15
+
+variables:
+  api_version: "v1"
+  require_auth: true
+  rate_limiting: true

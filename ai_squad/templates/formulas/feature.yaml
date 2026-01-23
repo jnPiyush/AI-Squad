@@ -1,0 +1,63 @@
+name: feature
+description: Standard feature development workflow with all agents
+version: "1.0"
+labels:
+  - standard
+  - feature
+  - full-workflow
+
+steps:
+  - name: requirements
+    agent: pm
+    action: create_prd
+    description: Create Product Requirements Document from issue
+    outputs:
+      - "docs/prd/PRD-{issue}.md"
+    timeout_minutes: 15
+
+  - name: architecture
+    agent: architect
+    action: create_spec
+    description: Create Technical Specification and ADR
+    depends_on:
+      - requirements
+    outputs:
+      - "docs/specs/SPEC-{issue}.md"
+      - "docs/adr/ADR-{issue}.md"
+    timeout_minutes: 20
+
+  - name: ux_design
+    agent: ux
+    action: create_design
+    description: Create UX Design and HTML Prototype
+    depends_on:
+      - requirements
+    parallel_with:
+      - architecture
+    outputs:
+      - "docs/ux/UX-{issue}.md"
+      - "docs/ux/prototypes/prototype-{issue}.html"
+    timeout_minutes: 20
+
+  - name: implementation
+    agent: engineer
+    action: implement
+    description: Implement the feature with comprehensive tests
+    depends_on:
+      - architecture
+      - ux_design
+    timeout_minutes: 60
+
+  - name: review
+    agent: reviewer
+    action: review
+    description: Code review, security audit, and quality check
+    depends_on:
+      - implementation
+    outputs:
+      - "docs/reviews/REVIEW-{issue}.md"
+    timeout_minutes: 30
+
+variables:
+  coverage_threshold: 80
+  include_ui: true
