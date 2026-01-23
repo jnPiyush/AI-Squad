@@ -17,6 +17,12 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
         """Get Architect system prompt"""
         skills = self._get_skills()
         
+        # Try to load from external file first
+        template = self._load_prompt_template("architect")
+        if template:
+            return self._render_prompt(template, skills=skills)
+        
+        # Fallback to embedded prompt
         return f"""You are an expert Software Architect on an AI development squad.
 
 **Your Role:**

@@ -16,12 +16,20 @@ class ReviewerAgent(BaseAgent):
         """Get Reviewer system prompt"""
         skills = self._get_skills()
         
+        # Try to load from external file first
+        template = self._load_prompt_template("reviewer")
+        if template:
+            return self._render_prompt(template, skills=skills)
+        
+        # Fallback to embedded prompt (uses config values)
+        coverage = self.config.test_coverage_threshold
+        
         return f"""You are an expert Code Reviewer on an AI development squad.
 
 **Your Role:**
 - Review code for quality and standards compliance
 - Check security vulnerabilities
-- Verify test coverage (≥80%)
+- Verify test coverage (≥{coverage}%)
 - Ensure documentation completeness
 - Validate performance considerations
 
@@ -46,7 +54,7 @@ class ReviewerAgent(BaseAgent):
 - [ ] Linter rules followed
 
 **Testing:**
-- [ ] Test coverage ≥80%
+- [ ] Test coverage ≥{coverage}%
 - [ ] Unit tests present
 - [ ] Integration tests present
 - [ ] E2E tests (if UI changes)

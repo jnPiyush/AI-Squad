@@ -74,9 +74,8 @@ agents:
     model: "gpt-4"
     temperature: 0.7
     skills:
-      - product-management
-      - requirements-analysis
-      - user-research
+      - core-principles
+      - documentation
 ```
 
 ---
@@ -143,10 +142,10 @@ agents:
     model: "gpt-4"
     temperature: 0.5
     skills:
-      - system-design
       - api-design
-      - architecture-patterns
-      - security-design
+      - database
+      - scalability
+      - security
 ```
 
 ---
@@ -228,10 +227,10 @@ agents:
     model: "gpt-4"
     temperature: 0.3
     skills:
-      - coding
       - testing
-      - debugging
-      - refactoring
+      - error-handling
+      - code-organization
+      - type-safety
     coverage_threshold: 80
 ```
 
@@ -314,10 +313,8 @@ agents:
     model: "gpt-4"
     temperature: 0.6
     skills:
-      - ux-design
-      - accessibility
-      - wireframing
-      - user-research
+      - documentation
+      - core-principles
     accessibility_standard: "WCAG 2.1 AA"
 ```
 
@@ -418,9 +415,10 @@ agents:
     model: "gpt-4"
     temperature: 0.4
     skills:
-      - code-review
-      - security-audit
-      - performance-analysis
+      - code-review-and-audit
+      - security
+      - performance
+      - testing
     coverage_threshold: 80
     strict_mode: true
 ```
@@ -468,18 +466,35 @@ See [Workflows](workflows.md) for more multi-agent patterns.
 
 All agents have access to specialized skills from the `ai_squad/skills/` directory:
 
-### Common Skills
-- `code-organization` - Project structure best practices
-- `testing-strategy` - Comprehensive testing approaches
-- `documentation` - Writing clear documentation
-- `version-control` - Git workflow best practices
+### Available Skills (18 total)
+
+| Skill | Directory | Used By |
+|-------|-----------|---------|
+| `ai-agent-development` | AI/ML patterns | All |
+| `api-design` | REST/GraphQL design | Architect |
+| `code-organization` | Project structure | Engineer |
+| `code-review-and-audit` | Review checklists | Reviewer |
+| `configuration` | Config management | All |
+| `core-principles` | SOLID, DRY, KISS | All |
+| `database` | Database design | Architect |
+| `dependency-management` | Package management | Engineer |
+| `documentation` | Doc standards | PM, UX |
+| `error-handling` | Error patterns | Engineer |
+| `logging-monitoring` | Observability | Engineer |
+| `performance` | Optimization | Reviewer, Architect |
+| `remote-git-operations` | Git workflows | All |
+| `scalability` | Scaling patterns | Architect |
+| `security` | Security practices | Architect, Reviewer |
+| `testing` | Testing strategies | Engineer, Reviewer |
+| `type-safety` | Type systems | Engineer |
+| `version-control` | Git best practices | All |
 
 ### Agent-Specific Skills
-- **PM**: `product-management`, `requirements-analysis`, `user-research`
-- **Architect**: `system-design`, `api-design`, `architecture-patterns`
-- **Engineer**: `coding`, `testing`, `debugging`, `refactoring`
-- **UX**: `ux-design`, `accessibility`, `wireframing`
-- **Reviewer**: `code-review`, `security-audit`, `performance-analysis`
+- **PM**: `core-principles`, `documentation`
+- **Architect**: `api-design`, `database`, `scalability`, `security`
+- **Engineer**: `testing`, `error-handling`, `code-organization`, `type-safety`
+- **UX**: `documentation`, `core-principles`
+- **Reviewer**: `code-review-and-audit`, `security`, `performance`, `testing`
 
 ---
 

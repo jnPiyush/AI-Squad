@@ -16,6 +16,12 @@ class ProductManagerAgent(BaseAgent):
         """Get PM system prompt"""
         skills = self._get_skills()
         
+        # Try to load from external file first
+        template = self._load_prompt_template("pm")
+        if template:
+            return self._render_prompt(template, skills=skills)
+        
+        # Fallback to embedded prompt
         return f"""You are an expert Product Manager on an AI development squad.
 
 **Your Role:**

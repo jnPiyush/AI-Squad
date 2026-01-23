@@ -87,3 +87,43 @@ skills:
   # - remote-git-operations
   # - ai-agent-development
   # - code-review-and-audit
+
+# Quality thresholds (used by Engineer and Reviewer agents)
+quality:
+  # Minimum test coverage required (%)
+  test_coverage_threshold: 80
+  
+  # Test pyramid distribution (should sum to 100)
+  test_pyramid:
+    unit: 70         # Unit tests percentage
+    integration: 20  # Integration tests percentage
+    e2e: 10          # End-to-end tests percentage
+
+# Performance requirements (used in specifications)
+performance:
+  response_time_p95_ms: 200    # 95th percentile response time
+  throughput_req_per_sec: 1000 # Minimum requests per second
+  concurrent_users: 100        # Expected concurrent users
+
+# Accessibility standards (used by UX Designer)
+accessibility:
+  wcag_version: "2.1"    # WCAG version (2.0, 2.1, 2.2)
+  wcag_level: "AA"       # Compliance level (A, AA, AAA)
+  contrast_ratio: 4.5    # Minimum contrast ratio for text
+
+# Responsive design breakpoints (used by UX Designer)
+design:
+  breakpoints:
+    mobile: "320px-767px"
+    tablet: "768px-1023px"
+    desktop: "1024px+"
+  touch_target_min: "44px"  # Minimum touch target size
+
+# Document naming patterns
+# output:
+#   naming:
+#     prd: "PRD-{issue}.md"
+#     adr: "ADR-{issue}.md"
+#     spec: "SPEC-{issue}.md"
+#     ux: "UX-{issue}.md"
+#     review: "REVIEW-{pr}.md"

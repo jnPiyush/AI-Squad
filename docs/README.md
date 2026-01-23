@@ -7,10 +7,8 @@ Welcome to AI-Squad! Your AI Development Squad, One Command Away.
 - [Quick Start Guide](quickstart.md) - Get up and running in 30 seconds
 - [Commands Reference](commands.md) - All available commands
 - [Configuration](configuration.md) - Customize AI-Squad
-- [Agents Guide](agents.md) - Learn about each agent
-- [Workflows](workflows.md) - Multi-agent collaboration
-- [GitHub Actions](github-actions.md) - CI/CD integration
-- [Troubleshooting](troubleshooting.md) - Common issues and solutions
+- [Agents Guide](../AGENTS.md) - Learn about each agent
+- [Automation Design](AUTOMATION-DESIGN.md) - Watch mode and automation
 - [Contributing](../CONTRIBUTING.md) - Contribute to AI-Squad
 
 ## What is AI-Squad?

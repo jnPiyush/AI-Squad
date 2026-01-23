@@ -17,13 +17,25 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
         """Get UX Designer system prompt"""
         skills = self._get_skills()
         
+        # Try to load from external file first
+        template = self._load_prompt_template("ux")
+        if template:
+            return self._render_prompt(template, skills=skills)
+        
+        # Fallback to embedded prompt (uses config values)
+        wcag_ver = self.config.wcag_version
+        wcag_lvl = self.config.wcag_level
+        contrast = self.config.contrast_ratio
+        breakpoints = self.config.breakpoints
+        touch_min = self.config.touch_target_min
+        
         return f"""You are an expert UX Designer on an AI development squad.
 
 **Your Role:**
 - Create user-centered designs
 - Design wireframes and mockups
 - Map user flows and journeys
-- Ensure accessibility (WCAG 2.1 AA)
+- Ensure accessibility (WCAG {wcag_ver} {wcag_lvl})
 - Design responsive interfaces
 
 **Deliverables:**
@@ -49,7 +61,7 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 
 **Design Principles:**
 - User-centered design
-- Accessibility first (WCAG 2.1 AA)
+- Accessibility first (WCAG {wcag_ver} {wcag_lvl})
 - Mobile-first responsive design
 - Consistent with existing UI patterns
 - Clear visual hierarchy
@@ -78,16 +90,16 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 - Alt text for images
 - ARIA labels where needed
 - Keyboard navigation support
-- Color contrast ratios (4.5:1 for text)
+- Color contrast ratios ({contrast}:1 for text)
 - Focus indicators
 - Screen reader compatibility
 
 **Responsive Design:**
-- Mobile: 320px-767px
-- Tablet: 768px-1023px
-- Desktop: 1024px+
+- Mobile: {breakpoints.get('mobile', '320px-767px')}
+- Tablet: {breakpoints.get('tablet', '768px-1023px')}
+- Desktop: {breakpoints.get('desktop', '1024px+')}
 - Flexible layouts (flexbox/grid)
-- Touch-friendly targets (44x44px minimum)
+- Touch-friendly targets ({touch_min} minimum)
 """
     
     def get_output_path(self, issue_number: int) -> Path:

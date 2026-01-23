@@ -193,3 +193,57 @@ class BaseAgent(ABC):
             return "\n\n".join(skills)
         
         return ""
+    
+    def _load_prompt_template(self, prompt_name: str) -> str:
+        """
+        Load prompt template from external file
+        
+        Args:
+            prompt_name: Prompt name (pm, architect, engineer, ux, reviewer)
+            
+        Returns:
+            Prompt template content or empty string if not found
+        """
+        prompts_dir = Path(__file__).parent.parent / "prompts"
+        prompt_file = prompts_dir / f"{prompt_name}.md"
+        
+        if prompt_file.exists():
+            return prompt_file.read_text(encoding="utf-8")
+        return ""
+    
+    def _render_prompt(self, template: str, **kwargs) -> str:
+        """
+        Render prompt template with config values
+        
+        Args:
+            template: Prompt template with {placeholders}
+            **kwargs: Additional variables to substitute
+            
+        Returns:
+            Rendered prompt
+        """
+        # Get config values for common placeholders
+        values = {
+            "skills": kwargs.get("skills", ""),
+            "test_coverage_threshold": self.config.test_coverage_threshold,
+            "test_pyramid_unit": self.config.test_pyramid.get("unit", 70),
+            "test_pyramid_integration": self.config.test_pyramid.get("integration", 20),
+            "test_pyramid_e2e": self.config.test_pyramid.get("e2e", 10),
+            "wcag_version": self.config.wcag_version,
+            "wcag_level": self.config.wcag_level,
+            "contrast_ratio": self.config.contrast_ratio,
+            "breakpoint_mobile": self.config.breakpoints.get("mobile", "320px-767px"),
+            "breakpoint_tablet": self.config.breakpoints.get("tablet", "768px-1023px"),
+            "breakpoint_desktop": self.config.breakpoints.get("desktop", "1024px+"),
+            "touch_target_min": self.config.touch_target_min,
+            "response_time_p95_ms": self.config.response_time_p95_ms,
+            "throughput_req_per_sec": self.config.throughput_req_per_sec,
+        }
+        values.update(kwargs)
+        
+        # Simple placeholder replacement
+        result = template
+        for key, value in values.items():
+            result = result.replace(f"{{{key}}}", str(value))
+        
+        return result

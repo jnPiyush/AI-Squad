@@ -41,6 +41,32 @@ class Config:
             },
         },
         "skills": ["all"],  # or list specific skills
+        "quality": {
+            "test_coverage_threshold": 80,
+            "test_pyramid": {
+                "unit": 70,
+                "integration": 20,
+                "e2e": 10,
+            },
+        },
+        "performance": {
+            "response_time_p95_ms": 200,
+            "throughput_req_per_sec": 1000,
+            "concurrent_users": 100,
+        },
+        "accessibility": {
+            "wcag_version": "2.1",
+            "wcag_level": "AA",
+            "contrast_ratio": 4.5,
+        },
+        "design": {
+            "breakpoints": {
+                "mobile": "320px-767px",
+                "tablet": "768px-1023px",
+                "desktop": "1024px+",
+            },
+            "touch_target_min": "44px",
+        },
     }
     
     def __init__(self, data: Dict[str, Any]):
@@ -159,3 +185,56 @@ class Config:
     def reviews_dir(self) -> Path:
         """Get reviews output directory"""
         return Path(self.get("output.reviews_dir", "docs/reviews"))
+
+    # Quality thresholds
+    @property
+    def test_coverage_threshold(self) -> int:
+        """Get test coverage threshold (%)"""
+        return self.get("quality.test_coverage_threshold", 80)
+    
+    @property
+    def test_pyramid(self) -> Dict[str, int]:
+        """Get test pyramid distribution"""
+        return self.get("quality.test_pyramid", {"unit": 70, "integration": 20, "e2e": 10})
+    
+    # Performance requirements
+    @property
+    def response_time_p95_ms(self) -> int:
+        """Get p95 response time target (ms)"""
+        return self.get("performance.response_time_p95_ms", 200)
+    
+    @property
+    def throughput_req_per_sec(self) -> int:
+        """Get throughput target (req/s)"""
+        return self.get("performance.throughput_req_per_sec", 1000)
+    
+    # Accessibility
+    @property
+    def wcag_version(self) -> str:
+        """Get WCAG version"""
+        return self.get("accessibility.wcag_version", "2.1")
+    
+    @property
+    def wcag_level(self) -> str:
+        """Get WCAG compliance level"""
+        return self.get("accessibility.wcag_level", "AA")
+    
+    @property
+    def contrast_ratio(self) -> float:
+        """Get minimum contrast ratio"""
+        return self.get("accessibility.contrast_ratio", 4.5)
+    
+    # Design breakpoints
+    @property
+    def breakpoints(self) -> Dict[str, str]:
+        """Get responsive design breakpoints"""
+        return self.get("design.breakpoints", {
+            "mobile": "320px-767px",
+            "tablet": "768px-1023px",
+            "desktop": "1024px+"
+        })
+    
+    @property
+    def touch_target_min(self) -> str:
+        """Get minimum touch target size"""
+        return self.get("design.touch_target_min", "44px")

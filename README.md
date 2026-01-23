@@ -72,7 +72,21 @@ squad engineer 123
 
 # Multi-agent collaboration
 squad collab 100 pm architect
+
+# Automatic orchestration (watch mode)
+squad watch
 ```
+
+#### 💬 GitHub Copilot Chat Integration
+Your agents work naturally in Copilot Chat - just mention them by name:
+
+```
+"PM, create requirements for user authentication"
+"Architect, design a REST API for users"
+"Engineer, implement JWT auth with tests"
+```
+
+See `.github/copilot-instructions.md` and `.github/agents/` for agent definitions.
 
 ---
 
