@@ -4,7 +4,7 @@ Agent Communication Tests
 Tests for agent-to-agent communication and clarification framework.
 """
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 import uuid
 
@@ -99,7 +99,7 @@ class TestAgentCommunicator:
         """Create communicator in automated mode"""
         return AgentCommunicator(
             execution_mode="automated",
-            github=mock_github
+            github_tool=mock_github
         )
     
     @pytest.fixture
@@ -107,7 +107,7 @@ class TestAgentCommunicator:
         """Create communicator in manual mode"""
         return AgentCommunicator(
             execution_mode="manual",
-            github=mock_github
+            github_tool=mock_github
         )
     
     def test_communicator_initialization(self, communicator_automated):
@@ -278,17 +278,17 @@ class TestClarificationMixin:
     def test_agent_has_clarification_methods(self, agent):
         """Test agent has clarification methods"""
         assert hasattr(agent, 'ask_clarification')
-        assert hasattr(agent, 'wait_for_clarification')
+        assert hasattr(agent, 'check_pending_questions')
         assert callable(agent.ask_clarification)
-        assert callable(agent.wait_for_clarification)
+        assert callable(agent.check_pending_questions)
     
     def test_ask_clarification_automated(self, agent):
         """Test asking clarification in automated mode"""
         agent.execution_mode = "automated"
         
         question_id = agent.ask_clarification(
-            to_agent="pm",
             question="Clarify scope?",
+            target_agent="pm",
             context={"issue": 123},
             issue_number=123
         )
@@ -301,26 +301,25 @@ class TestClarificationMixin:
         
         with patch('builtins.print'):
             question_id = agent.ask_clarification(
-                to_agent="user",
                 question="Clarify scope?",
+                target_agent="user",
                 context={"issue": 123},
                 issue_number=123
             )
         
         assert question_id is not None
     
-    def test_wait_for_clarification_timeout(self, agent):
-        """Test waiting for clarification with timeout"""
+    def test_check_pending_questions(self, agent):
+        """Test checking pending questions"""
         agent.execution_mode = "automated"
         
-        question_id = agent.ask_clarification(
-            "pm", "Question?", {}, 123
+        agent.ask_clarification(
+            "Question?", "pm", {}, 123
         )
         
-        # Wait with very short timeout (should timeout)
-        response = agent.wait_for_clarification(question_id, timeout=0.1)
-        
-        assert response is None  # Timeout
+        # The agent shouldn't have pending questions - they're sent TO pm
+        pending = agent.check_pending_questions()
+        assert len(pending) == 0  # No questions directed at this agent
 
 
 class TestMultiAgentCommunication:
@@ -331,7 +330,7 @@ class TestMultiAgentCommunication:
         """Create communicator"""
         github = Mock(spec=GitHubTool)
         github._is_configured.return_value = True
-        return AgentCommunicator(execution_mode="automated", github=github)
+        return AgentCommunicator(execution_mode="automated", github_tool=github)
     
     def test_multiple_agents_asking_same_agent(self, communicator):
         """Test multiple agents asking the same agent"""
@@ -398,7 +397,7 @@ class TestGitHubIntegration:
         
         communicator = AgentCommunicator(
             execution_mode="automated",
-            github=github
+            github_tool=github
         )
         
         question_id = communicator.ask(

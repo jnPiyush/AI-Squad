@@ -114,10 +114,13 @@ class AgentCommunicator:
         if self.execution_mode == "automated":
             # Automated mode: Agent-to-agent communication
             # For agent-to-agent, route the message
-            return self._route_message(message)
+            self._route_message(message)
         else:
             # Manual mode: Agent-to-user via GitHub Copilot Chat
-            return self._request_user_clarification(message)
+            self._request_user_clarification(message)
+        
+        # Return message ID for tracking
+        return message.id
     
     def respond(
         self,

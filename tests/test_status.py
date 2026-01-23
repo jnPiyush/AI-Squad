@@ -165,9 +165,36 @@ class TestStatusManager:
         
         assert success is True
     
-    def test_transition_history_tracking(self, status_manager):
+    def test_transition_history_tracking(self, mock_github):
         """Test transitions are tracked in history"""
+        # Create status manager with mock that updates labels after transition
+        current_labels = []
+        
+        def get_issue_with_labels(issue_number):
+            return {
+                "number": issue_number,
+                "state": "open",
+                "labels": [{"name": label} for label in current_labels]
+            }
+        
+        def update_labels(issue_number, labels):
+            # Track which status labels were added
+            for label in labels:
+                if label.startswith("status:"):
+                    # Remove old status labels
+                    current_labels[:] = [l for l in current_labels if not l.startswith("status:")]
+                    current_labels.append(label)
+            return True
+        
+        mock_github.get_issue.side_effect = get_issue_with_labels
+        mock_github.add_labels.side_effect = update_labels
+        
+        status_manager = StatusManager(mock_github)
+        
+        # First transition: Backlog → Ready
         status_manager.transition(123, IssueStatus.READY, "pm")
+        
+        # Second transition: Ready → In Progress (now should work because mock tracks labels)
         status_manager.transition(123, IssueStatus.IN_PROGRESS, "engineer")
         
         history = status_manager.get_transition_history(123)
@@ -178,7 +205,7 @@ class TestStatusManager:
         assert history[0].to_status == IssueStatus.READY
         assert history[0].agent == "pm"
         
-        assert history[1].from_status == IssueStatus.BACKLOG  # Current status from mock
+        assert history[1].from_status == IssueStatus.READY
         assert history[1].to_status == IssueStatus.IN_PROGRESS
     
     def test_get_agent_start_status(self, status_manager):

@@ -313,6 +313,8 @@ class WorkflowValidator:
         """Check if issue is open"""
         try:
             issue = self.github.get_issue(issue_number)
+            if issue is None:
+                return False
             return issue.get("state") == "open"
         except (ConnectionError, TimeoutError, KeyError):
             return False
