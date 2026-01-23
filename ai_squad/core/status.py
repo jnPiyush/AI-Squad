@@ -56,9 +56,13 @@ class StatusManager:
         IssueStatus.DONE: set(),  # Terminal state
     }
     
-    # Agent to status mapping
+    # Agent to status mapping (supports both short and full names)
     AGENT_STATUS_TRANSITIONS: Dict[str, Dict[str, IssueStatus]] = {
         "pm": {
+            "start": IssueStatus.BACKLOG,
+            "complete": IssueStatus.READY,
+        },
+        "productmanager": {
             "start": IssueStatus.BACKLOG,
             "complete": IssueStatus.READY,
         },
@@ -67,6 +71,10 @@ class StatusManager:
             "complete": IssueStatus.READY,
         },
         "ux": {
+            "start": IssueStatus.READY,
+            "complete": IssueStatus.READY,
+        },
+        "uxdesigner": {
             "start": IssueStatus.READY,
             "complete": IssueStatus.READY,
         },
@@ -133,6 +141,10 @@ class StatusManager:
         """
         # Get current status
         current_status = self._get_current_status(issue_number)
+        
+        # Skip if already in target status
+        if current_status == to_status:
+            return True
         
         # Validate transition
         if not force and not self.can_transition(current_status, to_status):

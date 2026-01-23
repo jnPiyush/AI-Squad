@@ -4,7 +4,7 @@ Reviewer Agent
 Reviews code, checks quality, and ensures standards compliance.
 """
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from ai_squad.agents.base import BaseAgent
 

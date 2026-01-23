@@ -69,12 +69,19 @@ class ProductManagerAgent(BaseAgent):
         # Get PRD template
         template = self.templates.get_template("prd")
         
+        # Extract label names from label dicts
+        labels = issue.get("labels", [])
+        if labels and isinstance(labels[0], dict):
+            label_names = [label.get("name", "") for label in labels]
+        else:
+            label_names = labels
+        
         # Prepare template variables
         variables = {
             "issue_number": issue["number"],
             "title": issue["title"],
             "description": issue["body"] or "",
-            "labels": ", ".join(issue.get("labels", [])),
+            "labels": ", ".join(label_names),
             "author": issue.get("user", {}).get("login", "Unknown"),
             "created_at": issue.get("created_at", ""),
             "codebase_context": self._format_context(context),
@@ -93,7 +100,7 @@ class ProductManagerAgent(BaseAgent):
         
         # If epic, create feature issues
         created_issues = []
-        if "type:epic" in issue.get("labels", []):
+        if "type:epic" in label_names:
             created_issues = self._create_feature_issues(issue, prd_content)
         
         return {

@@ -20,7 +20,8 @@ console = Console()
 
 
 def print_banner():
-    """Print AI-Squad banner"""
+    """Print enhanced AI-Squad banner with agents"""
+    # Main ASCII logo
     banner = Text()
     banner.append(r"""
    ___   ____      _____                      __
@@ -30,11 +31,18 @@ def print_banner():
                       /___/                     
 """, style="cyan bold")
     console.print(banner)
+    
+    # Tagline and version in panel
     console.print(
         Panel(
-            "[bold]Your AI Development Squad, One Command Away[/bold]\n"
-            f"Version {__version__}",
+            "[bold cyan]Your AI Development Squad, One Command Away[/bold cyan]\n\n"
+            "[dim]Five Expert AI Agents:[/dim]\n"
+            "🎨 [bold]Product Manager[/bold] • 🏗️  [bold]Architect[/bold] • "
+            "💻 [bold]Engineer[/bold] • 🎭 [bold]UX Designer[/bold] • "
+            "✅ [bold]Reviewer[/bold]\n\n"
+            f"[dim]Version {__version__}[/dim]",
             style="cyan",
+            border_style="bright_cyan"
         )
     )
     console.print()

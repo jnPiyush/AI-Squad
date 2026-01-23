@@ -7,12 +7,23 @@ import os
 import subprocess
 from typing import Dict, Any, Optional, List
 import json
+import logging
 
 from ai_squad.core.config import Config
+from ai_squad.core.retry import (
+    retry_with_backoff,
+    GITHUB_API_RETRY,
+    RateLimiter,
+    CircuitBreaker,
+    with_rate_limiting,
+    GitHubRateLimitError
+)
+
+logger = logging.getLogger(__name__)
 
 
 class GitHubTool:
-    """GitHub API and CLI integration"""
+    """GitHub API and CLI integration with retry logic and rate limiting"""
     
     def __init__(self, config: Config):
         """
@@ -26,6 +37,15 @@ class GitHubTool:
         self.owner = config.github_owner
         self.repo = config.github_repo
         
+        # Initialize retry components
+        self.rate_limiter = RateLimiter(calls_per_hour=5000, burst_size=100)
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=5,
+            success_threshold=2,
+            timeout=60
+        )
+    
+    @retry_with_backoff(GITHUB_API_RETRY)
     def get_issue(self, issue_number: int) -> Optional[Dict[str, Any]]:
         """
         Get issue details
@@ -39,17 +59,22 @@ class GitHubTool:
         if not self._is_configured():
             return self._create_mock_issue(issue_number)
         
+        # Check rate limits before making call
+        self.rate_limiter.wait_if_needed()
+        
         try:
-            result = self._run_gh_command([
+            result = self._run_gh_command_with_circuit_breaker([
                 "issue", "view", str(issue_number),
                 "--json", "number,title,body,labels,author,createdAt,state"
             ])
+            
+            self.rate_limiter.record_call()
             
             if result:
                 return json.loads(result)
             
         except Exception as e:
-            print(f"Error fetching issue: {e}")
+            logger.error(f"Error fetching issue: {e}")
         
         return None
     
@@ -496,6 +521,62 @@ class GitHubTool:
         """
         status_label = f"status:{status.lower().replace(' ', '-')}"
         return self.search_issues_by_labels([status_label])
+    
+    def _run_gh_command_with_circuit_breaker(self, cmd: List[str]) -> Optional[str]:
+        """
+        Run GitHub CLI command with circuit breaker protection
+        
+        Args:
+            cmd: Command arguments
+            
+        Returns:
+            Command output or None
+        """
+        return self.circuit_breaker.call(self._run_gh_command, cmd)
+    
+    def _check_rate_limit_response(self, error_msg: str) -> None:
+        """
+        Check if error indicates rate limit and raise appropriate exception
+        
+        Args:
+            error_msg: Error message from GitHub
+            
+        Raises:
+            GitHubRateLimitError: If rate limit exceeded
+        """
+        if "rate limit" in error_msg.lower() or "403" in error_msg:
+            raise GitHubRateLimitError(f"GitHub rate limit exceeded: {error_msg}")
+    
+    def get_rate_limit_status(self) -> Dict[str, int]:
+        """
+        Get current rate limit status
+        
+        Returns:
+            Dict with rate limit information
+        """
+        github_limits = {}
+        
+        if self._is_configured():
+            try:
+                result = self._run_gh_command(["api", "rate_limit"])
+                if result:
+                    data = json.loads(result)
+                    github_limits = {
+                        "remaining": data.get("rate", {}).get("remaining", 0),
+                        "limit": data.get("rate", {}).get("limit", 5000),
+                        "reset": data.get("rate", {}).get("reset", 0)
+                    }
+            except Exception as e:
+                logger.warning(f"Could not fetch GitHub rate limits: {e}")
+        
+        # Combine with our rate limiter
+        local_limits = self.rate_limiter.get_remaining()
+        
+        return {
+            **github_limits,
+            **local_limits
+        }
+
     
     def _create_mock_issue(self, issue_number: int) -> Dict[str, Any]:
         """Create mock issue for testing"""
