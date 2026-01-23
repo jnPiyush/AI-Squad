@@ -4,7 +4,7 @@ Status Management Tests
 Comprehensive tests for status transitions and workflow validation.
 """
 import pytest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock
 from datetime import datetime
 
 from ai_squad.core.status import (
@@ -177,7 +177,7 @@ class TestStatusManager:
                 "labels": [{"name": label} for label in current_labels]
             }
         
-        def update_labels(issue_number, labels):
+        def update_labels(_issue_number, labels):
             # Track which status labels were added
             for label in labels:
                 if label.startswith("status:"):
@@ -229,7 +229,7 @@ class TestStatusManager:
             "labels": [{"name": "status:in-progress"}]
         }
         
-        status = status_manager._get_current_status(123)
+        status = status_manager.get_current_status(123)
         assert status == IssueStatus.IN_PROGRESS
     
     def test_get_current_status_from_closed_issue(self, status_manager, mock_github):
@@ -240,7 +240,7 @@ class TestStatusManager:
             "labels": []
         }
         
-        status = status_manager._get_current_status(123)
+        status = status_manager.get_current_status(123)
         assert status == IssueStatus.DONE
     
     def test_get_current_status_default(self, status_manager, mock_github):
@@ -251,7 +251,7 @@ class TestStatusManager:
             "labels": []
         }
         
-        status = status_manager._get_current_status(123)
+        status = status_manager.get_current_status(123)
         assert status == IssueStatus.BACKLOG
     
     def test_reset_to_ready(self, status_manager, mock_github):
@@ -273,7 +273,7 @@ class TestStatusManager:
     
     def test_create_transition_comment(self, status_manager):
         """Test transition comment generation"""
-        comment = status_manager._create_transition_comment(
+        comment = status_manager.create_transition_comment(
             IssueStatus.READY,
             IssueStatus.IN_PROGRESS,
             "engineer",
@@ -387,18 +387,18 @@ class TestWorkflowValidator:
     
     def test_check_issue_exists(self, validator, mock_github):
         """Test issue existence check"""
-        assert validator._check_issue_exists(123) is True
+        assert validator.check_issue_exists(123) is True
         
         mock_github.get_issue.return_value = None
-        assert validator._check_issue_exists(999) is False
+        assert validator.check_issue_exists(999) is False
     
     def test_check_issue_open(self, validator, mock_github):
         """Test issue open state check"""
         mock_github.get_issue.return_value = {"state": "open"}
-        assert validator._check_issue_open(123) is True
+        assert validator.check_issue_open(123) is True
         
         mock_github.get_issue.return_value = {"state": "closed"}
-        assert validator._check_issue_open(123) is False
+        assert validator.check_issue_open(123) is False
 
 
 class TestStatusTransition:

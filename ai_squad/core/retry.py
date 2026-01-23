@@ -77,7 +77,7 @@ def retry_with_backoff(config: Optional[RetryConfig] = None):
         @retry_with_backoff()
         def api_call():
             # code that might fail
-            pass
+            ...
     
     Args:
         config: RetryConfig instance, uses defaults if None
@@ -100,15 +100,21 @@ def retry_with_backoff(config: Optional[RetryConfig] = None):
                     if attempt == config.max_attempts - 1:
                         # Last attempt, raise the exception
                         logger.error(
-                            f"{func.__name__} failed after {config.max_attempts} attempts: {e}"
+                            "%s failed after %s attempts: %s",
+                            func.__name__,
+                            config.max_attempts,
+                            e,
                         )
                         raise
                     
                     # Calculate delay and wait
                     delay = config.get_delay(attempt)
                     logger.warning(
-                        f"{func.__name__} attempt {attempt + 1} failed: {e}. "
-                        f"Retrying in {delay:.2f}s..."
+                        "%s attempt %s failed: %s. Retrying in %.2fs...",
+                        func.__name__,
+                        attempt + 1,
+                        e,
+                        delay,
                     )
                     time.sleep(delay)
             
@@ -236,7 +242,7 @@ class CircuitBreaker:
             self._on_success()
             return result
             
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
     
@@ -267,7 +273,8 @@ class CircuitBreaker:
         elif self.failure_count >= self.failure_threshold:
             # Too many failures, open circuit
             logger.warning(
-                f"Circuit breaker opening ({self.failure_count} failures)"
+                "Circuit breaker opening (%d failures)",
+                self.failure_count,
             )
             self.state = CircuitState.OPEN
     
@@ -298,12 +305,10 @@ class CircuitBreaker:
 
 class CircuitBreakerOpenError(Exception):
     """Raised when circuit breaker is open"""
-    pass
 
 
 class GitHubRateLimitError(Exception):
     """Raised when GitHub rate limit is exceeded"""
-    pass
 
 
 def with_circuit_breaker(breaker: CircuitBreaker):
@@ -316,7 +321,7 @@ def with_circuit_breaker(breaker: CircuitBreaker):
         @with_circuit_breaker(breaker)
         def api_call():
             # code
-            pass
+            ...
     """
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -336,7 +341,7 @@ def with_rate_limiting(limiter: RateLimiter):
         @with_rate_limiting(limiter)
         def api_call():
             # code
-            pass
+            ...
     """
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -346,7 +351,7 @@ def with_rate_limiting(limiter: RateLimiter):
                 result = func(*args, **kwargs)
                 limiter.record_call()
                 return result
-            except Exception as e:
+            except Exception:
                 limiter.record_call()  # Still count failed calls
                 raise
         return wrapper

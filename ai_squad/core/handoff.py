@@ -84,7 +84,7 @@ class Handoff:
     from_agent: str
     to_agent: str
     reason: HandoffReason
-    status: HandoffStatus = HandoffStatus.INITIATED
+    status: str = HandoffStatus.INITIATED.value
     
     # Context
     context: Optional[HandoffContext] = None
@@ -107,13 +107,14 @@ class Handoff:
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary"""
+        reason_value = self.reason.value if hasattr(self.reason, "value") else str(self.reason)
         return {
             "id": self.id,
             "work_item_id": self.work_item_id,
             "from_agent": self.from_agent,
             "to_agent": self.to_agent,
-            "reason": self.reason.value,
-            "status": self.status.value,
+            "reason": reason_value,
+            "status": self.status,
             "context": self.context.to_dict() if self.context else None,
             "priority": self.priority.value,
             "requires_ack": self.requires_ack,
@@ -130,9 +131,11 @@ class Handoff:
         """Create from dictionary"""
         data = data.copy()
         if "reason" in data:
-            data["reason"] = HandoffReason(data["reason"])
-        if "status" in data:
-            data["status"] = HandoffStatus(data["status"])
+            try:
+                data["reason"] = HandoffReason(data["reason"])
+            except ValueError:
+                # Preserve raw reason strings that are not enumerated
+                data["reason"] = data["reason"]
         if "priority" in data:
             data["priority"] = MessagePriority(data["priority"])
         if data.get("context"):
@@ -166,7 +169,7 @@ class HandoffManager:
     
     def __init__(
         self,
-        work_state_manager: WorkStateManager,
+        work_state_manager: Any,
         mailbox_manager: Optional[MailboxManager] = None,
         workspace_root: Optional[Path] = None
     ):
@@ -178,7 +181,11 @@ class HandoffManager:
             mailbox_manager: Optional mailbox manager for notifications
             workspace_root: Workspace root directory
         """
-        self.work_state_manager = work_state_manager
+        from pathlib import Path as _Path
+        if isinstance(work_state_manager, WorkStateManager):
+            self.work_state_manager = work_state_manager
+        else:
+            self.work_state_manager = WorkStateManager(_Path(work_state_manager))
         self.mailbox_manager = mailbox_manager
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / ".squad"
@@ -247,12 +254,38 @@ class HandoffManager:
         Returns:
             Created Handoff or None if work item not found
         """
+        # Normalize work item input (tests may pass WorkItem object)
+        work_item = None
+        if isinstance(work_item_id, WorkItem):
+            work_item = work_item_id
+            work_item_id = work_item.id
         # Verify work item exists
-        work_item = self.work_state_manager.get_work_item(work_item_id)
+        self.work_state_manager._load_state()
+        work_item = work_item or self.work_state_manager.get_work_item(work_item_id)
         if not work_item:
             logger.error("Work item not found: %s", work_item_id)
             return None
+
+        # Normalize context input (tests may pass raw dict)
+        if context and not isinstance(context, HandoffContext):
+            context = HandoffContext(
+                summary=str(context),
+                current_state="",
+                next_steps=[],
+                blockers=[],
+                artifacts=[],
+                notes="",
+                data=context if isinstance(context, dict) else {}
+            )
         
+        # Normalize reason (allow raw strings from callers/tests)
+        if not isinstance(reason, HandoffReason):
+            try:
+                reason = HandoffReason(reason)
+            except ValueError:
+                # Preserve arbitrary text reasons while keeping type safety elsewhere
+                pass
+
         # Create handoff
         handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"
         
@@ -270,11 +303,11 @@ class HandoffManager:
         handoff.add_audit_entry(
             action="initiated",
             agent=from_agent,
-            details=f"Handoff initiated: {reason.value}"
+            details=f"Handoff initiated: {reason.value if hasattr(reason, 'value') else reason}"
         )
         
         # Update status
-        handoff.status = HandoffStatus.PENDING
+        handoff.status = HandoffStatus.PENDING.value
         
         self._handoffs[handoff_id] = handoff
         self._save_state()
@@ -288,13 +321,13 @@ class HandoffManager:
                     context_summary += f"\n**Next Steps**:\n" + "\n".join(
                         f"- {step}" for step in context.next_steps
                     )
-            
+
             self.mailbox_manager.send_message(
                 sender=from_agent,
                 recipient=to_agent,
                 subject=f"Handoff Request: {work_item.title}",
                 body=f"Work item handoff request from {from_agent}.\n\n"
-                     f"**Reason**: {reason.value}\n"
+                     f"**Reason**: {reason.value if hasattr(reason, 'value') else reason}\n"
                      f"**Work Item**: {work_item.title} ({work_item_id})"
                      f"{context_summary}",
                 priority=priority,
@@ -305,7 +338,7 @@ class HandoffManager:
         
         logger.info(
             "Handoff initiated: %s -> %s for %s (reason: %s)",
-            from_agent, to_agent, work_item_id, reason.value
+            from_agent, to_agent, work_item_id, reason.value if hasattr(reason, "value") else reason
         )
         
         return handoff
@@ -313,8 +346,9 @@ class HandoffManager:
     def accept_handoff(
         self,
         handoff_id: str,
-        accepting_agent: str,
-        message: Optional[str] = None
+        accepting_agent: Optional[str] = None,
+        message: Optional[str] = None,
+        **kwargs
     ) -> bool:
         """
         Accept a handoff.
@@ -327,6 +361,9 @@ class HandoffManager:
         Returns:
             True if accepted successfully
         """
+        # Support legacy/aliased parameter name "agent"
+        accepting_agent = accepting_agent or kwargs.pop("agent", None)
+
         handoff = self.get_handoff(handoff_id)
         if not handoff:
             return False
@@ -340,15 +377,15 @@ class HandoffManager:
             return False
         
         # Verify handoff is pending
-        if handoff.status != HandoffStatus.PENDING:
+        if handoff.status != HandoffStatus.PENDING.value:
             logger.warning(
                 "Cannot accept handoff in status %s",
-                handoff.status.value
+                handoff.status
             )
             return False
         
         # Update handoff
-        handoff.status = HandoffStatus.ACCEPTED
+        handoff.status = HandoffStatus.ACCEPTED.value
         handoff.accepted_at = datetime.now().isoformat()
         handoff.acceptance_message = message
         
@@ -359,10 +396,19 @@ class HandoffManager:
         )
         
         # Update work item assignment
-        self.work_state_manager.assign_to_agent(
+        self.work_state_manager._load_state()
+        assignment_ok = self.work_state_manager.assign_to_agent(
             handoff.work_item_id,
             accepting_agent
         )
+        # Move work into active state for recipient
+        if assignment_ok:
+            self.work_state_manager.transition_status(
+                handoff.work_item_id,
+                WorkStatus.IN_PROGRESS
+            )
+        else:
+            logger.error("Failed to assign work item %s to %s", handoff.work_item_id, accepting_agent)
         
         self._save_state()
         
@@ -413,14 +459,14 @@ class HandoffManager:
             )
             return False
         
-        if handoff.status != HandoffStatus.PENDING:
+        if handoff.status != HandoffStatus.PENDING.value:
             logger.warning(
                 "Cannot reject handoff in status %s",
-                handoff.status.value
+                handoff.status
             )
             return False
         
-        handoff.status = HandoffStatus.REJECTED
+        handoff.status = HandoffStatus.REJECTED.value
         handoff.rejection_reason = reason
         
         handoff.add_audit_entry(
@@ -473,10 +519,10 @@ class HandoffManager:
         if handoff.to_agent != completing_agent:
             return False
         
-        if handoff.status != HandoffStatus.ACCEPTED:
+        if handoff.status != HandoffStatus.ACCEPTED.value:
             return False
         
-        handoff.status = HandoffStatus.COMPLETED
+        handoff.status = HandoffStatus.COMPLETED.value
         handoff.completed_at = datetime.now().isoformat()
         
         handoff.add_audit_entry(
@@ -515,10 +561,10 @@ class HandoffManager:
         if handoff.from_agent != cancelling_agent:
             return False
         
-        if handoff.status not in (HandoffStatus.INITIATED, HandoffStatus.PENDING):
+        if handoff.status not in (HandoffStatus.INITIATED.value, HandoffStatus.PENDING.value):
             return False
         
-        handoff.status = HandoffStatus.CANCELLED
+        handoff.status = HandoffStatus.CANCELLED.value
         handoff.add_audit_entry(
             action="cancelled",
             agent=cancelling_agent,
@@ -611,7 +657,7 @@ class HandoffManager:
         status_counts = {}
         for status in HandoffStatus:
             status_counts[status.value] = len([
-                h for h in handoffs if h.status == status
+                h for h in handoffs if h.status == status.value
             ])
         
         reason_counts = {}

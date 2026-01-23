@@ -4,7 +4,7 @@ Integration Tests for AI-Squad
 Tests complete workflows across multiple agents and components.
 """
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from pathlib import Path
 import tempfile
 import shutil
@@ -12,7 +12,6 @@ import shutil
 from ai_squad.core.config import Config
 from ai_squad.agents.product_manager import ProductManagerAgent
 from ai_squad.agents.architect import ArchitectAgent
-from ai_squad.agents.engineer import EngineerAgent
 from ai_squad.agents.reviewer import ReviewerAgent
 from ai_squad.core.status import StatusManager, IssueStatus
 from ai_squad.core.agent_comm import AgentCommunicator
@@ -56,7 +55,7 @@ class TestEndToEndWorkflow:
     @pytest.fixture
     def mock_github(self):
         """Create mock GitHub tool"""
-        github = Mock(spec=GitHubTool)
+        github = Mock()
         
         # Mock issue
         github.get_issue.return_value = {
@@ -87,7 +86,7 @@ class TestEndToEndWorkflow:
         github.add_labels.return_value = True
         github.update_issue_status.return_value = True
         github.close_issue.return_value = True
-        github._is_configured.return_value = True
+        github.is_configured.return_value = True
         
         return github
     
@@ -151,7 +150,7 @@ class TestEndToEndWorkflow:
                 "state": "open"
             }
         
-        def add_labels(issue_number, labels):
+        def add_labels(_issue_number, labels):
             for label in labels:
                 if label.startswith("status:"):
                     # Remove old status labels
@@ -331,7 +330,7 @@ class TestWorkflowValidation:
         
         # Create PRD
         Path("docs/prd").mkdir(parents=True, exist_ok=True)
-        Path("docs/prd/PRD-123.md").write_text("# PRD")
+        Path("docs/prd/PRD-123.md").write_text("# PRD", encoding="utf-8")
         
         # With PRD
         checks = validator.validate_prerequisites(123, "architect")
@@ -356,13 +355,13 @@ class TestWorkflowValidation:
         assert checks["spec_exists"] is False
         
         # Create PRD only
-        Path("docs/prd/PRD-123.md").write_text("# PRD")
+        Path("docs/prd/PRD-123.md").write_text("# PRD", encoding="utf-8")
         checks = validator.validate_prerequisites(123, "engineer")
         assert checks["prd_exists"] is True
         assert checks["spec_exists"] is False
         
         # Create spec
-        Path("docs/specs/SPEC-123.md").write_text("# Spec")
+        Path("docs/specs/SPEC-123.md").write_text("# Spec", encoding="utf-8")
         checks = validator.validate_prerequisites(123, "engineer")
         assert checks["prd_exists"] is True
         assert checks["spec_exists"] is True
@@ -388,7 +387,7 @@ class TestErrorScenarios:
         """Test agent handles missing issue gracefully"""
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = None
-        github._is_configured.return_value = True
+        github.is_configured.return_value = True
         
         agent = ProductManagerAgent(config, sdk=None)
         agent.github = github
@@ -406,7 +405,7 @@ class TestErrorScenarios:
             "number": 123,
             "state": "open"
         }
-        github._is_configured.return_value = True
+        github.is_configured.return_value = True
         
         architect = ArchitectAgent(config, sdk=None)
         architect.github = github
@@ -462,7 +461,7 @@ class TestMultiAgentCollaboration:
         """Test agents can ask each other for clarification"""
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = {"number": 123, "state": "open"}
-        github._is_configured.return_value = True
+        github.is_configured.return_value = True
         
         communicator = AgentCommunicator(
             execution_mode="automated",
@@ -470,13 +469,13 @@ class TestMultiAgentCollaboration:
         )
         
         # Architect asks PM
-        q1 = communicator.ask("architect", "pm", "Question 1", {}, 123)
-        
+        _q1 = communicator.ask("architect", "pm", "Question 1", {}, 123)
+
         # Engineer asks Architect
-        q2 = communicator.ask("engineer", "architect", "Question 2", {}, 123)
-        
+        _q2 = communicator.ask("engineer", "architect", "Question 2", {}, 123)
+
         # UX asks PM
-        q3 = communicator.ask("ux", "pm", "Question 3", {}, 123)
+        _q3 = communicator.ask("ux", "pm", "Question 3", {}, 123)
         
         # Verify message routing
         pm_questions = communicator.get_pending_questions("pm")

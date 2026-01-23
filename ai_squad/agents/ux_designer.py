@@ -199,6 +199,8 @@ Use ASCII art or Mermaid diagrams for wireframes.
     def _generate_html_prototype(self, issue: Dict[str, Any], context: Dict[str, Any],
                                   prd_content: str) -> str:
         """Generate HTML click-through prototype using Copilot SDK"""
+        # Context is currently unused for prototype generation; keep signature for future expansion
+        _ = context
         
         system_prompt = """You are an expert UX Designer creating HTML prototypes.
 Create self-contained, single-file HTML prototypes with:

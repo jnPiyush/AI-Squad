@@ -98,7 +98,12 @@ Always provide clear, structured coordination plans.
         self,
         config: Config,
         sdk: Optional[Any] = None,
-        orchestration: Optional[Dict[str, Any]] = None
+        orchestration: Optional[Dict[str, Any]] = None,
+        work_state_manager: Optional[WorkStateManager] = None,
+        formula_manager: Optional[FormulaManager] = None,
+        convoy_manager: Optional[ConvoyManager] = None,
+        mailbox_manager: Optional[Any] = None,
+        handoff_manager: Optional[Any] = None
     ):
         """
         Initialize Captain agent.
@@ -111,9 +116,29 @@ Always provide clear, structured coordination plans.
         super().__init__(config, sdk, orchestration)
         
         # Use injected managers (DI pattern) or create local ones as fallback
-        self.work_state_manager = self.workstate or WorkStateManager(Path.cwd())
-        self.formula_manager = self.formula or FormulaManager(Path.cwd())
-        self.convoy_manager = self.convoy or None
+        self.work_state_manager = work_state_manager or self.workstate or WorkStateManager(Path.cwd())
+        self.formula_manager = formula_manager or self.formula or FormulaManager(Path.cwd())
+        self.convoy_manager = convoy_manager or self.convoy or None
+        self.mailbox_manager = mailbox_manager or self.mailbox
+        self.handoff_manager = handoff_manager or self.handoff
+        # Keep orchestration in sync for downstream consumers
+        self.orchestration.update({
+            "workstate": self.work_state_manager,
+            "formula": self.formula_manager,
+            "convoy": self.convoy_manager,
+            "mailbox": self.mailbox_manager,
+            "handoff": self.handoff_manager,
+        })
+
+    def _execute_agent(self, issue: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+        """Synchronous execution hook required by BaseAgent."""
+        issue_number = issue.get("number") or issue.get("id") or "unknown"
+        summary = f"Captain coordination initialized for issue #{issue_number}"
+        return {
+            "success": True,
+            "output": summary,
+            "artifacts": [],
+        }
     
     async def analyze_task(
         self,
@@ -687,7 +712,8 @@ Always provide clear, structured coordination plans.
         logger.info("Captain coordinating %d work items", len(work_items))
         
         # Analyze work items
-        items = [ws_mgr.get_work_item(wid) for wid in work_items]
+        normalized_ids = [wid.id if isinstance(wid, WorkItem) else wid for wid in work_items]
+        items = [ws_mgr.get_work_item(wid) for wid in normalized_ids]
         
         # Group by agent type and dependencies
         agent_groups: Dict[str, List[WorkItem]] = {}

@@ -217,6 +217,10 @@ class StatusManager:
             
         except (ConnectionError, TimeoutError, KeyError):
             return IssueStatus.BACKLOG
+
+    def get_current_status(self, issue_number: int) -> IssueStatus:
+        """Public wrapper for retrieving current status"""
+        return self._get_current_status(issue_number)
     
     def _create_transition_comment(
         self,
@@ -236,6 +240,16 @@ class StatusManager:
         comment += f"\n*{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
         
         return comment
+
+    def create_transition_comment(
+        self,
+        from_status: IssueStatus,
+        to_status: IssueStatus,
+        agent: str,
+        reason: Optional[str]
+    ) -> str:
+        """Public wrapper for transition comment generation"""
+        return self._create_transition_comment(from_status, to_status, agent, reason)
     
     def get_transition_history(self, issue_number: int) -> List[StatusTransition]:
         """Get transition history for an issue"""
@@ -318,6 +332,26 @@ class WorkflowValidator:
             return issue.get("state") == "open"
         except (ConnectionError, TimeoutError, KeyError):
             return False
+
+    def check_issue_exists(self, issue_number: int) -> bool:
+        """Public wrapper for issue existence check"""
+        return self._check_issue_exists(issue_number)
+
+    def check_issue_open(self, issue_number: int) -> bool:
+        """Public wrapper for open issue check"""
+        return self._check_issue_open(issue_number)
+
+    def check_prd_exists(self, issue_number: int) -> bool:
+        """Public wrapper for PRD existence"""
+        return self._check_prd_exists(issue_number)
+
+    def check_spec_exists(self, issue_number: int) -> bool:
+        """Public wrapper for spec existence"""
+        return self._check_spec_exists(issue_number)
+
+    def check_pr_exists(self, issue_number: int) -> bool:
+        """Public wrapper for PR existence"""
+        return self._check_pr_exists(issue_number)
     
     def _check_prd_exists(self, issue_number: int) -> bool:
         """Check if PRD exists for issue"""

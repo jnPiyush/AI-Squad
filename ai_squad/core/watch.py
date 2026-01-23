@@ -3,15 +3,17 @@ Watch daemon for automatic agent orchestration
 
 Monitors GitHub for label changes and triggers agents automatically.
 """
+# ruff: noqa: BLE001
+# pylint: disable=broad-except
 import time
 from typing import Dict, List, Set, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from rich.live import Live
 from rich.table import Table
 from rich.console import Console
 
 from ai_squad.core.config import Config
-from ai_squad.tools.github import GitHubTool
+from ai_squad.tools.github import GitHubTool, GitHubCommandError
 from ai_squad.core.agent_executor import AgentExecutor
 
 
@@ -62,7 +64,7 @@ class WatchDaemon:
         """Main watch loop"""
         self.console.print(f"[bold cyan]🔍 Monitoring:[/bold cyan] {self.repo}")
         self.console.print(f"[bold cyan]⏱️  Interval:[/bold cyan] {self.interval}s")
-        self.console.print(f"[bold cyan]🔄 Flow:[/bold cyan] PM → Architect → Engineer → Reviewer\n")
+        self.console.print("[bold cyan]🔄 Flow:[/bold cyan] PM → Architect → Engineer → Reviewer\n")
         self.console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
         
         with Live(self._create_status_table(), refresh_per_second=4) as live:
@@ -96,7 +98,7 @@ class WatchDaemon:
         """Check for orchestration labels and status changes on issues"""
         events = []
         
-        if not self.github._is_configured():
+        if not self.github.is_configured():
             # Skip if GitHub not configured
             return events
         
@@ -132,7 +134,10 @@ class WatchDaemon:
                     for agent in agents:
                         # Check if agent already ran
                         completion_label = f"orch:{agent}-done"
-                        issue_labels = [l.get("name", "") for l in issue.get("labels", [])]
+                        issue_labels = [
+                            label.get("name", "") if isinstance(label, dict) else str(label)
+                            for label in issue.get("labels", [])
+                        ]
                         
                         if completion_label not in issue_labels:
                             event_key = f"{issue['number']}:{agent}:status"
@@ -146,7 +151,7 @@ class WatchDaemon:
                                 })
                                 self.processed_events.add(event_key)
                         
-        except Exception as e:
+        except (GitHubCommandError, TimeoutError, ValueError) as e:
             self.console.print(f"[red]Error checking triggers: {e}[/red]")
         
         return events
@@ -204,7 +209,7 @@ class WatchDaemon:
                 
                 return False
                 
-        except Exception as e:
+        except (GitHubCommandError, TimeoutError, RuntimeError) as e:
             live.console.print(f"[red]❌ Error executing {agent}: {e}[/red]")
             return False
     

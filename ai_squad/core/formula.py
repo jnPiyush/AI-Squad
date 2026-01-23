@@ -5,6 +5,7 @@ YAML-based workflow definitions for reusable multi-agent orchestration patterns.
 Inspired by Gastown's Formula system.
 """
 import logging
+import inspect
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
@@ -171,14 +172,11 @@ class FormulaManager:
     def __init__(self, workspace_root: Optional[Path] = None):
         """
         Initialize formula manager.
-        
-        Args:
-            workspace_root: Root directory of the workspace (defaults to cwd)
         """
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / ".squad"
         self.formulas_dir = self.squad_dir / self.FORMULAS_DIR
-        
+
         self._formulas: Dict[str, Formula] = {}
         self._load_formulas()
     
@@ -541,6 +539,8 @@ class FormulaExecutor:
                 logger.info(f"Executing step: {step.name} with agent: {step.agent}")
                 try:
                     result = self.agent_executor(step.agent, issue_number)
+                    if inspect.iscoroutine(result):
+                        result = await result
                     
                     if result.get('success'):
                         artifacts = result.get('artifacts', [])

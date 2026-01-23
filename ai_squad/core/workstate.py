@@ -11,7 +11,14 @@ from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, ContextManager
+
+# Cross-platform file locking for safe persistence
+try:  # POSIX
+    import fcntl  # type: ignore
+except ImportError:  # Windows
+    fcntl = None
+    import msvcrt  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +52,9 @@ class WorkItem:
     
     # Context preservation for agent restarts
     context: Dict[str, Any] = field(default_factory=dict)
+
+    # Arbitrary metadata for orchestration
+    metadata: Dict[str, Any] = field(default_factory=dict)
     
     # Related artifacts
     artifacts: List[str] = field(default_factory=list)
@@ -59,6 +69,15 @@ class WorkItem:
     # Metadata
     labels: List[str] = field(default_factory=list)
     priority: int = 0  # Higher = more important
+
+    @property
+    def assigned_to(self) -> Optional[str]:
+        """Alias for agent assignment (compatibility with tests)."""
+        return self.agent_assignee
+
+    @assigned_to.setter
+    def assigned_to(self, agent: Optional[str]) -> None:
+        self.agent_assignee = agent
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
@@ -130,9 +149,77 @@ class WorkStateManager:
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / self.SQUAD_DIR
         self.workstate_file = self.squad_dir / self.WORKSTATE_FILE
+        self.lock_file = self.squad_dir / f"{self.WORKSTATE_FILE}.lock"
         
         self._work_items: Dict[str, WorkItem] = {}
+        self._in_transaction: bool = False
         self._load_state()
+
+    # --- Locking helpers -------------------------------------------------
+    def _acquire_lock(self) -> ContextManager:
+        """Context manager to acquire file lock for state operations."""
+        self._ensure_squad_dir()
+        lock_handle = open(self.lock_file, "a+")
+
+        class _LockCtx:
+            def __enter__(self_nonlocal):
+                if fcntl:
+                    fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
+                else:  # Windows
+                    msvcrt.locking(lock_handle.fileno(), msvcrt.LK_LOCK, 1)
+                return lock_handle
+
+            def __exit__(self_nonlocal, exc_type, exc, tb):
+                try:
+                    if fcntl:
+                        fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
+                    else:
+                        msvcrt.locking(lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
+                finally:
+                    lock_handle.close()
+
+        return _LockCtx()
+
+    def _atomic_write(self, path: Path, content: str) -> None:
+        """Write to temp file then replace to avoid partial writes."""
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_text(content, encoding="utf-8")
+        tmp_path.replace(path)
+
+    def _build_state_payload(self) -> str:
+        """Serialize current in-memory state to JSON string."""
+        data = {
+            "version": "1.0",
+            "updated_at": datetime.now().isoformat(),
+            "work_items": {
+                item_id: item.to_dict()
+                for item_id, item in self._work_items.items()
+            }
+        }
+        return json.dumps(data, indent=2)
+
+    def _load_state_locked(self) -> None:
+        """Load state assuming the caller already holds the lock."""
+        if not self.workstate_file.exists():
+            self._work_items = {}
+            return
+
+        try:
+            data = json.loads(self.workstate_file.read_text(encoding="utf-8"))
+            self._work_items = {
+                item_id: WorkItem.from_dict(item_data)
+                for item_id, item_data in data.get("work_items", {}).items()
+            }
+            logger.info("Loaded %d work items from state", len(self._work_items))
+        except (json.JSONDecodeError, KeyError) as e:
+            logger.error("Failed to load work state: %s", e)
+            self._work_items = {}
+
+    def _save_state_locked(self) -> None:
+        """Persist state assuming the caller already holds the lock."""
+        payload = self._build_state_payload()
+        self._atomic_write(self.workstate_file, payload)
+        logger.debug("Saved %d work items to state", len(self._work_items))
     
     def _ensure_squad_dir(self) -> None:
         """Create .squad directory if it doesn't exist"""
@@ -149,35 +236,44 @@ class WorkStateManager:
             self._work_items = {}
             return
         
-        try:
-            data = json.loads(self.workstate_file.read_text(encoding="utf-8"))
-            self._work_items = {
-                item_id: WorkItem.from_dict(item_data)
-                for item_id, item_data in data.get("work_items", {}).items()
-            }
-            logger.info("Loaded %d work items from state", len(self._work_items))
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error("Failed to load work state: %s", e)
-            self._work_items = {}
+        with self._acquire_lock():
+            self._load_state_locked()
     
     def _save_state(self) -> None:
         """Persist work state to disk"""
         self._ensure_squad_dir()
-        
-        data = {
-            "version": "1.0",
-            "updated_at": datetime.now().isoformat(),
-            "work_items": {
-                item_id: item.to_dict()
-                for item_id, item in self._work_items.items()
-            }
-        }
-        
-        self.workstate_file.write_text(
-            json.dumps(data, indent=2),
-            encoding="utf-8"
-        )
-        logger.debug("Saved %d work items to state", len(self._work_items))
+        with self._acquire_lock():
+            self._save_state_locked()
+
+    # --- Mutation helpers -------------------------------------------------
+    def transaction(self, reload: bool = True) -> ContextManager:
+        """Lock the state, optionally reload, and save only if marked dirty."""
+        self._ensure_squad_dir()
+        lock = self._acquire_lock()
+
+        class _TxnCtx:
+            def __enter__(self_nonlocal):
+                self._in_transaction = True
+                self_nonlocal.lock_ctx = lock.__enter__()
+                if reload:
+                    self._load_state_locked()
+                self_nonlocal.dirty = False
+
+                def mark_dirty():
+                    self_nonlocal.dirty = True
+
+                return mark_dirty
+
+            def __exit__(self_nonlocal, exc_type, exc, tb):
+                try:
+                    if exc_type is None and self_nonlocal.dirty:
+                        self._save_state_locked()
+                finally:
+                    self._in_transaction = False
+                    lock.__exit__(exc_type, exc, tb)
+                return False  # Do not suppress exceptions
+
+        return _TxnCtx()
     
     def generate_id(self, prefix: str = "sq") -> str:
         """Generate a unique work item ID"""
@@ -191,39 +287,53 @@ class WorkStateManager:
         title: str,
         description: str = "",
         issue_number: Optional[int] = None,
+        agent: Optional[str] = None,
         depends_on: Optional[List[str]] = None,
         labels: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         priority: int = 0
     ) -> WorkItem:
         """Create a new work item"""
-        item = WorkItem(
-            id=self.generate_id(),
-            title=title,
-            description=description,
-            issue_number=issue_number,
-            depends_on=depends_on or [],
-            labels=labels or [],
-            priority=priority
-        )
-        
-        # Check if dependencies are satisfied
-        if item.depends_on:
-            if self._dependencies_satisfied(item):
-                item.status = WorkStatus.READY
+        with self.transaction() as mark_dirty:
+            item = WorkItem(
+                id=self.generate_id(),
+                title=title,
+                description=description,
+                issue_number=issue_number,
+                agent_assignee=agent,
+                depends_on=depends_on or [],
+                labels=labels or [],
+                metadata=metadata or {},
+                priority=priority
+            )
+            
+            # Check if dependencies are satisfied
+            if item.depends_on:
+                if self._dependencies_satisfied(item):
+                    item.status = WorkStatus.READY
+                else:
+                    item.status = WorkStatus.BLOCKED
             else:
-                item.status = WorkStatus.BLOCKED
-        else:
-            # No dependencies, ready to start
-            item.status = WorkStatus.READY
-        
-        self._work_items[item.id] = item
-        self._save_state()
+                # No dependencies, ready to start
+                item.status = WorkStatus.READY
+            
+            if agent:
+                # Mark as hooked to reflect assignment
+                item.status = WorkStatus.HOOKED
+                item.assigned_to = agent
+
+            self._work_items[item.id] = item
+            mark_dirty()
         
         logger.info("Created work item: %s (%s)", item.id, title)
         return item
     
     def get_work_item(self, item_id: str) -> Optional[WorkItem]:
         """Get a work item by ID"""
+        if not self._in_transaction:
+            self._load_state()
+        if isinstance(item_id, WorkItem):
+            item_id = item_id.id
         return self._work_items.get(item_id)
     
     def get_work_item_by_issue(self, issue_number: int) -> Optional[WorkItem]:
@@ -235,17 +345,19 @@ class WorkStateManager:
     
     def update_work_item(self, item: WorkItem) -> None:
         """Update a work item"""
-        item.updated_at = datetime.now().isoformat()
-        self._work_items[item.id] = item
-        self._save_state()
+        with self.transaction() as mark_dirty:
+            item.updated_at = datetime.now().isoformat()
+            self._work_items[item.id] = item
+            mark_dirty()
     
     def delete_work_item(self, item_id: str) -> bool:
         """Delete a work item"""
-        if item_id in self._work_items:
-            del self._work_items[item_id]
-            self._save_state()
-            return True
-        return False
+        with self.transaction() as mark_dirty:
+            if item_id in self._work_items:
+                del self._work_items[item_id]
+                mark_dirty()
+                return True
+            return False
     
     def list_work_items(
         self,
@@ -271,25 +383,27 @@ class WorkStateManager:
     
     def assign_to_agent(self, item_id: str, agent: str) -> bool:
         """Assign a work item to an agent (hook it)"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        item.assign_to(agent)
-        self._save_state()
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            item.assign_to(agent)
+            mark_dirty()
         
         logger.info("Assigned %s to agent %s", item_id, agent)
         return True
     
     def unassign_from_agent(self, item_id: str) -> bool:
         """Remove agent assignment (unhook)"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        old_agent = item.agent_assignee
-        item.unassign()
-        self._save_state()
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            old_agent = item.agent_assignee
+            item.unassign()
+            mark_dirty()
         
         logger.info("Unassigned %s from agent %s", item_id, old_agent)
         return True
@@ -311,13 +425,14 @@ class WorkStateManager:
         context: Dict[str, Any]
     ) -> bool:
         """Save agent context for later resumption"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        item.save_context(context)
-        self._save_state()
-        return True
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            item.save_context(context)
+            mark_dirty()
+            return True
     
     def restore_agent_context(self, item_id: str) -> Optional[Dict[str, Any]]:
         """Restore previously saved agent context"""
@@ -336,53 +451,52 @@ class WorkStateManager:
     
     def update_blocked_items(self) -> List[WorkItem]:
         """Update status of blocked items whose dependencies are now satisfied"""
-        unblocked = []
-        
-        for item in self._work_items.values():
-            if item.status == WorkStatus.BLOCKED:
-                if self._dependencies_satisfied(item):
+        unblocked: List[WorkItem] = []
+        with self.transaction() as mark_dirty:
+            for item in self._work_items.values():
+                if item.status == WorkStatus.BLOCKED and self._dependencies_satisfied(item):
                     item.update_status(WorkStatus.READY)
                     unblocked.append(item)
-        
-        if unblocked:
-            self._save_state()
-            
+            if unblocked:
+                mark_dirty()
         return unblocked
     
     def add_dependency(self, item_id: str, depends_on_id: str) -> bool:
         """Add a dependency to a work item"""
-        item = self.get_work_item(item_id)
-        dep = self.get_work_item(depends_on_id)
-        
-        if not item or not dep:
-            return False
-        
-        if depends_on_id not in item.depends_on:
-            item.depends_on.append(depends_on_id)
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            dep = self.get_work_item(depends_on_id)
             
-            # Also track reverse relationship
-            if item_id not in dep.blocks:
-                dep.blocks.append(item_id)
+            if not item or not dep:
+                return False
             
-            # Update status if needed
-            if not self._dependencies_satisfied(item):
-                item.update_status(WorkStatus.BLOCKED)
+            if depends_on_id not in item.depends_on:
+                item.depends_on.append(depends_on_id)
+                
+                # Also track reverse relationship
+                if item_id not in dep.blocks:
+                    dep.blocks.append(item_id)
+                
+                # Update status if needed
+                if not self._dependencies_satisfied(item):
+                    item.update_status(WorkStatus.BLOCKED)
+                
+                mark_dirty()
             
-            self._save_state()
-        
-        return True
+            return True
     
     # Artifact Management
     
     def add_artifact(self, item_id: str, artifact_path: str) -> bool:
         """Add an artifact (output file) to a work item"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        item.add_artifact(artifact_path)
-        self._save_state()
-        return True
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            item.add_artifact(artifact_path)
+            mark_dirty()
+            return True
     
     # Status Transitions
     
@@ -393,17 +507,18 @@ class WorkStateManager:
         context: Optional[Dict[str, Any]] = None
     ) -> bool:
         """Transition a work item to a new status"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        old_status = item.status
-        item.update_status(new_status)
-        
-        if context:
-            item.save_context(context)
-        
-        self._save_state()
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            old_status = item.status
+            item.update_status(new_status)
+            
+            if context:
+                item.save_context(context)
+            
+            mark_dirty()
         
         logger.info(
             "Transitioned %s from %s to %s",
@@ -422,17 +537,18 @@ class WorkStateManager:
         artifacts: Optional[List[str]] = None
     ) -> bool:
         """Mark work as complete with optional artifacts"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        if artifacts:
-            for artifact in artifacts:
-                item.add_artifact(artifact)
-        
-        item.unassign()
-        item.update_status(WorkStatus.DONE)
-        self._save_state()
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            if artifacts:
+                for artifact in artifacts:
+                    item.add_artifact(artifact)
+            
+            item.unassign()
+            item.update_status(WorkStatus.DONE)
+            mark_dirty()
         
         # Unblock dependent items
         self.update_blocked_items()
@@ -443,13 +559,14 @@ class WorkStateManager:
     
     def set_convoy(self, item_id: str, convoy_id: str) -> bool:
         """Associate a work item with a convoy"""
-        item = self.get_work_item(item_id)
-        if not item:
-            return False
-        
-        item.convoy_id = convoy_id
-        self._save_state()
-        return True
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            
+            item.convoy_id = convoy_id
+            mark_dirty()
+            return True
     
     # Statistics
     

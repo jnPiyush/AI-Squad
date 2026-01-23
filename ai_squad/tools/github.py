@@ -3,6 +3,8 @@ GitHub Integration Tool
 
 Interacts with GitHub API for issues, PRs, and repository operations.
 """
+# ruff: noqa: BLE001
+# pylint: disable=broad-except
 import os
 import subprocess
 from typing import Dict, Any, Optional, List
@@ -47,6 +49,10 @@ class GitHubTool:
             success_threshold=2,
             timeout=60
         )
+
+    def is_configured(self) -> bool:
+        """Public helper to check GitHub configuration state"""
+        return self._is_configured()
     
     @retry_with_backoff(GITHUB_API_RETRY)
     def get_issue(self, issue_number: int) -> Optional[Dict[str, Any]]:
@@ -314,7 +320,7 @@ class GitHubTool:
             if result:
                 return json.loads(result)
             
-        except Exception as e:
+        except (GitHubCommandError, json.JSONDecodeError, subprocess.CalledProcessError, TimeoutError) as e:
             print(f"Error fetching PR: {e}")
         
         return None
@@ -336,21 +342,21 @@ class GitHubTool:
             return self._run_gh_command([
                 "pr", "diff", str(pr_number)
             ])
-        except Exception as e:
+        except (GitHubCommandError, subprocess.CalledProcessError, TimeoutError) as e:
             print(f"Error fetching diff: {e}")
             return ""
-    
-    def get_pr_files(self, pr_number: int) -> List[Dict[str, Any]]:
-        """
-        Get files changed in PR
-        
-        Args:
-            pr_number: PR number
+        try:
+            result = self._run_gh_command([
+                "pr", "view", str(pr_number),
+                "--json", "files"
+            ])
             
-        Returns:
-            List of changed files
-        """
-        if not self._is_configured():
+            if result:
+                data = json.loads(result)
+                return data.get("files", [])
+            
+        except (GitHubCommandError, json.JSONDecodeError, subprocess.CalledProcessError, TimeoutError) as e:
+            print(f"Error fetching PR files: {e}")
             return []
         
         try:
@@ -470,7 +476,7 @@ class GitHubTool:
                 ])
             return True
             
-        except Exception as e:
+        except (GitHubCommandError, subprocess.CalledProcessError, TimeoutError) as e:
             print(f"Error adding labels: {e}")
             return False
     

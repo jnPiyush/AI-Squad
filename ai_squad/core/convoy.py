@@ -162,7 +162,7 @@ class ConvoyManager:
     
     def __init__(
         self,
-        work_state_manager: WorkStateManager,
+        work_state_manager: Any,
         agent_executor: Optional[AgentExecutorFunc] = None
     ):
         """
@@ -173,7 +173,12 @@ class ConvoyManager:
             agent_executor: Function to execute agent work
                            Signature: async (agent_type, work_item_id, context) -> result
         """
-        self.work_state_manager = work_state_manager
+        # Accept either a manager instance or a workspace path
+        if isinstance(work_state_manager, WorkStateManager):
+            self.work_state_manager = work_state_manager
+        else:
+            from pathlib import Path
+            self.work_state_manager = WorkStateManager(Path(work_state_manager))
         self.agent_executor = agent_executor
         self._convoys: Dict[str, Convoy] = {}
     
@@ -260,18 +265,49 @@ class ConvoyManager:
     async def execute_convoy(
         self,
         convoy_id: str,
-        context: Optional[Dict[str, Any]] = None
-    ) -> Convoy:
+        tasks: Optional[List[tuple]] = None,
+        context: Optional[Dict[str, Any]] = None,
+        max_parallel: Optional[int] = None
+    ) -> Any:
         """
         Execute a convoy (run all members in parallel).
         
-        Args:
-            convoy_id: Convoy ID
-            context: Additional context for execution
-            
-        Returns:
-            Updated Convoy with results
+        Supports two modes:
+        - Legacy: run an existing Convoy object by ID
+        - Direct: run ad-hoc tasks list [(agent_type, issue_number), ...]
         """
+        if tasks is not None:
+            if not self.agent_executor:
+                raise ValueError("No agent executor configured")
+
+            errors: List[str] = []
+            results: List[Any] = []
+            semaphore = asyncio.Semaphore(max_parallel or 5)
+
+            async def _run_task(agent: str, issue: Any) -> None:
+                async with semaphore:
+                    try:
+                        try:
+                            res = await self.agent_executor(agent, issue, context)
+                        except TypeError:
+                            res = await self.agent_executor(agent, issue)
+                        results.append({"agent": agent, "issue": issue, "result": res})
+                    except Exception as exc:
+                        errors.append(f"{agent}-{issue}: {exc}")
+
+            await asyncio.gather(*[_run_task(agent, issue) for agent, issue in tasks])
+
+            completed = len(results)
+            failed = len(errors)
+            return {
+                "convoy_id": convoy_id,
+                "completed": completed,
+                "failed": failed,
+                "errors": errors,
+                "results": results,
+            }
+
+        # Legacy convoy execution path
         convoy = self.get_convoy(convoy_id)
         if not convoy:
             raise ValueError(f"Convoy not found: {convoy_id}")
@@ -351,13 +387,13 @@ class ConvoyManager:
             timeout = convoy.timeout_minutes * 60
             
             # Execute all members in parallel
-            tasks = [
+            tasks_list = [
                 asyncio.create_task(execute_member(member))
                 for member in convoy.members
             ]
             
             await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True),
+                asyncio.gather(*tasks_list, return_exceptions=True),
                 timeout=timeout
             )
             

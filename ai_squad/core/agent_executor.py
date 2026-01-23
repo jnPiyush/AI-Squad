@@ -30,6 +30,8 @@ from ai_squad.core.captain import Captain  # NEW: Meta-agent coordinator (in cor
 from ai_squad.core.formula import FormulaManager, FormulaExecutor  # NEW: Workflow system
 from ai_squad.core.convoy import ConvoyManager  # NEW: Parallel execution
 from ai_squad.core.workstate import WorkStateManager  # NEW: Work tracking
+from ai_squad.core.mailbox import MailboxManager
+from ai_squad.core.handoff import HandoffManager
 
 logger = logging.getLogger(__name__)
 
@@ -47,18 +49,26 @@ class AgentExecutor:
     when SDK is not available.
     """
     
-    def __init__(self, config_path: Optional[str] = None):
-        """
-        Initialize agent executor
-        
-        Args:
-            config_path: Path to squad.yaml (defaults to current directory)
-        """
-        self.config = Config.load(config_path)
+    def __init__(
+        self,
+        config_path: Optional[str] = None,
+        config: Optional[Config] = None,
+        workstate_manager: Optional[Any] = None,
+        formula_manager: Optional[Any] = None,
+        convoy_manager: Optional[Any] = None,
+        mailbox_manager: Optional[Any] = None,
+        handoff_manager: Optional[Any] = None
+    ):
+        """Initialize agent executor with optional injected managers."""
+        self.config = config or Config.load(config_path)
         self.github_token = os.getenv("GITHUB_TOKEN")
         
         if not self.github_token:
-            raise ValueError("GITHUB_TOKEN environment variable not set")
+            warnings.warn(
+                "GITHUB_TOKEN environment variable not set; using placeholder token for local/testing.",
+                UserWarning
+            )
+            self.github_token = "ghp_mock_token"
         
         # Initialize SDK - this is our primary choice for AI generation
         self.sdk = None
@@ -83,15 +93,15 @@ class AgentExecutor:
         
         # NEW: Create shared orchestration managers FIRST (single source of truth)
         from pathlib import Path
-        workspace_root = Path.cwd()
-        self.workstate_mgr = WorkStateManager(workspace_root=workspace_root)
-        self.mailbox_mgr = MailboxManager(workspace_root=workspace_root)
-        self.handoff_mgr = HandoffManager(
+        workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
+        self.workstate_mgr = workstate_manager or WorkStateManager(workspace_root=workspace_root)
+        self.mailbox_mgr = mailbox_manager or MailboxManager(workspace_root=workspace_root)
+        self.handoff_mgr = handoff_manager or HandoffManager(
             work_state_manager=self.workstate_mgr,
             mailbox_manager=self.mailbox_mgr,
             workspace_root=workspace_root
         )
-        self.formula_mgr = FormulaManager(workspace_root=workspace_root)
+        self.formula_mgr = formula_manager or FormulaManager(workspace_root=workspace_root)
         
         # Async agent executor for convoy with error handling
         async def _async_agent_executor(agent_type: str, work_item_id: str, 
@@ -111,7 +121,7 @@ class AgentExecutor:
                 logger.error(f"Convoy agent execution failed for {work_item_id}: {e}")
                 raise
         
-        self.convoy_mgr = ConvoyManager(
+        self.convoy_mgr = convoy_manager or ConvoyManager(
             work_state_manager=self.workstate_mgr,
             agent_executor=_async_agent_executor
         )

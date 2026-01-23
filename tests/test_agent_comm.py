@@ -4,9 +4,9 @@ Agent Communication Tests
 Tests for agent-to-agent communication and clarification framework.
 """
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from pathlib import Path
+from unittest.mock import Mock, patch
 from datetime import datetime
-import uuid
 
 from ai_squad.core.agent_comm import (
     AgentCommunicator,
@@ -14,7 +14,6 @@ from ai_squad.core.agent_comm import (
     MessageType,
     ClarificationMixin
 )
-from ai_squad.tools.github import GitHubTool
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.config import Config
 
@@ -89,9 +88,9 @@ class TestAgentCommunicator:
     @pytest.fixture
     def mock_github(self):
         """Create mock GitHub tool"""
-        github = Mock(spec=GitHubTool)
+        github = Mock()
         github.add_comment.return_value = True
-        github._is_configured.return_value = True
+        github.is_configured.return_value = True
         return github
     
     @pytest.fixture
@@ -137,10 +136,10 @@ class TestAgentCommunicator:
         # Should post to GitHub for visibility
         mock_github.add_comment.assert_called_once()
     
-    def test_ask_question_manual(self, communicator_manual, mock_github):
+    def test_ask_question_manual(self, communicator_manual):
         """Test asking question in manual mode"""
         # In manual mode, should prompt user via Copilot Chat
-        with patch('builtins.print') as mock_print:
+        with patch('builtins.print'):
             question_id = communicator_manual.ask(
                 from_agent="architect",
                 to_agent="user",
@@ -186,8 +185,8 @@ class TestAgentCommunicator:
         """Test retrieving pending questions"""
         # Ask multiple questions
         q1 = communicator_automated.ask("architect", "pm", "Q1", {}, 123)
-        q2 = communicator_automated.ask("engineer", "pm", "Q2", {}, 124)
-        q3 = communicator_automated.ask("ux", "architect", "Q3", {}, 125)
+        _q2 = communicator_automated.ask("engineer", "pm", "Q2", {}, 124)
+        _q3 = communicator_automated.ask("ux", "architect", "Q3", {}, 125)
         
         # Get PM's pending questions
         pm_questions = communicator_automated.get_pending_questions("pm")
@@ -271,8 +270,8 @@ class TestClarificationMixin:
     def agent(self, config):
         """Create test agent"""
         agent = self.TestAgent(config, sdk=None)
-        agent.github = Mock(spec=GitHubTool)
-        agent.github._is_configured.return_value = True
+        agent.github = Mock()
+        agent.github.is_configured.return_value = True
         return agent
     
     def test_agent_has_clarification_methods(self, agent):
@@ -328,8 +327,8 @@ class TestMultiAgentCommunication:
     @pytest.fixture
     def communicator(self):
         """Create communicator"""
-        github = Mock(spec=GitHubTool)
-        github._is_configured.return_value = True
+        github = Mock()
+        github.is_configured.return_value = True
         return AgentCommunicator(execution_mode="automated", github_tool=github)
     
     def test_multiple_agents_asking_same_agent(self, communicator):
@@ -392,15 +391,15 @@ class TestGitHubIntegration:
     
     def test_clarification_posted_to_github(self):
         """Test clarifications are posted as GitHub comments"""
-        github = Mock(spec=GitHubTool)
-        github._is_configured.return_value = True
+        github = Mock()
+        github.is_configured.return_value = True
         
         communicator = AgentCommunicator(
             execution_mode="automated",
             github_tool=github
         )
         
-        question_id = communicator.ask(
+        _question_id = communicator.ask(
             "architect",
             "pm",
             "Need clarification",

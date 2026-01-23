@@ -327,6 +327,7 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
         Returns:
             True if successful
         """
+        _ = review_content  # Placeholder until review text is used in closure comment
         try:
             # Create closure comment
             comment = f"""✅ **Issue Closed by Reviewer Agent**

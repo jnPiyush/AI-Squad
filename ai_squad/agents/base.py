@@ -8,30 +8,19 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import warnings
 import logging
+import importlib.util
 
 logger = logging.getLogger(__name__)
 
-# GitHub Copilot SDK - Primary choice for AI generation
-# Fallback to template-based generation if SDK not available
-try:
-    from github_copilot_sdk import CopilotSDK, Agent  # noqa: F401
-    SDK_AVAILABLE = True
-except ImportError:
-    CopilotSDK = None
-    Agent = None
-    SDK_AVAILABLE = False
+# Detect GitHub Copilot SDK availability without importing unused symbols
+SDK_AVAILABLE = importlib.util.find_spec("github_copilot_sdk") is not None
 
 from ai_squad.core.config import Config
 from ai_squad.tools.github import GitHubTool
 from ai_squad.tools.templates import TemplateEngine
 from ai_squad.tools.codebase import CodebaseSearch
-
-# NEW: Import orchestration modules
-from ai_squad.core.workstate import WorkStateManager
-from ai_squad.core.mailbox import MailboxManager, MessagePriority
-from ai_squad.core.handoff import HandoffManager, HandoffReason
-
-
+from ai_squad.core.mailbox import MessagePriority
+from ai_squad.core.handoff import HandoffReason
 class InvalidIssueNumberError(ValueError):
     """Raised when an invalid issue number is provided"""
 
@@ -145,12 +134,12 @@ class BaseAgent(ABC):
     @abstractmethod
     def get_system_prompt(self) -> str:
         """Get system prompt for this agent"""
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def get_output_path(self, issue_number: int) -> Path:
         """Get output file path for this agent"""
-        pass
+        raise NotImplementedError
     
     def _call_sdk(self, system_prompt: str, user_prompt: str, 
                   model: Optional[str] = None) -> Optional[str]:
@@ -303,7 +292,7 @@ class BaseAgent(ABC):
         Returns:
             Dict with execution result
         """
-        pass
+        raise NotImplementedError
     
     def _save_output(self, content: str, output_path: Path) -> Path:
         """

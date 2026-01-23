@@ -200,7 +200,7 @@ class AgentCommunicator:
             if msg.issue_number == issue_number
         ]
     
-    def _route_message(self, message: AgentMessage) -> Optional[str]:  # noqa: ARG002
+    def _route_message(self, message: AgentMessage) -> Optional[str]:
         """
         Route message to target agent
         
@@ -210,6 +210,7 @@ class AgentCommunicator:
         Returns:
             Response or None
         """
+        _ = message  # Placeholder until routing is implemented
         # For now, return a placeholder response
         # In a full implementation, this would instantiate the target agent
         # and call its handle_message method

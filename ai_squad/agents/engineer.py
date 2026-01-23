@@ -176,9 +176,8 @@ Provide the output as a structured response with file paths and content.
         self._save_output(sdk_response, guide_path)
         files_created.append(str(guide_path))
         
-        # TODO: Parse code blocks from SDK response and create actual files
-        # This would involve:
-        # 1. Extract ```python ... ``` or ```csharp ... ``` blocks
+        # Future enhancement: parse SDK code blocks and create actual files
+        # 1. Extract code blocks (e.g., ```python ... ```)
         # 2. Determine appropriate file paths from context
         # 3. Create the files with proper structure
         
