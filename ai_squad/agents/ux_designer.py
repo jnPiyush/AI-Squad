@@ -146,8 +146,8 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
                           prd_content: str, template: str) -> str:
         """Generate UX design using Copilot SDK"""
         
-        system_prompt = self.get_system_prompt()
-        user_prompt = f"""Create a comprehensive UX design for this issue:
+        _ = self.get_system_prompt()  # Available for SDK calls
+        _ = f"""Create a comprehensive UX design for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -164,7 +164,7 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 
 Generate a complete UX design with wireframes, user flows, and accessibility checklist.
 Use ASCII art or Mermaid diagrams for wireframes.
-"""
+"""  # Available for SDK calls
         
         # Placeholder - actual SDK call
         return self.templates.render(template, {

@@ -128,8 +128,8 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
                                prd_content: str, template: str) -> str:
         """Generate ADR using Copilot SDK"""
         
-        system_prompt = self.get_system_prompt()
-        user_prompt = f"""Create an Architecture Decision Record for this issue:
+        _ = self.get_system_prompt()  # Available for SDK calls
+        _ = f"""Create an Architecture Decision Record for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -145,7 +145,7 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
 {template}
 
 Generate a comprehensive ADR that documents the architectural decision and its rationale.
-"""
+"""  # Available for SDK calls
         
         # Placeholder - actual SDK call would go here
         return self.templates.render(template, {
@@ -158,8 +158,8 @@ Generate a comprehensive ADR that documents the architectural decision and its r
                                 prd_content: str, template: str) -> str:
         """Generate technical spec using Copilot SDK"""
         
-        system_prompt = self.get_system_prompt()
-        user_prompt = f"""Create a detailed technical specification for this issue:
+        _ = self.get_system_prompt()  # Available for SDK calls
+        _ = f"""Create a detailed technical specification for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -175,7 +175,7 @@ Generate a comprehensive ADR that documents the architectural decision and its r
 {template}
 
 Generate a complete technical specification with architecture diagrams, API contracts, and data models.
-"""
+"""  # Available for SDK calls
         
         # Placeholder - actual SDK call would go here
         return self.templates.render(template, {

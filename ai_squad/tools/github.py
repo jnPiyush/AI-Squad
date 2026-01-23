@@ -15,11 +15,14 @@ from ai_squad.core.retry import (
     GITHUB_API_RETRY,
     RateLimiter,
     CircuitBreaker,
-    with_rate_limiting,
     GitHubRateLimitError
 )
 
 logger = logging.getLogger(__name__)
+
+
+class GitHubCommandError(Exception):
+    """Raised when a GitHub CLI command fails"""
 
 
 class GitHubTool:
@@ -73,8 +76,8 @@ class GitHubTool:
             if result:
                 return json.loads(result)
             
-        except Exception as e:
-            logger.error(f"Error fetching issue: {e}")
+        except (json.JSONDecodeError, GitHubCommandError, TimeoutError) as e:
+            logger.error("Error fetching issue: %s", e)
         
         return None
     
@@ -384,13 +387,14 @@ class GitHubTool:
             cmd,
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
+            check=False
         )
         
         if result.returncode == 0:
             return result.stdout.strip()
         else:
-            raise Exception(f"Command failed: {result.stderr}")
+            raise GitHubCommandError(f"Command failed: {result.stderr}")
     
     def _is_configured(self) -> bool:
         """Check if GitHub is properly configured"""
@@ -566,8 +570,8 @@ class GitHubTool:
                         "limit": data.get("rate", {}).get("limit", 5000),
                         "reset": data.get("rate", {}).get("reset", 0)
                     }
-            except Exception as e:
-                logger.warning(f"Could not fetch GitHub rate limits: {e}")
+            except (json.JSONDecodeError, GitHubCommandError, TimeoutError) as e:
+                logger.warning("Could not fetch GitHub rate limits: %s", e)
         
         # Combine with our rate limiter
         local_limits = self.rate_limiter.get_remaining()

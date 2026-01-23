@@ -6,10 +6,10 @@ Foundation for all AI-Squad agents.
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Any, Optional
-import os
 
+# GitHub Copilot SDK is optional - used when available
 try:
-    from github_copilot_sdk import CopilotSDK, Agent
+    from github_copilot_sdk import CopilotSDK, Agent  # noqa: F401
 except ImportError:
     CopilotSDK = None
     Agent = None
@@ -64,12 +64,12 @@ class BaseAgent(ABC):
     @abstractmethod
     def get_system_prompt(self) -> str:
         """Get system prompt for this agent"""
-        pass
+        ...
     
     @abstractmethod
     def get_output_path(self, issue_number: int) -> Path:
         """Get output file path for this agent"""
-        pass
+        ...
     
     def execute(self, issue_number: int) -> Dict[str, Any]:
         """
@@ -111,7 +111,7 @@ class BaseAgent(ABC):
                     self.agent_type,
                     f"{self.agent_type.title()} agent started"
                 )
-            except Exception as e:
+            except (ConnectionError, TimeoutError, OSError) as e:
                 print(f"Warning: Could not update status: {e}")
             
             # Get codebase context
@@ -130,12 +130,12 @@ class BaseAgent(ABC):
                         self.agent_type,
                         f"{self.agent_type.title()} agent completed successfully"
                     )
-                except Exception as e:
+                except (ConnectionError, TimeoutError, OSError) as e:
                     print(f"Warning: Could not update status: {e}")
             
             return result
             
-        except Exception as e:
+        except (ValueError, KeyError, IOError, RuntimeError) as e:
             return {
                 "success": False,
                 "error": str(e)
@@ -153,7 +153,7 @@ class BaseAgent(ABC):
         Returns:
             Dict with execution result
         """
-        pass
+        ...
     
     def _save_output(self, content: str, output_path: Path) -> Path:
         """

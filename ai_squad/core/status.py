@@ -29,7 +29,6 @@ class IssueStatus(Enum):
 
 class StatusTransitionError(Exception):
     """Raised when an invalid status transition is attempted"""
-    pass
 
 
 @dataclass
@@ -180,8 +179,8 @@ class StatusManager:
             
             return True
             
-        except Exception as e:
-            raise StatusTransitionError(f"Failed to transition status: {e}")
+        except (ConnectionError, TimeoutError, OSError) as e:
+            raise StatusTransitionError(f"Failed to transition status: {e}") from e
     
     def get_agent_start_status(self, agent: str) -> IssueStatus:
         """Get the status an agent should set when starting"""
@@ -216,7 +215,7 @@ class StatusManager:
             # Default to backlog
             return IssueStatus.BACKLOG
             
-        except Exception:
+        except (ConnectionError, TimeoutError, KeyError):
             return IssueStatus.BACKLOG
     
     def _create_transition_comment(
@@ -227,7 +226,7 @@ class StatusManager:
         reason: Optional[str]
     ) -> str:
         """Create GitHub comment for status transition"""
-        comment = f"🔄 **Status Update**\n\n"
+        comment = "🔄 **Status Update**\n\n"
         comment += f"**{from_status.value}** → **{to_status.value}**\n\n"
         comment += f"*Updated by {agent.title()} Agent*\n"
         
@@ -307,7 +306,7 @@ class WorkflowValidator:
         try:
             issue = self.github.get_issue(issue_number)
             return issue is not None
-        except Exception:
+        except (ConnectionError, TimeoutError, KeyError):
             return False
     
     def _check_issue_open(self, issue_number: int) -> bool:
@@ -315,7 +314,7 @@ class WorkflowValidator:
         try:
             issue = self.github.get_issue(issue_number)
             return issue.get("state") == "open"
-        except Exception:
+        except (ConnectionError, TimeoutError, KeyError):
             return False
     
     def _check_prd_exists(self, issue_number: int) -> bool:
@@ -334,7 +333,7 @@ class WorkflowValidator:
             # Search for PRs referencing this issue
             prs = self.github.search_prs_by_issue(issue_number)
             return len(prs) > 0
-        except Exception:
+        except (ConnectionError, TimeoutError, KeyError):
             return False
     
     def get_missing_prerequisites(

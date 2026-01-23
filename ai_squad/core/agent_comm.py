@@ -197,7 +197,7 @@ class AgentCommunicator:
             if msg.issue_number == issue_number
         ]
     
-    def _route_message(self, message: AgentMessage) -> Optional[str]:
+    def _route_message(self, message: AgentMessage) -> Optional[str]:  # noqa: ARG002
         """
         Route message to target agent
         

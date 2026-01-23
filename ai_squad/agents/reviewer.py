@@ -97,12 +97,13 @@ class ReviewerAgent(BaseAgent):
 - **Comment**: Suggestions for improvement (optional)
 """
     
-    def get_output_path(self, pr_number: int) -> Path:
-        """Get review output path"""
-        return self.config.reviews_dir / f"REVIEW-{pr_number}.md"
+    def get_output_path(self, issue_number: int) -> Path:  # noqa: ARG002
+        """Get review output path (uses issue_number as pr_number for reviews)"""
+        return self.config.reviews_dir / f"REVIEW-{issue_number}.md"
     
-    def _execute_agent(self, pr_number: int) -> Dict[str, Any]:
-        """Execute Reviewer agent logic"""
+    def _execute_agent(self, issue: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:  # noqa: ARG002
+        """Execute Reviewer agent logic (expects issue to contain PR number)"""
+        pr_number = issue.get("number", 0)
         
         # Get PR details
         pr = self.github.get_pull_request(pr_number)
@@ -159,9 +160,9 @@ class ReviewerAgent(BaseAgent):
         """Generate review using Copilot SDK"""
         
         pr = context["pr"]
-        system_prompt = self.get_system_prompt()
+        _ = self.get_system_prompt()  # Available for SDK calls
         
-        user_prompt = f"""Review this pull request:
+        _ = f"""Review this pull request:
 
 **PR #{pr['number']}: {pr['title']}**
 
@@ -184,7 +185,7 @@ Perform a comprehensive code review covering:
 6. Architecture compliance
 
 Provide specific, actionable feedback with line numbers where applicable.
-"""
+"""  # Available for SDK calls
         
         # Placeholder - actual SDK call
         template = self.templates.get_template("review")
@@ -340,7 +341,7 @@ The implementation has been reviewed and approved. All requirements from the PRD
             
             return success
             
-        except Exception as e:
+        except (ConnectionError, TimeoutError, OSError) as e:
             print(f"Error closing issue: {e}")
             return False
     

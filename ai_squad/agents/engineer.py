@@ -112,9 +112,9 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
         """Generate implementation using Copilot SDK"""
         
         issue = context["issue"]
-        system_prompt = self.get_system_prompt()
+        _ = self.get_system_prompt()  # Available for SDK calls
         
-        user_prompt = f"""Implement the feature for this issue:
+        _ = f"""Implement the feature for this issue:
 
 **Issue #{issue['number']}: {issue['title']}**
 
@@ -135,7 +135,7 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
 6. Consider security and performance
 
 Generate the implementation files with complete code, tests, and documentation.
-"""
+"""  # Available for SDK calls
         
         # Placeholder - actual SDK implementation would generate files
         return {
