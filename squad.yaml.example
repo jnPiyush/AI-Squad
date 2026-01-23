@@ -1,0 +1,89 @@
+# Example squad.yaml
+
+# This is an example configuration file for AI-Squad.
+# Copy this to your project root as squad.yaml and customize as needed.
+
+project:
+  # Project name (used in documentation)
+  name: My Project
+  
+  # GitHub repository info (auto-detected from git remote if not specified)
+  github_repo: null  # e.g., "my-repo"
+  github_owner: null  # e.g., "myusername"
+
+# Agent configuration
+agents:
+  # Product Manager
+  pm:
+    enabled: true
+    model: gpt-4  # Options: gpt-4, gpt-3.5-turbo
+  
+  # Architect
+  architect:
+    enabled: true
+    model: gpt-4
+  
+  # Engineer
+  engineer:
+    enabled: true
+    model: gpt-4
+  
+  # UX Designer
+  ux:
+    enabled: true
+    model: gpt-4
+  
+  # Reviewer
+  reviewer:
+    enabled: true
+    model: gpt-4
+
+# Output directory configuration
+output:
+  prd_dir: docs/prd          # Product Requirements Documents
+  adr_dir: docs/adr          # Architecture Decision Records
+  specs_dir: docs/specs      # Technical Specifications
+  ux_dir: docs/ux            # UX Designs
+  reviews_dir: docs/reviews  # Code Reviews
+
+# GitHub integration settings
+github:
+  # Automatically create feature issues from epics
+  auto_create_issues: true
+  
+  # Automatically create pull requests (experimental)
+  auto_create_prs: false
+  
+  # Label mappings for issue types
+  labels:
+    epic: type:epic
+    feature: type:feature
+    story: type:story
+    bug: type:bug
+    spike: type:spike
+    docs: type:docs
+
+# Production skills configuration
+skills:
+  # Use all skills (recommended)
+  - all
+  
+  # Or specify individual skills:
+  # - core-principles
+  # - testing
+  # - error-handling
+  # - security
+  # - performance
+  # - database
+  # - scalability
+  # - code-organization
+  # - api-design
+  # - configuration
+  # - documentation
+  # - version-control
+  # - type-safety
+  # - dependency-management
+  # - logging-monitoring
+  # - remote-git-operations
+  # - ai-agent-development
+  # - code-review-and-audit

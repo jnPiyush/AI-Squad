@@ -1,0 +1,382 @@
+"""
+Agent Communication Framework
+
+Enables inter-agent communication for clarifications and collaboration.
+Note: Leverages GitHub Copilot Chat window for interactive clarifications.
+"""
+from typing import Dict, Any, Optional, List
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+import uuid
+
+
+class MessageType(Enum):
+    """Types of messages between agents"""
+    QUESTION = "question"
+    RESPONSE = "response"
+    NOTIFICATION = "notification"
+    CLARIFICATION = "clarification"
+
+
+@dataclass
+class AgentMessage:
+    """Message between agents"""
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    from_agent: str = ""
+    to_agent: str = ""
+    message_type: MessageType = MessageType.QUESTION
+    content: str = ""
+    context: Dict[str, Any] = field(default_factory=dict)
+    timestamp: datetime = field(default_factory=datetime.now)
+    response_to: Optional[str] = None
+    issue_number: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary"""
+        return {
+            "id": self.id,
+            "from_agent": self.from_agent,
+            "to_agent": self.to_agent,
+            "message_type": self.message_type.value,
+            "content": self.content,
+            "context": self.context,
+            "timestamp": self.timestamp.isoformat(),
+            "response_to": self.response_to,
+            "issue_number": self.issue_number,
+        }
+
+
+class AgentCommunicator:
+    """
+    Handles inter-agent communication
+    
+    Supports two modes:
+    - Automated Mode: Agent-to-agent clarifications (e.g., Architect asks PM)
+    - Manual Mode: User-to-agent clarifications via GitHub Copilot Chat
+    """
+    
+    def __init__(self, github_tool=None, execution_mode: str = "manual"):
+        """
+        Initialize communicator
+        
+        Args:
+            github_tool: GitHub tool for storing messages as issue comments
+            execution_mode: "automated" (watch mode) or "manual" (CLI)
+        """
+        self.github = github_tool
+        self.execution_mode = execution_mode
+        self.message_queue: List[AgentMessage] = []
+        self.responses: Dict[str, str] = {}
+    
+    def ask(
+        self,
+        from_agent: str,
+        to_agent: str,
+        question: str,
+        context: Dict[str, Any],
+        issue_number: Optional[int] = None
+    ) -> Optional[str]:
+        """
+        Ask another agent or user a question
+        
+        Args:
+            from_agent: Asking agent name
+            to_agent: Target agent name or "user"
+            question: Question to ask
+            context: Context information
+            issue_number: Related issue number
+            
+        Returns:
+            Response or None if async (GitHub Copilot Chat)
+            
+        Behavior:
+            - Automated Mode: Agent-to-agent (e.g., Architect → PM)
+            - Manual Mode: Agent-to-user via GitHub Copilot Chat
+        """
+        message = AgentMessage(
+            from_agent=from_agent,
+            to_agent=to_agent,
+            message_type=MessageType.QUESTION,
+            content=question,
+            context=context,
+            issue_number=issue_number
+        )
+        
+        # Store message
+        self.message_queue.append(message)
+        
+        # Post to GitHub as comment for visibility
+        if self.github and issue_number:
+            self._post_clarification_request(message)
+        
+        # Route based on execution mode
+        if self.execution_mode == "automated":
+            # Automated mode: Agent-to-agent communication
+            # For agent-to-agent, route the message
+            return self._route_message(message)
+        else:
+            # Manual mode: Agent-to-user via GitHub Copilot Chat
+            return self._request_user_clarification(message)
+    
+    def respond(
+        self,
+        message_id: str,
+        response: str,
+        agent: str
+    ) -> bool:
+        """
+        Respond to a message
+        
+        Args:
+            message_id: Original message ID
+            response: Response content
+            agent: Responding agent
+            
+        Returns:
+            True if successful
+        """
+        # Find original message
+        original = next(
+            (m for m in self.message_queue if m.id == message_id),
+            None
+        )
+        
+        if not original:
+            return False
+        
+        # Create response message
+        response_msg = AgentMessage(
+            from_agent=agent,
+            to_agent=original.from_agent,
+            message_type=MessageType.RESPONSE,
+            content=response,
+            context=original.context,
+            response_to=message_id,
+            issue_number=original.issue_number
+        )
+        
+        self.message_queue.append(response_msg)
+        self.responses[message_id] = response
+        
+        # Post response to GitHub
+        if self.github and original.issue_number:
+            self._post_response(response_msg, original)
+        
+        return True
+    
+    def get_pending_questions(self, agent: str) -> List[AgentMessage]:
+        """
+        Get pending questions for an agent
+        
+        Args:
+            agent: Agent name
+            
+        Returns:
+            List of pending questions
+        """
+        return [
+            msg for msg in self.message_queue
+            if msg.to_agent == agent
+            and msg.message_type == MessageType.QUESTION
+            and msg.id not in self.responses
+        ]
+    
+    def get_conversation(self, issue_number: int) -> List[AgentMessage]:
+        """
+        Get all messages for an issue
+        
+        Args:
+            issue_number: Issue number
+            
+        Returns:
+            List of messages
+        """
+        return [
+            msg for msg in self.message_queue
+            if msg.issue_number == issue_number
+        ]
+    
+    def _route_message(self, message: AgentMessage) -> Optional[str]:
+        """
+        Route message to target agent
+        
+        Args:
+            message: Message to route
+            
+        Returns:
+            Response or None
+        """
+        # For now, return a placeholder response
+        # In a full implementation, this would instantiate the target agent
+        # and call its handle_message method
+        
+        return None
+    
+    def _request_user_clarification(self, message: AgentMessage) -> Optional[str]:
+        """
+        Request clarification from user via GitHub Copilot Chat
+        
+        Args:
+            message: Clarification request
+            
+        Returns:
+            None (user should respond via Copilot Chat)
+        """
+        # Post a comment suggesting the user respond via Copilot Chat
+        if self.github and message.issue_number:
+            comment = f"""💬 **Clarification Needed**
+
+**From**: {message.from_agent.title()} Agent  
+**Question**: {message.content}
+
+**To respond**: 
+1. Open this issue in VS Code
+2. Use GitHub Copilot Chat (`Ctrl+Shift+I` or `Cmd+Shift+I`)
+3. Type: `@workspace respond to {message.from_agent} agent for issue #{message.issue_number}`
+4. Provide your answer
+
+*Message ID: `{message.id}`*
+"""
+            self.github.add_comment(message.issue_number, comment)
+        
+        return None
+    
+    def _post_clarification_request(self, message: AgentMessage):
+        """Post clarification request to GitHub"""
+        if not message.issue_number:
+            return
+        
+        if self.execution_mode == "automated":
+            # Agent-to-agent in automated mode
+            comment = f"""🤖 **Agent Communication (Automated Mode)**
+
+**From**: {message.from_agent.title()} Agent  
+**To**: {message.to_agent.title()} Agent  
+**Question**: {message.content}
+
+*This will be handled automatically by the target agent in watch mode.*
+
+*Message ID: `{message.id}`*
+*Timestamp: {message.timestamp.strftime('%Y-%m-%d %H:%M:%S')}*
+"""
+        else:
+            # Agent-to-user in manual mode
+            comment = f"""💬 **Clarification Needed (Manual Mode)**
+
+**From**: {message.from_agent.title()} Agent  
+**Question**: {message.content}
+
+**To respond**:  
+1. Open this issue in VS Code
+2. Use GitHub Copilot Chat (`Ctrl+Shift+I` or `Cmd+Shift+I`)
+3. Type: `@workspace respond to {message.from_agent} agent for issue #{message.issue_number}`
+4. Provide your answer
+
+*Message ID: `{message.id}`*
+*Timestamp: {message.timestamp.strftime('%Y-%m-%d %H:%M:%S')}*
+"""
+        
+        self.github.add_comment(message.issue_number, comment)
+    
+    def _post_response(self, response: AgentMessage, original: AgentMessage):
+        """Post response to GitHub"""
+        if not response.issue_number:
+            return
+        
+        comment = f"""💬 **Agent Response**
+
+**From**: {response.from_agent.title()} Agent  
+**In Response To**: {original.from_agent.title()} Agent  
+**Answer**: {response.content}
+
+*Original Question: {original.content}*  
+*Message ID: `{response.id}`*  
+*Timestamp: {response.timestamp.strftime('%Y-%m-%d %H:%M:%S')}*
+"""
+        self.github.add_comment(response.issue_number, comment)
+
+
+class ClarificationMixin:
+    """
+    Mixin for agents that need to ask clarifications
+    
+    Behavior:
+    - Automated Mode (watch mode): Agent asks other agents (e.g., Architect → PM)
+    - Manual Mode (CLI): Agent asks user via GitHub Copilot Chat
+    
+    Usage:
+        class MyAgent(BaseAgent, ClarificationMixin):
+            def _execute_agent(self, issue, context):
+                # Ask for clarification
+                response = self.ask_clarification(
+                    "Should we support OAuth?",
+                    context={"feature": "authentication"}
+                )
+    """
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._communicator = None
+    
+    @property
+    def communicator(self) -> AgentCommunicator:
+        """Get communicator instance"""
+        if self._communicator is None:
+            # Get execution mode from agent
+            execution_mode = getattr(self, 'execution_mode', 'manual')
+            self._communicator = AgentCommunicator(
+                self.github,
+                execution_mode=execution_mode
+            )
+        return self._communicator
+    
+    def ask_clarification(
+        self,
+        question: str,
+        target_agent: Optional[str] = None,
+        context: Dict[str, Any] = None,
+        issue_number: Optional[int] = None
+    ) -> Optional[str]:
+        """
+        Ask for clarification
+        
+        Args:
+            question: Question to ask
+            target_agent: Agent to ask (automated mode) or None (manual mode asks user)
+            context: Additional context
+            issue_number: Related issue
+            
+        Returns:
+            Response or None if async
+            
+        Behavior:
+            - Automated Mode: target_agent is required (e.g., "pm", "architect")
+            - Manual Mode: target_agent defaults to "user" (asks via Copilot Chat)
+        """
+        execution_mode = getattr(self, 'execution_mode', 'manual')
+        
+        # Determine target
+        if execution_mode == "automated":
+            # In automated mode, must specify target agent
+            if not target_agent:
+                target_agent = "pm"  # Default to PM in automated mode
+        else:
+            # In manual mode, ask user
+            target_agent = "user"
+        
+        return self.communicator.ask(
+            from_agent=self.agent_type,
+            to_agent=target_agent,
+            question=question,
+            context=context or {},
+            issue_number=issue_number
+        )
+    
+    def check_pending_questions(self) -> List[AgentMessage]:
+        """Get pending questions for this agent"""
+        return self.communicator.get_pending_questions(self.agent_type)
+    
+    def respond_to_question(self, message_id: str, response: str) -> bool:
+        """Respond to a question"""
+        return self.communicator.respond(message_id, response, self.agent_type)

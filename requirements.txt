@@ -1,0 +1,23 @@
+# Requirements file for AI-Squad
+
+# Core dependencies
+click>=8.1.0
+rich>=13.0.0
+pyyaml>=6.0
+github-copilot-sdk>=0.1.16
+aiohttp>=3.9.0
+python-dotenv>=1.0.0
+
+# Development dependencies (install with: pip install -e ".[dev]")
+# pytest>=7.4.0
+# pytest-cov>=4.1.0
+# pytest-asyncio>=0.21.0
+# pytest-mock>=3.11.0
+# black>=23.7.0
+# ruff>=0.0.282
+# mypy>=1.4.1
+# pre-commit>=3.3.3
+
+# Documentation dependencies (install with: pip install -e ".[docs]")
+# mkdocs>=1.5.0
+# mkdocs-material>=9.1.0
