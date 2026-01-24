@@ -143,7 +143,7 @@
   <g filter="url(#glow)" transform="translate(300, 205)">
     <circle cx="0" cy="0" r="24" fill="url(#revGrad)"/>
     <circle cx="0" cy="0" r="28" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.3"/>
-    <text x="0" y="7" text-anchor="middle" font-size="18">✅</text>
+    <text x="0" y="7" text-anchor="middle" font-size="18">🛡️</text>
   </g>
   
   <!-- Title and text -->

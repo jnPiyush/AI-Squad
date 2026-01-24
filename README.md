@@ -29,7 +29,7 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 | 🧩 **Architect** | Design | Designs solutions, writes ADRs and technical specs |
 | 🔧 **Engineer** | Implementation | Implements features with comprehensive tests |
 | 🎭 **UX Designer** | User Experience | Creates wireframes, HTML prototypes, accessibility guidelines |
-| ✅ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
+| 🛡️ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
 
 **New in v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), web dashboard, retry logic, rate limiting, persistent storage!
 
@@ -59,7 +59,7 @@ graph TB
         Arch["🧩 Architect"]
         Eng["🔧 Engineer"]
         UX["🎭 UX"]
-        Rev["✅ Reviewer"]
+        Rev["🛡️ Reviewer"]
     end
     
     Captain --> BP
@@ -121,7 +121,7 @@ flowchart LR
         P1["Phase 1<br/>🎨 PM<br/>Create PRD"]
         P2["Phase 2<br/>🧩 Architect<br/>Design Solution"]
         P3["Phase 3<br/>🔧 Engineer<br/>Implement"]
-        P4["Phase 4<br/>✅ Reviewer<br/>Review Code"]
+        P4["Phase 4<br/>🛡️ Reviewer<br/>Review Code"]
         
         P1 -->|handoff| P2
         P2 -->|handoff| P3
@@ -266,7 +266,7 @@ graph LR
 | **🧩 Architect** | `squad architect <issue>` | ADR + Technical Spec + Diagrams |
 | **🔧 Engineer** | `squad engineer <issue>` | Code + Tests + Documentation |
 | **🎭 UX Designer** | `squad ux <issue>` | Wireframes + User Flows + Prototype |
-| **✅ Reviewer** | `squad review <pr>` | Code Review + Security Analysis |
+| **🛡️ Reviewer** | `squad review <pr>` | Code Review + Security Analysis |
 
 ### 📊 Web Dashboard
 
@@ -434,7 +434,7 @@ squad pm <issue>              # 🎨 Product Manager: Create PRD
 squad architect <issue>       # 🧩 Architect: Create ADR/Spec
 squad engineer <issue>        # 🔧 Engineer: Implement feature
 squad ux <issue>              # 🎭 UX Designer: Create design
-squad review <pr>             # ✅ Reviewer: Review PR
+squad review <pr>             # 🛡️ Reviewer: Review PR
 ```
 
 ### Orchestration Commands
@@ -544,9 +544,9 @@ graph TB
     subgraph "🤖 Agent Layer"
         PM["🎨 PM"]
         Arch["🧩 Architect"]
-        Eng["� Engineer"]
+        Eng["🔧 Engineer"]
         UX["🎭 UX"]
-        Rev["✅ Reviewer"]
+        Rev["🛡️ Reviewer"]
     end
     
     subgraph "⚙️ Core Services"

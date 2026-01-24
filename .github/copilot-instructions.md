@@ -131,7 +131,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 
 ---
 
-## ✅ Reviewer (@reviewer)
+## 🛡️ Reviewer (@reviewer)
 
 **When to activate**: User mentions "review", "code review", "security audit", "performance", or "quality check"
 

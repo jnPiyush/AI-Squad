@@ -34,7 +34,7 @@ graph TB
         Arch[🧩 Architect]
         Eng[� Engineer]
         UX[🎭 UX Designer]
-        Rev[✅ Reviewer]
+        Rev[🛡️ Reviewer]
     end
     
     subgraph "Core Services"

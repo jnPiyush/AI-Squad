@@ -41,7 +41,7 @@ def print_banner():
             "[dim italic]Squad Assembled • Mission Ready • Awaiting Orders[/dim italic]\n\n"
             "🎨 [bold]Product Manager[/bold] • 🧩 [bold]Architect[/bold] • "
             "🔧 [bold]Engineer[/bold] • 🎭 [bold]UX Designer[/bold] • "
-            "✅ [bold]Reviewer[/bold]\n\n"
+            "🛡️ [bold]Reviewer[/bold]\n\n"
             f"[dim]Version {__version__}[/dim]",
             style="cyan",
             border_style="bright_cyan"
