@@ -298,7 +298,7 @@ squad collab 100 pm architect
 # 4. Both finalize documents
 ```
 
-### 📚 18 Production Skills
+### 🗡️ 18 Production Skills
 
 Every agent follows battle-tested production standards:
 
@@ -750,6 +750,7 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 
 
 
