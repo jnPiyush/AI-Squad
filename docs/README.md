@@ -4,7 +4,7 @@ Welcome to AI-Squad! 🎖️ Five expert AI agents orchestrated by a Captain.
 
 ## Quick Links
 
-- [Quick Start Guide](quickstart.md) - Get up and running in 30 seconds
+- [Quick Start Guide](../QUICK-START.md) - Get up and running in 5 minutes
 - [Commands Reference](commands.md) - All available commands
 - [Configuration](configuration.md) - Customize AI-Squad
 - [Orchestration Guide](ORCHESTRATION.md) - Battle Plans, Convoys, Handoffs
@@ -71,7 +71,7 @@ squad engineer 456 # Implement issue #456
 
 ## Learn More
 
-- [Quick Start →](quickstart.md)
+- [Quick Start →](../QUICK-START.md)
 - [Commands →](commands.md)
 - [Examples →](../examples/)
 - [GitHub Repository](https://github.com/jnPiyush/AI-Squad)
