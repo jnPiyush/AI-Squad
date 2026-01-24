@@ -4,6 +4,15 @@ from ai_squad.core.agent_executor import AgentExecutor
 from ai_squad.core.config import Config
 from ai_squad.core.init_project import initialize_project
 
+# AI Provider chain (Copilot -> OpenAI -> Azure -> Template)
+from ai_squad.core.ai_provider import (
+    AIProviderChain,
+    AIProviderType,
+    AIResponse,
+    get_ai_provider,
+    generate_content,
+)
+
 # Gastown-inspired orchestration modules
 from ai_squad.core.workstate import WorkItem, WorkStateManager, WorkStatus
 from ai_squad.core.battle_plan import (

@@ -22,6 +22,9 @@ from ai_squad.tools.templates import TemplateEngine
 from ai_squad.tools.codebase import CodebaseSearch
 from ai_squad.core.signal import MessagePriority
 from ai_squad.core.handoff import HandoffReason
+from ai_squad.core.ai_provider import get_ai_provider, AIProviderType
+
+
 class InvalidIssueNumberError(ValueError):
     """Raised when an invalid issue number is provided"""
 
@@ -44,7 +47,7 @@ class BaseAgent(ABC):
         
         Args:
             config: AI-Squad configuration
-            sdk: GitHub Copilot SDK instance (preferred for AI generation)
+            sdk: GitHub Copilot SDK instance (legacy, deprecated)
             orchestration: Optional dict with shared orchestration managers:
                 - 'workstate': WorkStateManager instance
                 - 'signal': SignalManager instance
@@ -53,11 +56,14 @@ class BaseAgent(ABC):
                 - 'convoy': ConvoyManager instance
         """
         self.config = config
-        self.sdk = sdk
+        self.sdk = sdk  # Legacy - kept for compatibility
         self.github = GitHubTool(config)
         self.templates = TemplateEngine()
         self.codebase = CodebaseSearch()
         self.agent_type = self.__class__.__name__.replace("Agent", "").lower()
+        
+        # NEW: AI Provider chain (Copilot -> OpenAI -> Azure -> Template)
+        self.ai_provider = get_ai_provider()
         
         # Orchestration managers (shared instances via dependency injection)
         self.orchestration = orchestration or {}
@@ -67,16 +73,20 @@ class BaseAgent(ABC):
         self.strategy = self.orchestration.get('strategy')
         self.convoy = self.orchestration.get('convoy')
         
-        # Track SDK availability for this agent
-        self._using_sdk = self.sdk is not None
-        if not self._using_sdk:
+        # Track AI availability
+        self._using_ai = self.ai_provider.is_ai_available()
+        if not self._using_ai:
             warnings.warn(
-                f"{self.__class__.__name__}: GitHub Copilot SDK not available. "
-                "Using template-based fallback (reduced AI capabilities). "
-                "Install with: pip install github-copilot-sdk",
+                f"{self.__class__.__name__}: No AI provider available. "
+                "Using template-based fallback (reduced capabilities). "
+                "Set GITHUB_TOKEN, OPENAI_API_KEY, or AZURE_OPENAI_* env vars.",
                 UserWarning,
                 stacklevel=2
             )
+        else:
+            provider_name = self.ai_provider.provider_type.value
+            logger.info(f"{self.__class__.__name__}: Using {provider_name} for AI generation")
+        
         
         # Execution mode: "manual" (CLI) or "automated" (watch mode)
         self.execution_mode = "manual"
@@ -142,10 +152,13 @@ class BaseAgent(ABC):
         """Get output file path for this agent"""
         raise NotImplementedError
     
-    def _call_sdk(self, system_prompt: str, user_prompt: str, 
-                  model: Optional[str] = None) -> Optional[str]:
+    def _call_ai(self, system_prompt: str, user_prompt: str, 
+                 model: Optional[str] = None) -> Optional[str]:
         """
-        Call GitHub Copilot SDK for AI generation
+        Call AI provider chain for generation.
+        
+        Tries providers in order: Copilot -> OpenAI -> Azure OpenAI
+        Falls back to templates if all fail.
         
         Args:
             system_prompt: System prompt for the agent
@@ -153,45 +166,34 @@ class BaseAgent(ABC):
             model: Model to use (defaults to config)
             
         Returns:
-            Generated content or None if SDK not available/failed
+            Generated content or None if all providers failed
         """
-        if not self.sdk:
-            return None
-        
         model = model or self.config.get(f"agents.{self.agent_type}.model", "gpt-4")
+        temperature = self.config.get(f"agents.{self.agent_type}.temperature", 0.5)
         
-        try:
-            # Call SDK's chat completion
-            response = self.sdk.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=self.config.get(f"agents.{self.agent_type}.temperature", 0.5),
-                max_tokens=4096
-            )
-            
-            if response and response.choices:
-                return response.choices[0].message.content
-            
-        except AttributeError:
-            # SDK might have different API - try alternative
-            try:
-                response = self.sdk.generate(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    model=model
-                )
-                return response.get("content") if isinstance(response, dict) else str(response)
-            except (AttributeError, TypeError) as e:
-                logger.warning("SDK API not compatible: %s", e)
-                
-        except (ConnectionError, TimeoutError, RuntimeError) as e:
-            logger.error("SDK call failed: %s", e)
-            raise SDKExecutionError(f"SDK execution failed: {e}") from e
+        response = self.ai_provider.generate(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=4096
+        )
+        
+        if response:
+            logger.info(f"AI generation successful via {response.provider.value}")
+            return response.content
         
         return None
+    
+    # Legacy method - redirects to new _call_ai
+    def _call_sdk(self, system_prompt: str, user_prompt: str, 
+                  model: Optional[str] = None) -> Optional[str]:
+        """
+        Legacy method - use _call_ai instead.
+        
+        Kept for backward compatibility.
+        """
+        return self._call_ai(system_prompt, user_prompt, model)
 
     def execute(self, issue_number: int) -> Dict[str, Any]:
         """
@@ -300,8 +302,9 @@ class BaseAgent(ABC):
             # Execute agent logic
             result = self._execute_agent(issue, context)
             
-            # Add SDK usage info
-            result["using_sdk"] = self._using_sdk
+            # Add AI provider usage info
+            result["using_ai"] = self._using_ai
+            result["ai_provider"] = self.ai_provider.provider_type.value if self._using_ai else "template"
             if identity_payload:
                 result["identity_dossier"] = identity_payload
             if identity_path:
@@ -341,8 +344,8 @@ class BaseAgent(ABC):
         except SDKExecutionError as e:
             return {
                 "success": False,
-                "error": f"SDK error: {e}",
-                "using_sdk": self._using_sdk
+                "error": f"AI provider error: {e}",
+                "using_ai": self._using_ai
             }
         except (ValueError, KeyError, IOError) as e:
             return {

@@ -67,19 +67,35 @@ def run_doctor_checks() -> Dict[str, Any]:
         "message": "All directories exist" if all_dirs_exist else "Some directories missing"
     })
     
-    # Check 4: GitHub Copilot SDK
+    # Check 4: AI Provider (Copilot -> OpenAI -> Azure -> Template)
     try:
-        import copilot
+        from ai_squad.core.ai_provider import get_ai_provider, AIProviderType
+        provider = get_ai_provider()
+        available = provider.get_available_providers()
+        
+        if available:
+            primary = available[0]
+            provider_names = {
+                "copilot": "GitHub Copilot",
+                "openai": "OpenAI API",
+                "azure_openai": "Azure OpenAI"
+            }
+            checks.append({
+                "name": "AI Provider",
+                "passed": True,
+                "message": f"{provider_names.get(primary, primary)} ({', '.join(available)})"
+            })
+        else:
+            checks.append({
+                "name": "AI Provider",
+                "passed": False,
+                "message": "No AI provider. Set GITHUB_TOKEN, OPENAI_API_KEY, or AZURE_OPENAI_*"
+            })
+    except Exception as e:
         checks.append({
-            "name": "Copilot SDK",
-            "passed": True,
-            "message": f"Installed (github-copilot-sdk)"
-        })
-    except ImportError:
-        checks.append({
-            "name": "Copilot SDK",
+            "name": "AI Provider",
             "passed": False,
-            "message": "Not installed (pip install github-copilot-sdk)"
+            "message": f"Error checking AI providers: {e}"
         })
     
     # Check 5: Git repository

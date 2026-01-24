@@ -6,7 +6,7 @@
       "agent": "pm"
     },
     "created_at": "2026-01-23T21:14:56.294029",
-    "updated_at": "2026-01-24T09:09:33.371783"
+    "updated_at": "2026-01-24T10:19:46.102114"
   },
   "architect": {
     "id": "architect",
@@ -15,7 +15,7 @@
       "agent": "architect"
     },
     "created_at": "2026-01-23T21:14:56.296073",
-    "updated_at": "2026-01-24T09:09:39.261352"
+    "updated_at": "2026-01-24T10:19:55.681465"
   },
   "sq-0e5ab": {
     "id": "sq-0e5ab",
@@ -79,7 +79,7 @@
       "issue_number": 123
     },
     "created_at": "2026-01-23T21:20:12.263244",
-    "updated_at": "2026-01-24T09:09:39.252077"
+    "updated_at": "2026-01-24T10:19:55.667214"
   },
   "productmanager": {
     "id": "productmanager",
@@ -88,7 +88,7 @@
       "agent": "productmanager"
     },
     "created_at": "2026-01-23T21:20:12.263244",
-    "updated_at": "2026-01-24T09:09:37.397762"
+    "updated_at": "2026-01-24T10:19:51.836301"
   },
   "issue-456": {
     "id": "issue-456",
@@ -98,7 +98,7 @@
       "issue_number": 456
     },
     "created_at": "2026-01-23T21:20:14.566582",
-    "updated_at": "2026-01-24T09:09:41.091506"
+    "updated_at": "2026-01-24T10:19:59.876421"
   },
   "reviewer": {
     "id": "reviewer",
@@ -107,7 +107,7 @@
       "agent": "reviewer"
     },
     "created_at": "2026-01-23T21:20:14.577873",
-    "updated_at": "2026-01-24T09:09:41.100057"
+    "updated_at": "2026-01-24T10:19:59.886950"
   },
   "sq-7b6c7": {
     "id": "sq-7b6c7",
@@ -135,5 +135,23 @@
     },
     "created_at": "2026-01-24T09:09:33.402884",
     "updated_at": "2026-01-24T09:09:33.402884"
+  },
+  "sq-1a495": {
+    "id": "sq-1a495",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-24T10:18:10.032472",
+    "updated_at": "2026-01-24T10:18:10.032472"
+  },
+  "sq-d4495": {
+    "id": "sq-d4495",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-24T10:19:46.119032",
+    "updated_at": "2026-01-24T10:19:46.119032"
   }
 }
