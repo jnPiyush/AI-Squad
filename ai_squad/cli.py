@@ -37,8 +37,8 @@ def print_banner():
     # Tagline and version in panel
     console.print(
         Panel(
-            "[bold cyan]Your AI Development Squad, One Command Away[/bold cyan]\n\n"
-            "[dim]Five Expert AI Agents:[/dim]\n"
+            "[bold cyan]🎖️ Five expert AI agents orchestrated by a Captain[/bold cyan]\n"
+            "[dim italic]Squad Assembled • Mission Ready • Awaiting Orders[/dim italic]\n\n"
             "🎨 [bold]Product Manager[/bold] • 🏗️  [bold]Architect[/bold] • "
             "💻 [bold]Engineer[/bold] • 🎭 [bold]UX Designer[/bold] • "
             "✅ [bold]Reviewer[/bold]\n\n"
