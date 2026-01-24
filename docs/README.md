@@ -9,7 +9,7 @@ Welcome to AI-Squad! 🎖️ Five expert AI agents orchestrated by a Captain.
 - [Configuration](configuration.md) - Customize AI-Squad
 - [Orchestration Guide](ORCHESTRATION.md) - Battle Plans, Convoys, Handoffs
 - [Agents Guide](../AGENTS.md) - Learn about each agent
-- [Architecture](architecture/ARCHITECTURE-DIAGRAMS.md) - System design diagrams
+- [Architecture](architecture/ARCHITECTURE.md) - System design diagrams
 - [Contributing](../CONTRIBUTING.md) - Contribute to AI-Squad
 
 ## What is AI-Squad?
