@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .workstate import WorkItem, WorkStateManager, WorkStatus
-from .mailbox import MailboxManager, MessagePriority
+from .signal import SignalManager, MessagePriority
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ class HandoffManager:
     def __init__(
         self,
         work_state_manager: Any,
-        mailbox_manager: Optional[MailboxManager] = None,
+        signal_manager: Optional[SignalManager] = None,
         workspace_root: Optional[Path] = None
     ):
         """
@@ -178,7 +178,7 @@ class HandoffManager:
         
         Args:
             work_state_manager: Work state manager instance
-            mailbox_manager: Optional mailbox manager for notifications
+            signal_manager: Optional signal manager for notifications
             workspace_root: Workspace root directory
         """
         from pathlib import Path as _Path
@@ -186,7 +186,7 @@ class HandoffManager:
             self.work_state_manager = work_state_manager
         else:
             self.work_state_manager = WorkStateManager(_Path(work_state_manager))
-        self.mailbox_manager = mailbox_manager
+        self.signal_manager = signal_manager
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / ".squad"
         self.handoffs_dir = self.squad_dir / self.HANDOFFS_DIR
@@ -312,8 +312,8 @@ class HandoffManager:
         self._handoffs[handoff_id] = handoff
         self._save_state()
         
-        # Send notification via mailbox
-        if self.mailbox_manager:
+        # Send notification via signal
+        if self.signal_manager:
             context_summary = ""
             if context:
                 context_summary = f"\n\n**Summary**: {context.summary}\n**Current State**: {context.current_state}"
@@ -322,7 +322,7 @@ class HandoffManager:
                         f"- {step}" for step in context.next_steps
                     )
 
-            self.mailbox_manager.send_message(
+            self.signal_manager.send_message(
                 sender=from_agent,
                 recipient=to_agent,
                 subject=f"Handoff Request: {work_item.title}",
@@ -412,9 +412,9 @@ class HandoffManager:
         
         self._save_state()
         
-        # Send confirmation via mailbox
-        if self.mailbox_manager:
-            self.mailbox_manager.send_message(
+        # Send confirmation via signal
+        if self.signal_manager:
+            self.signal_manager.send_message(
                 sender=accepting_agent,
                 recipient=handoff.from_agent,
                 subject=f"Handoff Accepted: {handoff.work_item_id}",
@@ -477,9 +477,9 @@ class HandoffManager:
         
         self._save_state()
         
-        # Send notification via mailbox
-        if self.mailbox_manager:
-            self.mailbox_manager.send_message(
+        # Send notification via signal
+        if self.signal_manager:
+            self.signal_manager.send_message(
                 sender=rejecting_agent,
                 recipient=handoff.from_agent,
                 subject=f"Handoff Rejected: {handoff.work_item_id}",
@@ -574,8 +574,8 @@ class HandoffManager:
         self._save_state()
         
         # Notify recipient
-        if self.mailbox_manager:
-            self.mailbox_manager.send_message(
+        if self.signal_manager:
+            self.signal_manager.send_message(
                 sender=cancelling_agent,
                 recipient=handoff.to_agent,
                 subject=f"Handoff Cancelled: {handoff.work_item_id}",
@@ -782,3 +782,4 @@ def specialist_handoff(
         context=context,
         priority=MessagePriority.HIGH
     )
+

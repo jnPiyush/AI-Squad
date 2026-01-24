@@ -1,8 +1,8 @@
 """
-Agent Mailbox System
+Agent Signal System
 
 Persistent asynchronous message passing between agents.
-Inspired by Gastown's message-based coordination pattern.
+Inspired by military tactical communications and signals.
 """
 import json
 import logging
@@ -124,9 +124,9 @@ class Message:
 
 
 @dataclass
-class Mailbox:
+class Signal:
     """
-    A mailbox for an agent or system component.
+    A Signal for an agent or system component.
     """
     owner: str
     inbox: List[str] = field(default_factory=list)    # Message IDs
@@ -143,7 +143,7 @@ class Mailbox:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Mailbox":
+    def from_dict(cls, data: Dict[str, Any]) -> "Signal":
         """Create from dictionary"""
         return cls(**data)
 
@@ -152,42 +152,42 @@ class Mailbox:
 MessageHandler = Callable[[Message], None]
 
 
-class MailboxManager:
+class SignalManager:
     """
-    Manages agent mailboxes and message routing.
+    Manages agent Signales and message routing.
     
-    Persists messages to .squad/mailbox/ directory.
+    Persists messages to .squad/Signal/ directory.
     """
     
-    MAILBOX_DIR = "mailbox"
+    Signal_DIR = "Signal"
     MESSAGES_FILE = "messages.json"
-    MAILBOXES_FILE = "mailboxes.json"
+    SignalES_FILE = "Signales.json"
     
     def __init__(self, workspace_root: Optional[Path] = None):
         """
-        Initialize mailbox manager.
+        Initialize Signal manager.
         
         Args:
             workspace_root: Root directory of the workspace (defaults to cwd)
         """
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / ".squad"
-        self.mailbox_dir = self.squad_dir / self.MAILBOX_DIR
+        self.Signal_dir = self.squad_dir / self.Signal_DIR
         
         self._messages: Dict[str, Message] = {}
-        self._mailboxes: Dict[str, Mailbox] = {}
+        self._Signales: Dict[str, Signal] = {}
         self._handlers: Dict[str, List[MessageHandler]] = {}
         
         self._load_state()
     
-    def _ensure_mailbox_dir(self) -> None:
-        """Create mailbox directory if it doesn't exist"""
-        self.mailbox_dir.mkdir(parents=True, exist_ok=True)
+    def _ensure_Signal_dir(self) -> None:
+        """Create Signal directory if it doesn't exist"""
+        self.Signal_dir.mkdir(parents=True, exist_ok=True)
     
     def _load_state(self) -> None:
-        """Load mailbox state from disk"""
+        """Load Signal state from disk"""
         # Load messages
-        messages_file = self.mailbox_dir / self.MESSAGES_FILE
+        messages_file = self.Signal_dir / self.MESSAGES_FILE
         if messages_file.exists():
             try:
                 data = json.loads(messages_file.read_text(encoding="utf-8"))
@@ -200,26 +200,26 @@ class MailboxManager:
                 logger.error("Failed to load messages: %s", e)
                 self._messages = {}
         
-        # Load mailboxes
-        mailboxes_file = self.mailbox_dir / self.MAILBOXES_FILE
-        if mailboxes_file.exists():
+        # Load Signales
+        Signales_file = self.Signal_dir / self.SignalES_FILE
+        if Signales_file.exists():
             try:
-                data = json.loads(mailboxes_file.read_text(encoding="utf-8"))
-                self._mailboxes = {
-                    owner: Mailbox.from_dict(mb_data)
+                data = json.loads(Signales_file.read_text(encoding="utf-8"))
+                self._Signales = {
+                    owner: Signal.from_dict(mb_data)
                     for owner, mb_data in data.items()
                 }
-                logger.info("Loaded %d mailboxes", len(self._mailboxes))
+                logger.info("Loaded %d Signales", len(self._Signales))
             except (json.JSONDecodeError, KeyError) as e:
-                logger.error("Failed to load mailboxes: %s", e)
-                self._mailboxes = {}
+                logger.error("Failed to load Signales: %s", e)
+                self._Signales = {}
     
     def _save_state(self) -> None:
-        """Save mailbox state to disk"""
-        self._ensure_mailbox_dir()
+        """Save Signal state to disk"""
+        self._ensure_Signal_dir()
         
         # Save messages
-        messages_file = self.mailbox_dir / self.MESSAGES_FILE
+        messages_file = self.Signal_dir / self.MESSAGES_FILE
         messages_data = {
             msg_id: msg.to_dict()
             for msg_id, msg in self._messages.items()
@@ -229,22 +229,22 @@ class MailboxManager:
             encoding="utf-8"
         )
         
-        # Save mailboxes
-        mailboxes_file = self.mailbox_dir / self.MAILBOXES_FILE
-        mailboxes_data = {
+        # Save Signales
+        Signales_file = self.Signal_dir / self.SignalES_FILE
+        Signales_data = {
             owner: mb.to_dict()
-            for owner, mb in self._mailboxes.items()
+            for owner, mb in self._Signales.items()
         }
-        mailboxes_file.write_text(
-            json.dumps(mailboxes_data, indent=2),
+        Signales_file.write_text(
+            json.dumps(Signales_data, indent=2),
             encoding="utf-8"
         )
     
-    def _get_or_create_mailbox(self, owner: str) -> Mailbox:
-        """Get or create a mailbox for an owner"""
-        if owner not in self._mailboxes:
-            self._mailboxes[owner] = Mailbox(owner=owner)
-        return self._mailboxes[owner]
+    def _get_or_create_Signal(self, owner: str) -> Signal:
+        """Get or create a Signal for an owner"""
+        if owner not in self._Signales:
+            self._Signales[owner] = Signal(owner=owner)
+        return self._Signales[owner]
     
     # Message Operations
     
@@ -316,21 +316,21 @@ class MailboxManager:
         self._messages[message_id] = message
         
         # Add to sender's outbox
-        sender_mailbox = self._get_or_create_mailbox(sender)
-        sender_mailbox.outbox.append(message_id)
+        sender_Signal = self._get_or_create_Signal(sender)
+        sender_Signal.outbox.append(message_id)
         
         # Route message
         if recipient == "broadcast":
             # Broadcast to all agents
-            for owner in self._mailboxes:
+            for owner in self._Signales:
                 if owner != sender:
-                    mailbox = self._mailboxes[owner]
-                    mailbox.inbox.append(message_id)
+                    Signal = self._Signales[owner]
+                    Signal.inbox.append(message_id)
             message.mark_delivered()
         else:
             # Direct message
-            recipient_mailbox = self._get_or_create_mailbox(recipient)
-            recipient_mailbox.inbox.append(message_id)
+            recipient_Signal = self._get_or_create_Signal(recipient)
+            recipient_Signal.inbox.append(message_id)
             message.mark_delivered()
         
         self._save_state()
@@ -359,17 +359,17 @@ class MailboxManager:
         Get messages in an agent's inbox.
         
         Args:
-            owner: Mailbox owner
+            owner: Signal owner
             unread_only: Only return unread messages
             priority: Filter by priority
             
         Returns:
             List of messages
         """
-        mailbox = self._get_or_create_mailbox(owner)
+        Signal = self._get_or_create_Signal(owner)
         messages = []
         
-        for msg_id in mailbox.inbox:
+        for msg_id in Signal.inbox:
             msg = self._messages.get(msg_id)
             if not msg:
                 continue
@@ -406,10 +406,10 @@ class MailboxManager:
     
     def get_outbox(self, owner: str) -> List[Message]:
         """Get messages sent by an agent"""
-        mailbox = self._get_or_create_mailbox(owner)
+        Signal = self._get_or_create_Signal(owner)
         return [
             self._messages[msg_id]
-            for msg_id in mailbox.outbox
+            for msg_id in Signal.outbox
             if msg_id in self._messages
         ]
     
@@ -428,8 +428,8 @@ class MailboxManager:
             return False
         
         # Verify reader has access
-        mailbox = self._get_or_create_mailbox(reader)
-        if message_id not in mailbox.inbox:
+        Signal = self._get_or_create_Signal(reader)
+        if message_id not in Signal.inbox:
             return False
         
         message.mark_read()
@@ -443,8 +443,8 @@ class MailboxManager:
             return False
         
         # Verify acknowledger has access
-        mailbox = self._get_or_create_mailbox(acknowledger)
-        if message_id not in mailbox.inbox:
+        Signal = self._get_or_create_Signal(acknowledger)
+        if message_id not in Signal.inbox:
             return False
         
         message.mark_acknowledged()
@@ -492,11 +492,11 @@ class MailboxManager:
     
     def archive(self, owner: str, message_id: str) -> bool:
         """Archive a message"""
-        mailbox = self._get_or_create_mailbox(owner)
+        Signal = self._get_or_create_Signal(owner)
         
-        if message_id in mailbox.inbox:
-            mailbox.inbox.remove(message_id)
-            mailbox.archived.append(message_id)
+        if message_id in Signal.inbox:
+            Signal.inbox.remove(message_id)
+            Signal.archived.append(message_id)
             self._save_state()
             return True
         
@@ -507,14 +507,14 @@ class MailboxManager:
         if message_id not in self._messages:
             return False
         
-        # Remove from all mailboxes
-        for mailbox in self._mailboxes.values():
-            if message_id in mailbox.inbox:
-                mailbox.inbox.remove(message_id)
-            if message_id in mailbox.outbox:
-                mailbox.outbox.remove(message_id)
-            if message_id in mailbox.archived:
-                mailbox.archived.remove(message_id)
+        # Remove from all Signales
+        for Signal in self._Signales.values():
+            if message_id in Signal.inbox:
+                Signal.inbox.remove(message_id)
+            if message_id in Signal.outbox:
+                Signal.outbox.remove(message_id)
+            if message_id in Signal.archived:
+                Signal.archived.remove(message_id)
         
         del self._messages[message_id]
         self._save_state()
@@ -603,7 +603,7 @@ class MailboxManager:
         return expired_count
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get mailbox statistics"""
+        """Get Signal statistics"""
         total_messages = len(self._messages)
         
         status_counts = {}
@@ -613,33 +613,33 @@ class MailboxManager:
                 if m.status == status
             ])
         
-        mailbox_stats = {}
-        for owner, mailbox in self._mailboxes.items():
-            mailbox_stats[owner] = {
-                "inbox": len(mailbox.inbox),
-                "outbox": len(mailbox.outbox),
-                "archived": len(mailbox.archived),
+        Signal_stats = {}
+        for owner, Signal in self._Signales.items():
+            Signal_stats[owner] = {
+                "inbox": len(Signal.inbox),
+                "outbox": len(Signal.outbox),
+                "archived": len(Signal.archived),
                 "unread": self.get_unread_count(owner)
             }
         
         return {
             "total_messages": total_messages,
             "by_status": status_counts,
-            "by_mailbox": mailbox_stats
+            "by_Signal": Signal_stats
         }
 
 
 # Convenience functions for common message patterns
 
 def notify_agent(
-    mailbox_manager: MailboxManager,
+    Signal_manager: SignalManager,
     recipient: str,
     subject: str,
     body: str,
     work_item_id: Optional[str] = None
 ) -> Message:
     """Send a notification to an agent"""
-    return mailbox_manager.send_message(
+    return Signal_manager.send_message(
         sender="system",
         recipient=recipient,
         subject=subject,
@@ -649,14 +649,14 @@ def notify_agent(
 
 
 def request_clarification(
-    mailbox_manager: MailboxManager,
+    Signal_manager: SignalManager,
     sender: str,
     recipient: str,
     question: str,
     work_item_id: Optional[str] = None
 ) -> Message:
     """Send a clarification request"""
-    return mailbox_manager.send_message(
+    return Signal_manager.send_message(
         sender=sender,
         recipient=recipient,
         subject="Clarification Needed",
@@ -668,13 +668,13 @@ def request_clarification(
 
 
 def broadcast_status(
-    mailbox_manager: MailboxManager,
+    Signal_manager: SignalManager,
     sender: str,
     status: str,
     work_item_id: Optional[str] = None
 ) -> Message:
     """Broadcast a status update to all agents"""
-    return mailbox_manager.send_message(
+    return Signal_manager.send_message(
         sender=sender,
         recipient="broadcast",
         subject="Status Update",
@@ -682,3 +682,4 @@ def broadcast_status(
         priority=MessagePriority.NORMAL,
         work_item_id=work_item_id
     )
+

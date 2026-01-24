@@ -49,26 +49,26 @@ class Captain(BaseAgent):
 
 ---
 
-### 2. FormulaExecutor Has No Execution Logic ⚠️ CRITICAL
+### 2. BattlePlanExecutor Has No Execution Logic ⚠️ CRITICAL
 
-**Problem**: FormulaExecutor has `agent_executor` but **never calls it**!
+**Problem**: BattlePlanExecutor has `agent_executor` but **never calls it**!
 
 ```python
-class FormulaExecutor:
-    def __init__(self, formula_mgr, workstate_mgr, agent_executor=None):
+class BattlePlanExecutor:
+    def __init__(self, BattlePlan_mgr, workstate_mgr, agent_executor=None):
         self.agent_executor = agent_executor  # ✅ Stored
     
-    # ❌ BUT WHERE IS execute_formula() IMPLEMENTATION?
+    # ❌ BUT WHERE IS execute_BattlePlan() IMPLEMENTATION?
     # ❌ No method actually calls self.agent_executor!
 ```
 
 **Verification**:
 ```bash
-$ grep -n "self.agent_executor(" ai_squad/core/formula.py
+$ grep -n "self.agent_executor(" ai_squad/core/BattlePlan.py
 # NO RESULTS - Never called!
 ```
 
-**Impact**: Formula workflows **cannot execute** - missing core functionality!
+**Impact**: BattlePlan workflows **cannot execute** - missing core functionality!
 
 ---
 
@@ -80,7 +80,7 @@ $ grep -n "self.agent_executor(" ai_squad/core/formula.py
 def __init__(self, config, sdk, orchestration=None):
     self.orchestration = orchestration or {}
     self.workstate = orchestration.get('workstate')  # ❌ Could be wrong type!
-    self.mailbox = orchestration.get('mailbox')      # ❌ No validation!
+    self.signal = orchestration.get('signal')      # ❌ No validation!
 ```
 
 **Missing**:
@@ -165,7 +165,7 @@ def _save_state(self):
 ```python
 # Missing: OrchestrationManager Protocol
 class WorkStateManager: pass
-class MailboxManager: pass
+class SignalManager: pass
 class HandoffManager: pass
 # ❌ No shared interface - can't substitute implementations
 ```
@@ -194,7 +194,7 @@ def create_work_item(...) -> Optional[str]:
 
 # Agent 2: Logs warning
 def send_message(...) -> Optional[str]:
-    if not self.mailbox:
+    if not self.signal:
         logger.warning("...")  # ⚠️ Logs but returns None
         return None
 
@@ -212,8 +212,8 @@ def send_message(...) -> Optional[str]:
 
 **Missing**:
 - How long does convoy execution take?
-- What's the success rate of formula workflows?
-- How many messages in mailbox queue?
+- What's the success rate of BattlePlan workflows?
+- How many messages in signal queue?
 - What's the average handoff time?
 
 **Impact**: Cannot monitor production health, no SLOs possible
@@ -246,21 +246,21 @@ orchestration:
 
 ## 🔴 FUNCTIONALITY ISSUES (Grade: D, 60/100)
 
-### 11. FormulaExecutor Cannot Execute Formulas! ⚠️ CRITICAL
+### 11. BattlePlanExecutor Cannot Execute BattlePlans! ⚠️ CRITICAL
 
-**Proof**: No `execute_formula()` method that actually runs agents
+**Proof**: No `execute_BattlePlan()` method that actually runs agents
 
 ```python
-# formula.py has:
-- start_execution()  # Creates FormulaExecution object
+# BattlePlan.py has:
+- start_execution()  # Creates BattlePlanExecution object
 - complete_step()    # Marks step done
 - fail_execution()   # Marks failed
 
 # ❌ MISSING: The actual execution loop!
 # Should have:
-async def execute_formula(self, formula_name, issue_number):
-    execution = self.start_execution(formula_name, issue_number)
-    for step in formula.steps:
+async def execute_BattlePlan(self, BattlePlan_name, issue_number):
+    execution = self.start_execution(BattlePlan_name, issue_number)
+    for step in BattlePlan.steps:
         if self.agent_executor:
             await self.agent_executor(step.agent, issue_number)
         self.complete_step(execution.id, step.name)
@@ -269,7 +269,7 @@ async def execute_formula(self, formula_name, issue_number):
 **Test This**:
 ```python
 executor = AgentExecutor()
-result = executor.execute_formula("feature", 123)
+result = executor.execute_BattlePlan("feature", 123)
 # ❌ Will fail - no implementation!
 ```
 
@@ -324,7 +324,7 @@ handoff_id = pm.initiate_handoff("architect", work_item_id, ...)
 
 ### 15. Message Delivery Not Guaranteed ⚠️ MEDIUM
 
-**Problem**: Mailbox sends messages but no retry on failure
+**Problem**: signal sends messages but no retry on failure
 
 ```python
 def send_message(self, ...):
@@ -351,9 +351,9 @@ def send_message(self, ...):
 # tests/test_e2e_orchestration.py - DOES NOT EXIST!
 
 class TestE2EOrchestration:
-    def test_formula_executes_full_workflow(self):
+    def test_BattlePlan_executes_full_workflow(self):
         """
-        Test: feature formula executes PM → Architect → Engineer
+        Test: feature BattlePlan executes PM → Architect → Engineer
         Verify: PRD, ADR, code files created
         """
         # ❌ THIS TEST DOESN'T EXIST
@@ -383,13 +383,13 @@ class TestE2EOrchestration:
 
 ```
 Captain: 18% coverage   ❌ 220/269 lines uncovered
-Formula: 48% coverage   ❌ Execution logic not tested
+BattlePlan: 48% coverage   ❌ Execution logic not tested
 Convoy: 41% coverage    ❌ Parallel execution not tested
 Handoff: 46% coverage   ❌ Handoff flow not tested
 ```
 
 **Key Missing Tests**:
-- Formula workflow execution (0 tests)
+- BattlePlan workflow execution (0 tests)
 - Convoy parallel execution with real agents (0 tests)
 - Captain coordination loop (0 tests)
 - Handoff acceptance and rejection (0 tests)
@@ -409,7 +409,7 @@ Handoff: 46% coverage   ❌ Handoff flow not tested
 - Agent communication ✅
 
 # Missing:
-- PM → Architect → Engineer (formula workflow) ❌
+- PM → Architect → Engineer (BattlePlan workflow) ❌
 - Convoy with multiple agents ❌
 - Captain coordinating multiple work items ❌
 - Handoff between agents ❌
@@ -432,8 +432,8 @@ def test_workstate_performance_1000_items():
     """Verify WorkState can track 1000 items without slow down"""
     pass
 
-def test_mailbox_throughput():
-    """Verify mailbox handles 1000 messages/sec"""
+def test_signal_throughput():
+    """Verify signal handles 1000 messages/sec"""
     pass
 ```
 
@@ -451,8 +451,8 @@ def test_workstate_handles_corrupted_json():
     """WorkState recovers from corrupted state file"""
     pass
 
-def test_network_failure_during_formula():
-    """Formula retries on network failures"""
+def test_network_failure_during_BattlePlan():
+    """BattlePlan retries on network failures"""
     pass
 ```
 
@@ -492,7 +492,7 @@ def test_network_failure_during_formula():
 docs/ORCHESTRATION.md - DOES NOT EXIST!
 
 Should contain:
-- How to create a formula
+- How to create a BattlePlan
 - How to run a convoy
 - How to use Captain for coordination
 - How handoffs work
@@ -521,7 +521,7 @@ Should contain:
 - ❌ Doesn't mention Captain
 - ❌ Doesn't explain orchestration methods (create_work_item, send_message, etc.)
 - ❌ Doesn't show new workflow patterns
-- ❌ Examples don't include formula/convoy usage
+- ❌ Examples don't include BattlePlan/convoy usage
 
 ---
 
@@ -530,9 +530,9 @@ Should contain:
 **No docs for**:
 - OrchestrationContext interface
 - WorkStateManager API
-- FormulaManager API  
+- BattlePlanManager API  
 - ConvoyManager API
-- MailboxManager API
+- SignalManager API
 - HandoffManager API
 
 **Format should be**: Auto-generated from docstrings (Sphinx/MkDocs)
@@ -566,8 +566,8 @@ logger.error("...")  # Mix of patterns
 # Should exist:
 $ squad doctor --orchestration
 ❌ WorkStateManager: OK (42 items)
-❌ MailboxManager: OK (7 messages)
-❌ FormulaManager: WARNING (builtin formulas only)
+❌ SignalManager: OK (7 messages)
+❌ BattlePlanManager: WARNING (builtin BattlePlans only)
 ❌ ConvoyManager: ERROR (no agent_executor)
 ```
 
@@ -611,9 +611,9 @@ $ squad doctor --orchestration
 |--------|----------|---------------|-------------|-------|
 | **Orchestration** | | | | |
 | Captain | 18% | 49 / 269 | 269 | F |
-| Formula | 48% | 114 / 237 | 237 | F |
+| BattlePlan | 48% | 114 / 237 | 237 | F |
 | Convoy | 41% | 89 / 216 | 216 | F |
-| Mailbox | 56% | 153 / 273 | 273 | F |
+| signal | 56% | 153 / 273 | 273 | F |
 | Handoff | 46% | 109 / 236 | 236 | F |
 | WorkState | 54% | 133 / 247 | 247 | F |
 | **Agents** | | | | |
@@ -656,7 +656,7 @@ $ squad doctor --orchestration
 
 ### Must-Fix (P0) - 2 weeks
 
-1. ✅ Implement FormulaExecutor.execute_formula() with agent execution
+1. ✅ Implement BattlePlanExecutor.execute_BattlePlan() with agent execution
 2. ✅ Make Captain.coordinate() actually execute the plan
 3. ✅ Write 10 E2E orchestration tests proving it works
 4. ✅ Fix README.md false claims
@@ -693,7 +693,7 @@ $ squad doctor --orchestration
 
 ### What's Broken/Incomplete ❌
 
-1. **Formula Execution** - Cannot execute workflows (no implementation)
+1. **BattlePlan Execution** - Cannot execute workflows (no implementation)
 2. **Convoy Execution** - Untested with real agents
 3. **Captain Coordination** - Returns plan but doesn't execute
 4. **Handoff Flow** - No acceptance/notification mechanism
@@ -718,7 +718,7 @@ $ squad doctor --orchestration
 **Status**: 🔴 **NOT PRODUCTION-READY**
 
 **Why**:
-- ❌ Core orchestration features incomplete (Formula, Captain execution)
+- ❌ Core orchestration features incomplete (BattlePlan, Captain execution)
 - ❌ ZERO E2E tests proving orchestration works
 - ❌ Documentation contains false claims
 - ❌ No observability or monitoring
@@ -727,7 +727,7 @@ $ squad doctor --orchestration
 **Recommendation**: **DO NOT DEPLOY TO PRODUCTION**
 
 **Minimum to Ship**:
-1. Implement Formula/Captain execution (2-3 days)
+1. Implement BattlePlan/Captain execution (2-3 days)
 2. Write 10 E2E orchestration tests (2 days)
 3. Fix documentation (1 day)
 4. Add transaction safety (2 days)
@@ -754,7 +754,7 @@ We claimed "production-ready" but the harsh reality:
 - ❌ Coverage insufficient
 
 **The Ugly**:
-- ❌ FormulaExecutor cannot execute formulas!
+- ❌ BattlePlanExecutor cannot execute BattlePlans!
 - ❌ Captain returns plans but doesn't execute them
 - ❌ ZERO tests prove orchestration works end-to-end
 - ❌ README claims 80% coverage (actually 49%)
@@ -766,3 +766,4 @@ We claimed "production-ready" but the harsh reality:
 **Reviewed by**: Self-Critical Analysis  
 **Date**: January 23, 2026  
 **Recommendation**: 🔴 **CONTINUE DEVELOPMENT** - Do not ship yet
+

@@ -430,7 +430,7 @@ def captain(issue_number):
     Run Captain (Coordinator) agent to orchestrate work on an issue
     
     The Captain analyzes the issue, breaks it down into work items,
-    selects appropriate formulas, and coordinates agents.
+    selects appropriate battle plans, and coordinates agents.
     
     Example:
         squad captain 123
@@ -537,38 +537,38 @@ def work(status, agent):
 
 
 @main.command()
-@click.option("--label", help="Filter formulas by label")
-def formulas(label):
+@click.option("--label", help="Filter battle plans by label")
+def plans(label):
     """
-    List available workflow formulas
+    List available battle plans (workflow templates)
     
-    Formulas are reusable workflow templates that define
+    Battle plans are reusable workflow templates that define
     multi-agent orchestration patterns.
     
     Examples:
-        squad formulas
-        squad formulas --label bugfix
+        squad plans
+        squad plans --label bugfix
     """
     try:
-        from ai_squad.core.formula import FormulaManager
+        from ai_squad.core.battle_plan import BattlePlanManager
         
-        manager = FormulaManager()
-        formula_list = manager.list_formulas(label=label)
+        manager = BattlePlanManager()
+        plan_list = manager.list_strategies(label=label)
         
-        if not formula_list:
-            console.print("[yellow]No formulas found[/yellow]")
-            console.print("[dim]💡 Create custom formulas in .squad/formulas/[/dim]")
+        if not plan_list:
+            console.print("[yellow]No battle plans found[/yellow]")
+            console.print("[dim]💡 Create custom plans in ai_squad/templates/strategies/[/dim]")
             return
         
-        console.print("[bold cyan]📜 Available Formulas[/bold cyan]\n")
+        console.print("[bold cyan]📜 Available Battle Plans[/bold cyan]\n")
         
-        for formula in formula_list:
+        for plan in plan_list:
             console.print(Panel(
-                f"[bold]Description:[/bold] {formula.description}\n"
-                f"[bold]Steps:[/bold] {len(formula.steps)}\n"
-                f"[bold]Labels:[/bold] {', '.join(formula.labels) if formula.labels else 'none'}\n\n"
-                f"[dim]Steps: {' → '.join(s.name for s in formula.steps)}[/dim]",
-                title=f"📋 {formula.name}",
+                f"[bold]Description:[/bold] {plan.description}\n"
+                f"[bold]Phases:[/bold] {len(plan.phases)}\n"
+                f"[bold]Labels:[/bold] {', '.join(plan.labels) if plan.labels else 'none'}\n\n"
+                f"[dim]Phases: {' → '.join(p.name for p in plan.phases)}[/dim]",
+                title=f"📋 {plan.name}",
                 border_style="cyan"
             ))
         
@@ -578,43 +578,43 @@ def formulas(label):
 
 
 @main.command()
-@click.argument("formula_name")
+@click.argument("plan_name")
 @click.argument("issue_number", type=int)
-def run_formula(formula_name, issue_number):
+def run_plan(plan_name, issue_number):
     """
-    Execute a workflow formula on an issue
+    Execute a battle plan on an issue
     
-    Runs the specified formula, creating work items and
+    Runs the specified battle plan, creating work items and
     coordinating agents according to the workflow definition.
     
     Example:
-        squad run-formula feature 123
-        squad run-formula bugfix 456
+        squad run-plan feature 123
+        squad run-plan bugfix 456
     """
-    console.print(f"[bold cyan]🚀 Running formula '{formula_name}' for issue #{issue_number}...[/bold cyan]\n")
+    console.print(f"[bold cyan]🚀 Running battle plan '{plan_name}' for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         from ai_squad.core.workstate import WorkStateManager
-        from ai_squad.core.formula import FormulaManager, FormulaExecutor
+        from ai_squad.core.battle_plan import BattlePlanManager, BattlePlanExecutor
         
         work_manager = WorkStateManager()
-        formula_manager = FormulaManager()
-        executor = FormulaExecutor(formula_manager, work_manager)
+        plan_manager = BattlePlanManager()
+        executor = BattlePlanExecutor(plan_manager, work_manager)
         
         # Start execution
-        execution = executor.start_execution(formula_name, issue_number)
+        execution = executor.start_execution(plan_name, issue_number)
         
         if not execution:
-            console.print(f"[bold red]❌ Formula '{formula_name}' not found[/bold red]")
-            console.print("[dim]💡 Run 'squad formulas' to see available formulas[/dim]")
+            console.print(f"[bold red]❌ Battle plan '{plan_name}' not found[/bold red]")
+            console.print("[dim]💡 Run 'squad plans' to see available battle plans[/dim]")
             sys.exit(1)
         
-        console.print(f"[green]✅ Formula execution started: {execution.id}[/green]\n")
+        console.print(f"[green]✅ Battle plan execution started: {execution.id}[/green]\n")
         
         # Show next steps
         next_steps = executor.get_next_steps(execution.id)
         if next_steps:
-            console.print("[bold]Next steps:[/bold]")
+            console.print("[bold]Next phases:[/bold]")
             for step in next_steps:
                 console.print(f"  • [{step.agent}] {step.name}: {step.description}")
         
@@ -692,25 +692,25 @@ def convoys(convoy_id, issue):
 @main.command()
 @click.argument("agent", type=click.Choice(["pm", "architect", "engineer", "ux", "reviewer", "system"]))
 @click.option("--unread", is_flag=True, help="Show only unread messages")
-def mailbox(agent, unread):
+def signal(agent, unread):
     """
-    View agent mailbox (messages and notifications)
+    View agent signal messages (notifications and communications)
     
     Shows messages sent to/from the specified agent.
     
     Examples:
-        squad mailbox engineer
-        squad mailbox pm --unread
+        squad signal engineer
+        squad signal pm --unread
     """
     try:
-        from ai_squad.core.mailbox import MailboxManager
+        from ai_squad.core.signal import SignalManager
         
-        manager = MailboxManager()
+        manager = SignalManager()
         
         # Get inbox
         messages = manager.get_inbox(agent, unread_only=unread)
         
-        console.print(f"[bold cyan]📬 Mailbox for {agent.upper()}[/bold cyan]\n")
+        console.print(f"[bold cyan]� Signal Messages for {agent.upper()}[/bold cyan]\n")
         
         if not messages:
             console.print("[yellow]No messages[/yellow]")
@@ -743,10 +743,10 @@ def mailbox(agent, unread):
         
         # Show stats
         stats = manager.get_stats()
-        mailbox_stats = stats["by_mailbox"].get(agent, {})
-        console.print(f"\n[dim]Inbox: {mailbox_stats.get('inbox', 0)} | "
-                     f"Unread: {mailbox_stats.get('unread', 0)} | "
-                     f"Sent: {mailbox_stats.get('outbox', 0)}[/dim]")
+        signal_stats = stats["by_signal"].get(agent, {})
+        console.print(f"\n[dim]Inbox: {signal_stats.get('inbox', 0)} | "
+                     f"Unread: {signal_stats.get('unread', 0)} | "
+                     f"Sent: {signal_stats.get('outbox', 0)}[/dim]")
         
     except Exception as e:
         console.print(f"[bold red]❌ Error: {e}[/bold red]")
@@ -774,12 +774,12 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
     
     try:
         from ai_squad.core.workstate import WorkStateManager
-        from ai_squad.core.mailbox import MailboxManager
+        from ai_squad.core.signal import SignalManager
         from ai_squad.core.handoff import HandoffManager, HandoffReason, HandoffContext
         
         work_manager = WorkStateManager()
-        mailbox_manager = MailboxManager()
-        handoff_manager = HandoffManager(work_manager, mailbox_manager)
+        signal_manager = SignalManager()
+        handoff_manager = HandoffManager(work_manager, signal_manager)
         
         # Map reason string to enum
         reason_map = {
@@ -832,13 +832,13 @@ def status():
     try:
         from ai_squad.core.workstate import WorkStateManager, WorkStatus
         from ai_squad.core.convoy import ConvoyManager, ConvoyStatus
-        from ai_squad.core.mailbox import MailboxManager
+        from ai_squad.core.signal import SignalManager
         from ai_squad.core.handoff import HandoffManager, HandoffStatus
         
         work_manager = WorkStateManager()
         convoy_manager = ConvoyManager(work_manager)
-        mailbox_manager = MailboxManager()
-        handoff_manager = HandoffManager(work_manager, mailbox_manager)
+        signal_manager = SignalManager()
+        handoff_manager = HandoffManager(work_manager, signal_manager)
         
         console.print("[bold cyan]📊 AI-Squad Orchestration Status[/bold cyan]\n")
         
@@ -873,16 +873,16 @@ def status():
             border_style="green"
         ))
         
-        # Mailbox Summary
-        mailbox_stats = mailbox_manager.get_stats()
+        # Signal Summary
+        signal_stats = signal_manager.get_stats()
         total_unread = sum(
-            mb.get("unread", 0) 
-            for mb in mailbox_stats["by_mailbox"].values()
+            sig.get("unread", 0) 
+            for sig in signal_stats["by_signal"].values()
         )
         console.print(Panel(
-            f"[bold]Total Messages:[/bold] {mailbox_stats['total_messages']}\n"
+            f"[bold]Total Messages:[/bold] {signal_stats['total_messages']}\n"
             f"[bold]Unread:[/bold] {total_unread}",
-            title="📬 Mailbox",
+            title="📡 Signals",
             border_style="magenta"
         ))
         
@@ -890,7 +890,7 @@ def status():
         console.print("\n[dim]Quick commands:[/dim]")
         console.print("[dim]  • squad work            - View work items[/dim]")
         console.print("[dim]  • squad convoys         - View convoys[/dim]")
-        console.print("[dim]  • squad mailbox <agent> - View agent mailbox[/dim]")
+        console.print("[dim]  • squad signal <agent> - View agent signal[/dim]")
         console.print("[dim]  • squad captain <issue> - Coordinate issue[/dim]")
         
     except Exception as e:
@@ -900,4 +900,6 @@ def status():
 
 if __name__ == "__main__":
     main()
+
+
 

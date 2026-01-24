@@ -29,7 +29,7 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 - 🎭 **UX Designer** - Creates wireframes, HTML prototypes, accessibility guidelines
 - ✅ **Reviewer** - Reviews code, auto-closes issues, ensures quality
 
-**New in v0.4.0**: Advanced orchestration (Captain, Formulas, Convoys), retry logic, rate limiting, persistent storage, performance benchmarks!
+**New in v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), retry logic, rate limiting, persistent storage, performance benchmarks!
 
 **Install once. Use everywhere. No hosting required.**
 
@@ -472,4 +472,5 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 

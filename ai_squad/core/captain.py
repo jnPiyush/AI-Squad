@@ -13,7 +13,12 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..agents.base import BaseAgent, SDK_AVAILABLE
 from ..core.config import Config
 from .convoy import ConvoyManager
-from .formula import Formula, FormulaExecutor, FormulaManager, FormulaStep
+from .battle_plan import (
+    BattlePlan,
+    BattlePlanExecutor,
+    BattlePlanManager,
+    BattlePlanPhase,
+)
 from .workstate import WorkItem, WorkStateManager, WorkStatus
 
 if SDK_AVAILABLE:
@@ -21,9 +26,6 @@ if SDK_AVAILABLE:
         from github_copilot_sdk import CopilotClient
     except ImportError:
         pass
-
-from .formula import Formula, FormulaExecutor, FormulaManager, FormulaStep
-from .workstate import WorkItem, WorkStateManager, WorkStatus
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +38,7 @@ class TaskBreakdown:
     original_task: str
     issue_number: Optional[int]
     work_items: List[WorkItem]
-    suggested_formula: Optional[str] = None
+    suggested_strategy: Optional[str] = None
     parallel_groups: List[List[str]] = field(default_factory=list)  # Groups of work item IDs
     estimated_time_minutes: int = 0
     complexity: str = "medium"  # low, medium, high, critical
@@ -60,7 +62,7 @@ class Captain(BaseAgent):
     
     Responsibilities:
     - Analyze complex tasks and break them down
-    - Select appropriate formulas (workflows)
+    - Select appropriate combat strategies (workflows)
     - Create convoys for parallel execution
     - Dispatch work to appropriate agents
     - Monitor progress and handle blockers
@@ -76,7 +78,7 @@ You are the Captain - a meta-agent coordinator for AI-Squad.
 
 Your role:
 - Analyze GitHub issues and break them into manageable work items
-- Select appropriate workflow formulas
+- Select appropriate combat strategies
 - Create convoys for parallel execution
 - Dispatch work to specialized agents (PM, Architect, Engineer, UX, Reviewer)
 - Monitor progress and resolve blockers
@@ -84,7 +86,7 @@ Your role:
 
 You have access to:
 - WorkStateManager for tracking work
-- FormulaManager for workflow templates
+- BattlePlanManager for workflow templates
 - ConvoyManager for parallel execution
 
 Always provide clear, structured coordination plans.
@@ -100,9 +102,9 @@ Always provide clear, structured coordination plans.
         sdk: Optional[Any] = None,
         orchestration: Optional[Dict[str, Any]] = None,
         work_state_manager: Optional[WorkStateManager] = None,
-        formula_manager: Optional[FormulaManager] = None,
+        strategy_manager: Optional[BattlePlanManager] = None,
         convoy_manager: Optional[ConvoyManager] = None,
-        mailbox_manager: Optional[Any] = None,
+        signal_manager: Optional[Any] = None,
         handoff_manager: Optional[Any] = None
     ):
         """
@@ -117,16 +119,16 @@ Always provide clear, structured coordination plans.
         
         # Use injected managers (DI pattern) or create local ones as fallback
         self.work_state_manager = work_state_manager or self.workstate or WorkStateManager(Path.cwd())
-        self.formula_manager = formula_manager or self.formula or FormulaManager(Path.cwd())
+        self.strategy_manager = strategy_manager or self.strategy or BattlePlanManager(Path.cwd())
         self.convoy_manager = convoy_manager or self.convoy or None
-        self.mailbox_manager = mailbox_manager or self.mailbox
+        self.signal_manager = signal_manager or self.signal
         self.handoff_manager = handoff_manager or self.handoff
         # Keep orchestration in sync for downstream consumers
         self.orchestration.update({
             "workstate": self.work_state_manager,
-            "formula": self.formula_manager,
+            "strategy": self.strategy_manager,
             "convoy": self.convoy_manager,
-            "mailbox": self.mailbox_manager,
+            "signal": self.signal_manager,
             "handoff": self.handoff_manager,
         })
 
@@ -159,8 +161,8 @@ Always provide clear, structured coordination plans.
         """
         logger.info("Analyzing task: %s", task_description[:50])
         
-        # Determine complexity and select formula
-        complexity, formula_name = await self._assess_task_complexity(
+        # Determine complexity and select strategy
+        complexity, strategy_name = await self._assess_task_complexity(
             task_description,
             context
         )
@@ -168,24 +170,24 @@ Always provide clear, structured coordination plans.
         # Get or create work items
         work_items = []
         
-        if formula_name:
-            formula = self.formula_manager.get_formula(formula_name)
-            if formula:
-                # Create work items from formula steps
-                for step in formula.steps:
+        if strategy_name:
+            strategy = self.strategy_manager.get_strategy(strategy_name)
+            if strategy:
+                # Create work items from strategy steps
+                for phase in strategy.phases:
                     item = self.work_state_manager.create_work_item(
-                        title=f"[{step.agent}] {step.name}",
-                        description=step.description,
+                        title=f"[{phase.agent}] {phase.name}",
+                        description=phase.description,
                         issue_number=issue_number,
-                        labels=[formula_name, step.agent]
+                        labels=[strategy_name, phase.agent]
                     )
                     work_items.append(item)
                 
                 # Set up dependencies
-                for i, step in enumerate(formula.steps):
-                    for dep_name in step.depends_on:
+                for i, step in enumerate(strategy.phases):
+                    for dep_name in phase.depends_on:
                         dep_idx = next(
-                            (j for j, s in enumerate(formula.steps) 
+                            (j for j, s in enumerate(strategy.phases) 
                              if s.name == dep_name),
                             None
                         )
@@ -212,15 +214,15 @@ Always provide clear, structured coordination plans.
             original_task=task_description,
             issue_number=issue_number,
             work_items=work_items,
-            suggested_formula=formula_name,
+            suggested_strategy=strategy_name,
             parallel_groups=parallel_groups,
             estimated_time_minutes=estimated_time,
             complexity=complexity
         )
         
         logger.info(
-            "Task breakdown: %d work items, complexity=%s, formula=%s",
-            len(work_items), complexity, formula_name
+            "Task breakdown: %d work items, complexity=%s, strategy=%s",
+            len(work_items), complexity, strategy_name
         )
         
         return breakdown
@@ -231,10 +233,10 @@ Always provide clear, structured coordination plans.
         context: Optional[Dict[str, Any]]
     ) -> Tuple[str, Optional[str]]:
         """
-        Assess task complexity and suggest a formula.
+        Assess task complexity and suggest a combat strategy.
         
         Returns:
-            Tuple of (complexity, formula_name)
+            Tuple of (complexity, strategy_name)
         """
         # Use SDK if available for intelligent assessment
         if SDK_AVAILABLE:
@@ -245,7 +247,7 @@ Always provide clear, structured coordination plans.
                     context=context
                 )
                 if result:
-                    return result.get("complexity", "medium"), result.get("formula")
+                    return result.get("complexity", "medium"), result.get("strategy")
             except Exception as e:
                 logger.warning("SDK assessment failed: %s", e)
         
@@ -253,18 +255,18 @@ Always provide clear, structured coordination plans.
         task_lower = task_description.lower()
         labels = (context or {}).get("labels", [])
         
-        # Check for formula keywords
-        formula_name = None
+        # Check for strategy keywords
+        strategy_name = None
         if any(w in task_lower for w in ["feature", "implement", "create", "add"]):
-            formula_name = "feature"
+            strategy_name = "feature"
         elif any(w in task_lower for w in ["bug", "fix", "error", "issue"]):
-            formula_name = "bugfix"
+            strategy_name = "bugfix"
         elif any(w in task_lower for w in ["refactor", "debt", "cleanup", "improve"]):
-            formula_name = "tech-debt"
+            strategy_name = "tech-debt"
         elif "enhancement" in labels:
-            formula_name = "feature"
+            strategy_name = "feature"
         elif "bug" in labels:
-            formula_name = "bugfix"
+            strategy_name = "bugfix"
         
         # Assess complexity
         complexity = "medium"
@@ -275,7 +277,7 @@ Always provide clear, structured coordination plans.
         elif any(w in task_lower for w in ["critical", "urgent", "security"]):
             complexity = "critical"
         
-        return complexity, formula_name
+        return complexity, strategy_name
     
     async def _create_generic_breakdown(
         self,
@@ -284,7 +286,7 @@ Always provide clear, structured coordination plans.
         context: Optional[Dict[str, Any]]
     ) -> List[WorkItem]:
         """
-        Create a generic breakdown when no formula matches.
+        Create a generic breakdown when no combat strategy matches.
         """
         work_items = []
         
@@ -663,7 +665,7 @@ Always provide clear, structured coordination plans.
 
 ### Task Breakdown
 - **Complexity**: {breakdown.complexity}
-- **Suggested Formula**: {breakdown.suggested_formula or 'Custom'}
+    - **Suggested Strategy**: {breakdown.suggested_strategy or 'Custom'}
 - **Work Items Created**: {len(breakdown.work_items)}
 - **Estimated Time**: {breakdown.estimated_time_minutes} minutes
 
@@ -686,7 +688,7 @@ Always provide clear, structured coordination plans.
         self,
         work_items: List[str],
         workstate_manager: Optional[WorkStateManager] = None,
-        formula_manager: Optional[FormulaManager] = None,
+        strategy_manager: Optional[BattlePlanManager] = None,
         convoy_manager: Optional[ConvoyManager] = None
     ) -> Dict[str, Any]:
         """
@@ -698,7 +700,7 @@ Always provide clear, structured coordination plans.
         Args:
             work_items: List of work item IDs to coordinate
             workstate_manager: WorkState manager (optional, uses self.work_state_manager)
-            formula_manager: Formula manager (optional, uses self.formula_manager)
+            strategy_manager: Strategy manager (optional, uses self.strategy_manager)
             convoy_manager: Convoy manager (optional, uses self.convoy_manager)
             
         Returns:
@@ -706,7 +708,6 @@ Always provide clear, structured coordination plans.
         """
         # Use provided managers or fall back to self managers
         ws_mgr = workstate_manager or self.work_state_manager
-        fm_mgr = formula_manager or self.formula_manager
         cv_mgr = convoy_manager or self.convoy_manager
         
         logger.info("Captain coordinating %d work items", len(work_items))
@@ -848,7 +849,7 @@ Always provide clear, structured coordination plans.
                 logger.exception(f"Convoy {convoy_id} failed")
         
         # Execute sequential steps
-        for step in plan.get("sequential_steps", []):
+        for phase in plan.get("sequential_steps", []):
             agent = step["agent"]
             item_id = step["item_id"]
             
@@ -944,4 +945,5 @@ Always provide clear, structured coordination plans.
                 "error": str(e),
                 "issue_number": issue_number
             }
+
 

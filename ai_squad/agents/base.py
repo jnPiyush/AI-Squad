@@ -19,7 +19,7 @@ from ai_squad.core.config import Config
 from ai_squad.tools.github import GitHubTool
 from ai_squad.tools.templates import TemplateEngine
 from ai_squad.tools.codebase import CodebaseSearch
-from ai_squad.core.mailbox import MessagePriority
+from ai_squad.core.signal import MessagePriority
 from ai_squad.core.handoff import HandoffReason
 class InvalidIssueNumberError(ValueError):
     """Raised when an invalid issue number is provided"""
@@ -36,7 +36,7 @@ class BaseAgent(ABC):
         self, 
         config: Config, 
         sdk: Optional[Any] = None,
-        orchestration: Optional[Dict[str, Any]] = None
+            orchestration: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize base agent
@@ -46,9 +46,9 @@ class BaseAgent(ABC):
             sdk: GitHub Copilot SDK instance (preferred for AI generation)
             orchestration: Optional dict with shared orchestration managers:
                 - 'workstate': WorkStateManager instance
-                - 'mailbox': MailboxManager instance
+                - 'signal': SignalManager instance
                 - 'handoff': HandoffManager instance
-                - 'formula': FormulaManager instance
+                - 'strategy': BattlePlanManager instance
                 - 'convoy': ConvoyManager instance
         """
         self.config = config
@@ -61,9 +61,9 @@ class BaseAgent(ABC):
         # Orchestration managers (shared instances via dependency injection)
         self.orchestration = orchestration or {}
         self.workstate = self.orchestration.get('workstate')
-        self.mailbox = self.orchestration.get('mailbox')
+        self.signal = self.orchestration.get('signal')
         self.handoff = self.orchestration.get('handoff')
-        self.formula = self.orchestration.get('formula')
+        self.strategy = self.orchestration.get('strategy')
         self.convoy = self.orchestration.get('convoy')
         
         # Track SDK availability for this agent
@@ -428,13 +428,13 @@ class BaseAgent(ABC):
             **kwargs: Additional message fields
             
         Returns:
-            Message ID or None if mailbox not available
+            Message ID or None if signal not available
         """
-        if not self.mailbox:
-            logger.warning("MailboxManager not available, skipping message send")
+        if not self.signal:
+            logger.warning("SignalManager not available, skipping message send")
             return None
         
-        return self.mailbox.send_message(
+        return self.signal.send_message(
             sender=self.agent_type,
             recipient=recipient,
             subject=subject,
@@ -451,12 +451,12 @@ class BaseAgent(ABC):
             unread_only: Only return unread messages
             
         Returns:
-            List of messages (empty if mailbox not available)
+            List of messages (empty if signal not available)
         """
-        if not self.mailbox:
+        if not self.signal:
             return []
         
-        return self.mailbox.get_inbox(
+        return self.signal.get_inbox(
             recipient=self.agent_type,
             unread_only=unread_only
         )

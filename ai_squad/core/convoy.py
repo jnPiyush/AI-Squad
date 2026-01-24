@@ -74,7 +74,7 @@ class Convoy:
     
     # Metadata
     issue_number: Optional[int] = None
-    formula_execution_id: Optional[str] = None
+    plan_execution_id: Optional[str] = None
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
     started_at: Optional[str] = None
     completed_at: Optional[str] = None
@@ -95,7 +95,7 @@ class Convoy:
             "timeout_minutes": self.timeout_minutes,
             "stop_on_first_failure": self.stop_on_first_failure,
             "issue_number": self.issue_number,
-            "formula_execution_id": self.formula_execution_id,
+            "plan_execution_id": self.plan_execution_id,
             "created_at": self.created_at,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
@@ -191,7 +191,7 @@ class ConvoyManager:
         timeout_minutes: int = 60,
         stop_on_first_failure: bool = False,
         issue_number: Optional[int] = None,
-        formula_execution_id: Optional[str] = None
+        plan_execution_id: Optional[str] = None
     ) -> Convoy:
         """
         Create a new convoy.
@@ -204,7 +204,7 @@ class ConvoyManager:
             timeout_minutes: Timeout in minutes
             stop_on_first_failure: Whether to stop on first failure
             issue_number: Optional GitHub issue number
-            formula_execution_id: Optional formula execution ID
+            plan_execution_id: Optional battle plan execution ID
             
         Returns:
             Created Convoy instance
@@ -219,7 +219,7 @@ class ConvoyManager:
             timeout_minutes=timeout_minutes,
             stop_on_first_failure=stop_on_first_failure,
             issue_number=issue_number,
-            formula_execution_id=formula_execution_id
+            plan_execution_id=plan_execution_id
         )
         
         # Add members
@@ -536,7 +536,7 @@ class ConvoyBuilder:
         self._timeout_minutes: int = 60
         self._stop_on_first_failure: bool = False
         self._issue_number: Optional[int] = None
-        self._formula_execution_id: Optional[str] = None
+        self._plan_execution_id: Optional[str] = None
     
     def name(self, name: str) -> "ConvoyBuilder":
         """Set convoy name"""
@@ -601,9 +601,9 @@ class ConvoyBuilder:
         self._issue_number = issue_number
         return self
     
-    def for_formula(self, execution_id: str) -> "ConvoyBuilder":
-        """Associate with a formula execution"""
-        self._formula_execution_id = execution_id
+    def for_plan(self, execution_id: str) -> "ConvoyBuilder":
+        """Associate with a battle plan execution"""
+        self._plan_execution_id = execution_id
         return self
     
     def build(self) -> Convoy:
@@ -619,5 +619,6 @@ class ConvoyBuilder:
             timeout_minutes=self._timeout_minutes,
             stop_on_first_failure=self._stop_on_first_failure,
             issue_number=self._issue_number,
-            formula_execution_id=self._formula_execution_id
+            plan_execution_id=self._plan_execution_id
         )
+

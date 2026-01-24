@@ -9,28 +9,28 @@
 
 ## ✅ P0 Critical Issues FIXED
 
-### 1. FormulaExecutor Missing Agent Executor Parameter ✅ FIXED
+### 1. BattlePlanExecutor Missing Agent Executor Parameter ✅ FIXED
 
-**Issue**: FormulaExecutor couldn't execute agents - missing callback parameter  
-**Files Changed**: `ai_squad/core/formula.py`
+**Issue**: BattlePlanExecutor couldn't execute agents - missing callback parameter  
+**Files Changed**: `ai_squad/core/BattlePlan.py`
 
 **Fix Applied**:
 ```python
 # BEFORE:
-def __init__(self, formula_manager, work_state_manager):
+def __init__(self, BattlePlan_manager, work_state_manager):
     # Missing agent_executor!
 
 # AFTER:
 def __init__(
     self,
-    formula_manager: FormulaManager,
+    BattlePlan_manager: BattlePlanManager,
     work_state_manager: WorkStateManager,
     agent_executor: Optional[Callable[[str, int], Dict[str, Any]]] = None
 ):
     self.agent_executor = agent_executor  # ✅ Added
 ```
 
-**Impact**: Formula workflows can now execute agents properly
+**Impact**: BattlePlan workflows can now execute agents properly
 
 ---
 
@@ -45,7 +45,7 @@ def __init__(
 class BaseAgent:
     def __init__(self, config, sdk):
         self.workstate = WorkStateManager()  # ❌ Creates NEW instance
-        self.mailbox = MailboxManager()      # ❌ Creates NEW instance
+        self.signal = SignalManager()      # ❌ Creates NEW instance
         # 5 agents × 3 managers = 15 instances!
 
 # AFTER (DI Pattern):
@@ -53,7 +53,7 @@ class BaseAgent:
     def __init__(self, config, sdk, orchestration=None):
         self.orchestration = orchestration or {}
         self.workstate = orchestration.get('workstate')  # ✅ Shared instance
-        self.mailbox = orchestration.get('mailbox')      # ✅ Shared instance
+        self.signal = orchestration.get('signal')      # ✅ Shared instance
         self.handoff = orchestration.get('handoff')      # ✅ Shared instance
 ```
 
@@ -61,17 +61,17 @@ class BaseAgent:
 ```python
 # Create SHARED managers (single source of truth)
 self.workstate_mgr = WorkStateManager(workspace_root)
-self.mailbox_mgr = MailboxManager(workspace_root)
+self.signal_mgr = SignalManager(workspace_root)
 self.handoff_mgr = HandoffManager(...)
-self.formula_mgr = FormulaManager(workspace_root)
+self.BattlePlan_mgr = BattlePlanManager(workspace_root)
 self.convoy_mgr = ConvoyManager(...)
 
 # Create orchestration context for injection
 self.orchestration = {
     'workstate': self.workstate_mgr,
-    'mailbox': self.mailbox_mgr,
+    'signal': self.signal_mgr,
     'handoff': self.handoff_mgr,
-    'formula': self.formula_mgr,
+    'BattlePlan': self.BattlePlan_mgr,
     'convoy': self.convoy_mgr
 }
 
@@ -201,7 +201,7 @@ async def _async_agent_executor(agent_type, work_item_id, context):
 ## 🔧 Additional Fixes
 
 ### 6. Missing Imports ✅ FIXED
-- Added `Callable` import to `formula.py`
+- Added `Callable` import to `BattlePlan.py`
 - Added `Config`, `Path` imports to `captain.py`
 
 ### 7. Helper Methods Made Safe ✅ FIXED
@@ -225,7 +225,7 @@ def create_work_item(...) -> Optional[str]:
 ### Before Fixes
 - ❌ Import errors
 - ❌ Captain command broken
-- ❌ Formula execution non-functional
+- ❌ BattlePlan execution non-functional
 - ❌ 15 duplicate manager instances
 
 ### After Fixes
@@ -303,7 +303,7 @@ Total: 141 tests passed
 ### P2 - Polish
 5. ⏳ Address 3 TODO comments in code
 6. ⏳ Implement rollback mechanism
-7. ⏳ Add mailbox cleanup/archival
+7. ⏳ Add signal cleanup/archival
 8. ⏳ Create performance benchmarks
 
 ---
@@ -328,3 +328,4 @@ All critical architectural flaws fixed:
 
 **Fixed by**: GitHub Copilot (Self-Review + Fix Mode)  
 **Review Status**: ✅ **APPROVED** - Critical issues resolved with production-grade code
+

@@ -6,12 +6,12 @@ from ai_squad.core.init_project import initialize_project
 
 # Gastown-inspired orchestration modules
 from ai_squad.core.workstate import WorkItem, WorkStateManager, WorkStatus
-from ai_squad.core.formula import (
-    Formula,
-    FormulaStep,
-    FormulaManager,
-    FormulaExecutor,
-    FormulaExecution,
+from ai_squad.core.battle_plan import (
+    BattlePlan,
+    BattlePlanPhase,
+    BattlePlanManager,
+    BattlePlanExecutor,
+    BattlePlanExecution,
 )
 from ai_squad.core.captain import Captain, TaskBreakdown, ConvoyPlan
 from ai_squad.core.convoy import (
@@ -21,10 +21,9 @@ from ai_squad.core.convoy import (
     ConvoyBuilder,
     ConvoyStatus,
 )
-from ai_squad.core.mailbox import (
-    Message,
-    Mailbox,
-    MailboxManager,
+from ai_squad.core.signal import (
+    Signal,
+    SignalManager,
     MessagePriority,
     MessageStatus,
 )
@@ -45,12 +44,12 @@ __all__ = [
     "WorkItem",
     "WorkStateManager",
     "WorkStatus",
-    # Formula
-    "Formula",
-    "FormulaStep",
-    "FormulaManager",
-    "FormulaExecutor",
-    "FormulaExecution",
+    # Battle Plan
+    "BattlePlan",
+    "BattlePlanPhase",
+    "BattlePlanManager",
+    "BattlePlanExecutor",
+    "BattlePlanExecution",
     # Captain
     "Captain",
     "TaskBreakdown",
@@ -61,10 +60,9 @@ __all__ = [
     "ConvoyManager",
     "ConvoyBuilder",
     "ConvoyStatus",
-    # Mailbox
-    "Message",
-    "Mailbox",
-    "MailboxManager",
+    # Signal
+    "Signal",
+    "SignalManager",
     "MessagePriority",
     "MessageStatus",
     # Handoff

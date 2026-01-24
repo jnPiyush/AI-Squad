@@ -1,7 +1,7 @@
 """
 End-to-End Orchestration Tests for AI-Squad
 
-Tests complete orchestration workflows including Formula, Captain, Convoy, and Handoff.
+Tests complete orchestration workflows including BattlePlan, Captain, Convoy, and Handoff.
 These tests verify that the orchestration system works end-to-end.
 """
 import pytest
@@ -14,17 +14,17 @@ from datetime import datetime
 
 from ai_squad.core.config import Config
 from ai_squad.core.workstate import WorkStateManager, WorkItem, WorkStatus
-from ai_squad.core.formula import FormulaManager, FormulaExecutor, FormulaStep
+from ai_squad.core.battle_plan import BattlePlanManager, BattlePlanExecutor, BattlePlanPhase
 from ai_squad.core.convoy import ConvoyManager
 from ai_squad.core.captain import Captain
-from ai_squad.core.mailbox import MailboxManager
+from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.agent_executor import AgentExecutor
 from ai_squad.agents.base import BaseAgent
 
 
-class TestE2EFormulaExecution:
-    """Test end-to-end formula execution"""
+class TestE2EBattlePlanExecution:
+    """Test end-to-end BattlePlan execution"""
     
     @pytest.fixture
     def temp_dir(self):
@@ -53,16 +53,16 @@ class TestE2EFormulaExecution:
     def managers(self, config, temp_dir):
         """Create orchestration managers"""
         workstate = WorkStateManager(temp_dir)
-        formula = FormulaManager(temp_dir)
+        BattlePlan = BattlePlanManager(temp_dir)
         convoy = ConvoyManager(temp_dir)
-        mailbox = MailboxManager(temp_dir)
+        signal = signalManager(temp_dir)
         handoff = HandoffManager(temp_dir)
         
         return {
             "workstate": workstate,
-            "formula": formula,
+            "BattlePlan": BattlePlan,
             "convoy": convoy,
-            "mailbox": mailbox,
+            "signal": signal,
             "handoff": handoff
         }
     
@@ -84,31 +84,31 @@ class TestE2EFormulaExecution:
         return executor
     
     @pytest.mark.asyncio
-    async def test_formula_executes_full_workflow(self, config, managers, mock_agent_executor):
-        """Test: Formula executor runs complete workflow PM -> Architect -> Engineer"""
-        formula_mgr = managers["formula"]
+    async def test_BattlePlan_executes_full_workflow(self, config, managers, mock_agent_executor):
+        """Test: BattlePlan executor runs complete workflow PM -> Architect -> Engineer"""
+        BattlePlan_mgr = managers["BattlePlan"]
         
-        # Create formula: PM -> Architect -> Engineer
-        formula_mgr.create_formula(
+        # Create BattlePlan: PM -> Architect -> Engineer
+        BattlePlan_mgr.create_BattlePlan(
             name="test-feature-workflow",
             description="Test feature workflow",
             steps=[
-                FormulaStep(name="requirements", agent="pm"),
-                FormulaStep(name="design", agent="architect", depends_on=["requirements"]),
-                FormulaStep(name="implement", agent="engineer", depends_on=["design"])
+                BattlePlanPhase(name="requirements", agent="pm"),
+                BattlePlanPhase(name="design", agent="architect", depends_on=["requirements"]),
+                BattlePlanPhase(name="implement", agent="engineer", depends_on=["design"])
             ]
         )
         
         # Create executor
-        executor = FormulaExecutor(
-            formula_manager=formula_mgr,
+        executor = BattlePlanExecutor(
+            BattlePlan_manager=BattlePlan_mgr,
             work_state_manager=managers["workstate"],
             agent_executor=mock_agent_executor
         )
         
-        # Execute formula
-        execution_id = await executor.execute_formula(
-            formula_name="test-feature-workflow",
+        # Execute BattlePlan
+        execution_id = await executor.execute_BattlePlan(
+            BattlePlan_name="test-feature-workflow",
             issue_number=123,
             variables={"priority": "high"}
         )
@@ -124,18 +124,18 @@ class TestE2EFormulaExecution:
         assert ("engineer", 123) in calls
     
     @pytest.mark.asyncio
-    async def test_formula_handles_step_failure_with_continue(self, config, managers):
-        """Test: Formula continues on error when continue_on_error=True"""
-        formula_mgr = managers["formula"]
+    async def test_BattlePlan_handles_step_failure_with_continue(self, config, managers):
+        """Test: BattlePlan continues on error when continue_on_error=True"""
+        BattlePlan_mgr = managers["BattlePlan"]
         
-        # Create formula with continue_on_error
-        formula_mgr.create_formula(
+        # Create BattlePlan with continue_on_error
+        BattlePlan_mgr.create_BattlePlan(
             name="test-error-handling",
             description="Test error handling",
             steps=[
-                FormulaStep(name="step1", agent="pm"),
-                FormulaStep(name="step2", agent="architect", continue_on_error=True),
-                FormulaStep(name="step3", agent="engineer")
+                BattlePlanPhase(name="step1", agent="pm"),
+                BattlePlanPhase(name="step2", agent="architect", continue_on_error=True),
+                BattlePlanPhase(name="step3", agent="engineer")
             ]
         )
         
@@ -147,15 +147,15 @@ class TestE2EFormulaExecution:
             return {"success": True, "artifacts": [f"{agent}-output.md"]}
         mock_executor.side_effect = failing_execute
         
-        executor = FormulaExecutor(
-            formula_manager=formula_mgr,
+        executor = BattlePlanExecutor(
+            BattlePlan_manager=BattlePlan_mgr,
             work_state_manager=managers["workstate"],
             agent_executor=mock_executor
         )
         
         # Execute - should not raise
-        execution_id = await executor.execute_formula(
-            formula_name="test-error-handling",
+        execution_id = await executor.execute_BattlePlan(
+            BattlePlan_name="test-error-handling",
             issue_number=456
         )
         
@@ -163,18 +163,18 @@ class TestE2EFormulaExecution:
         assert mock_executor.call_count == 3
     
     @pytest.mark.asyncio
-    async def test_formula_stops_on_critical_failure(self, config, managers):
-        """Test: Formula stops on error when continue_on_error=False"""
-        formula_mgr = managers["formula"]
+    async def test_BattlePlan_stops_on_critical_failure(self, config, managers):
+        """Test: BattlePlan stops on error when continue_on_error=False"""
+        BattlePlan_mgr = managers["BattlePlan"]
         
-        # Create formula without continue_on_error
-        formula_mgr.create_formula(
+        # Create BattlePlan without continue_on_error
+        BattlePlan_mgr.create_BattlePlan(
             name="test-stop-on-error",
             description="Test stop on error",
             steps=[
-                FormulaStep(name="step1", agent="pm"),
-                FormulaStep(name="step2", agent="architect", continue_on_error=False),
-                FormulaStep(name="step3", agent="engineer")
+                BattlePlanPhase(name="step1", agent="pm"),
+                BattlePlanPhase(name="step2", agent="architect", continue_on_error=False),
+                BattlePlanPhase(name="step3", agent="engineer")
             ]
         )
         
@@ -186,16 +186,16 @@ class TestE2EFormulaExecution:
             return {"success": True, "artifacts": [f"{agent}-output.md"]}
         mock_executor.side_effect = failing_execute
         
-        executor = FormulaExecutor(
-            formula_manager=formula_mgr,
+        executor = BattlePlanExecutor(
+            BattlePlan_manager=BattlePlan_mgr,
             work_state_manager=managers["workstate"],
             agent_executor=mock_executor
         )
         
         # Execute - should raise
         with pytest.raises(Exception):  # More general exception catching
-            await executor.execute_formula(
-                formula_name="test-stop-on-error",
+            await executor.execute_BattlePlan(
+                BattlePlan_name="test-stop-on-error",
                 issue_number=789
             )
         
@@ -233,17 +233,17 @@ class TestE2ECaptainCoordination:
     def captain(self, config, temp_dir):
         """Create Captain with managers"""
         workstate = WorkStateManager(temp_dir)
-        formula = FormulaManager(temp_dir)
+        BattlePlan = BattlePlanManager(temp_dir)
         convoy = ConvoyManager(temp_dir)
-        mailbox = MailboxManager(temp_dir)
+        signal = signalManager(temp_dir)
         handoff = HandoffManager(temp_dir)
         
         return Captain(
             config=config,
             work_state_manager=workstate,
-            formula_manager=formula,
+            BattlePlan_manager=BattlePlan,
             convoy_manager=convoy,
-            mailbox_manager=mailbox,
+            signal_manager=signal,
             handoff_manager=handoff
         )
     
@@ -505,18 +505,18 @@ class TestE2EMultiAgentCollaboration:
         
         # Create all managers
         workstate = WorkStateManager(temp_dir)
-        formula = FormulaManager(temp_dir)
+        BattlePlan = BattlePlanManager(temp_dir)
         convoy = ConvoyManager(temp_dir)
-        mailbox = MailboxManager(temp_dir)
+        signal = signalManager(temp_dir)
         handoff = HandoffManager(temp_dir)
         
         # Create agent executor
         agent_executor = AgentExecutor(
             config=config,
             workstate_manager=workstate,
-            formula_manager=formula,
+            BattlePlan_manager=BattlePlan,
             convoy_manager=convoy,
-            mailbox_manager=mailbox,
+            signal_manager=signal,
             handoff_manager=handoff
         )
         
@@ -524,18 +524,18 @@ class TestE2EMultiAgentCollaboration:
         captain = Captain(
             config=config,
             work_state_manager=workstate,
-            formula_manager=formula,
+            BattlePlan_manager=BattlePlan,
             convoy_manager=convoy,
-            mailbox_manager=mailbox,
+            signal_manager=signal,
             handoff_manager=handoff
         )
         
         return {
             "config": config,
             "workstate": workstate,
-            "formula": formula,
+            "BattlePlan": BattlePlan,
             "convoy": convoy,
-            "mailbox": mailbox,
+            "signal": signal,
             "handoff": handoff,
             "agent_executor": agent_executor,
             "captain": captain
@@ -545,18 +545,18 @@ class TestE2EMultiAgentCollaboration:
     async def test_complete_feature_workflow_with_all_components(self, full_system):
         """Test: Complete feature workflow using all orchestration components"""
         captain = full_system["captain"]
-        formula_mgr = full_system["formula"]
+        BattlePlan_mgr = full_system["BattlePlan"]
         workstate = full_system["workstate"]
         
-        # Create feature formula
-        formula_mgr.create_formula(
+        # Create feature BattlePlan
+        BattlePlan_mgr.create_BattlePlan(
             name="complete-feature",
             description="Complete feature workflow",
             steps=[
-                FormulaStep(name="prd", agent="pm"),
-                FormulaStep(name="design", agent="architect", depends_on=["prd"]),
-                FormulaStep(name="implement", agent="engineer", depends_on=["design"]),
-                FormulaStep(name="review", agent="reviewer", depends_on=["implement"])
+                BattlePlanPhase(name="prd", agent="pm"),
+                BattlePlanPhase(name="design", agent="architect", depends_on=["prd"]),
+                BattlePlanPhase(name="implement", agent="engineer", depends_on=["design"]),
+                BattlePlanPhase(name="review", agent="reviewer", depends_on=["implement"])
             ]
         )
         
@@ -565,7 +565,7 @@ class TestE2EMultiAgentCollaboration:
             title="Add payment feature",
             description="Implement payment processing",
             agent="captain",
-            metadata={"formula": "complete-feature"}
+            metadata={"BattlePlan": "complete-feature"}
         )
         
         # Mock successful execution
@@ -578,15 +578,15 @@ class TestE2EMultiAgentCollaboration:
                 "artifacts": [f"docs/{agent}/{agent}-{issue}.md"]
             }
         
-        # Execute via formula
-        executor = FormulaExecutor(
-            formula_manager=formula_mgr,
+        # Execute via BattlePlan
+        executor = BattlePlanExecutor(
+            BattlePlan_manager=BattlePlan_mgr,
             work_state_manager=workstate,
             agent_executor=mock_successful_agent_execution
         )
         
-        execution_id = await executor.execute_formula(
-            formula_name="complete-feature",
+        execution_id = await executor.execute_BattlePlan(
+            BattlePlan_name="complete-feature",
             issue_number=999
         )
         
@@ -600,3 +600,6 @@ class TestE2EMultiAgentCollaboration:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--asyncio-mode=auto"])
+
+
+

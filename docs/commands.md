@@ -439,3 +439,4 @@ squad architect 300
 ---
 
 **Need help?** Run `squad <command> --help` or [open an issue](https://github.com/jnPiyush/AI-Squad/issues).
+

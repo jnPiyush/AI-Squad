@@ -276,3 +276,4 @@ Or [open an issue](https://github.com/jnPiyush/AI-Squad/issues).
 ---
 
 **Ready to go?** Try: `squad pm 123` to create your first PRD!
+

@@ -159,8 +159,8 @@ class TestWorkState:
         assert item2.status == WorkStatus.BLOCKED
 
 
-class TestFormula:
-    """Tests for Formula system"""
+class TestBattlePlan:
+    """Tests for BattlePlan system"""
     
     def setup_method(self):
         """Set up test workspace"""
@@ -171,11 +171,11 @@ class TestFormula:
         """Clean up test workspace"""
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
-    def test_formula_step_creation(self):
-        """Test FormulaStep dataclass"""
-        from ai_squad.core.formula import FormulaStep
+    def test_BattlePlan_step_creation(self):
+        """Test BattlePlanStep dataclass"""
+        from ai_squad.core.battle_plan import BattlePlanStep
         
-        step = FormulaStep(
+        step = BattlePlanStep(
             name="test_step",
             agent="engineer",
             action="implement"
@@ -185,39 +185,39 @@ class TestFormula:
         assert step.agent == "engineer"
         assert step.action == "implement"
     
-    def test_formula_creation(self):
-        """Test Formula dataclass"""
-        from ai_squad.core.formula import Formula, FormulaStep
+    def test_BattlePlan_creation(self):
+        """Test BattlePlan dataclass"""
+        from ai_squad.core.battle_plan import BattlePlan, BattlePlanStep
         
-        formula = Formula(
-            name="test_formula",
+        BattlePlan = BattlePlan(
+            name="test_BattlePlan",
             description="Test description",
             steps=[
-                FormulaStep(name="step1", agent="pm", action="prd"),
-                FormulaStep(name="step2", agent="engineer", action="implement"),
+                BattlePlanStep(name="step1", agent="pm", action="prd"),
+                BattlePlanStep(name="step2", agent="engineer", action="implement"),
             ]
         )
         
-        assert formula.name == "test_formula"
-        assert len(formula.steps) == 2
+        assert BattlePlan.name == "test_BattlePlan"
+        assert len(BattlePlan.steps) == 2
     
-    def test_formula_to_yaml(self):
-        """Test Formula YAML serialization"""
-        from ai_squad.core.formula import Formula, FormulaStep
+    def test_BattlePlan_to_yaml(self):
+        """Test BattlePlan YAML serialization"""
+        from ai_squad.core.battle_plan import BattlePlan, BattlePlanStep
         
-        formula = Formula(
+        BattlePlan = BattlePlan(
             name="test",
             description="Test",
-            steps=[FormulaStep(name="s1", agent="pm", action="prd")]
+            steps=[BattlePlanStep(name="s1", agent="pm", action="prd")]
         )
         
-        yaml_str = formula.to_yaml()
+        yaml_str = BattlePlan.to_yaml()
         assert "name: test" in yaml_str
         assert "steps:" in yaml_str
     
-    def test_formula_from_yaml(self):
-        """Test Formula YAML deserialization"""
-        from ai_squad.core.formula import Formula
+    def test_BattlePlan_from_yaml(self):
+        """Test BattlePlan YAML deserialization"""
+        from ai_squad.core.battle_plan import BattlePlan
         
         yaml_content = """
 name: test_yaml
@@ -230,33 +230,33 @@ steps:
 labels:
   - test
 """
-        formula = Formula.from_yaml(yaml_content)
-        assert formula.name == "test_yaml"
-        assert len(formula.steps) == 1
-        assert "test" in formula.labels
+        BattlePlan = BattlePlan.from_yaml(yaml_content)
+        assert BattlePlan.name == "test_yaml"
+        assert len(BattlePlan.steps) == 1
+        assert "test" in BattlePlan.labels
     
-    def test_formula_manager_initialization(self):
-        """Test FormulaManager initialization"""
-        from ai_squad.core.formula import FormulaManager
+    def test_BattlePlan_manager_initialization(self):
+        """Test BattlePlanManager initialization"""
+        from ai_squad.core.battle_plan import BattlePlanManager
         
-        manager = FormulaManager(self.workspace)
+        manager = BattlePlanManager(self.workspace)
         assert manager.workspace_root == self.workspace
     
-    def test_formula_manager_builtin_formulas(self):
-        """Test built-in formulas are loaded"""
-        from ai_squad.core.formula import FormulaManager
+    def test_BattlePlan_manager_builtin_BattlePlans(self):
+        """Test built-in BattlePlans are loaded"""
+        from ai_squad.core.battle_plan import BattlePlanManager
         
-        manager = FormulaManager(self.workspace)
-        formulas = manager.list_formulas()
+        manager = BattlePlanManager(self.workspace)
+        BattlePlans = manager.list_BattlePlans()
         
-        # Should have built-in formulas
-        names = [f.name for f in formulas]
-        # Built-in formulas should exist if templates exist
-        assert isinstance(formulas, list)
+        # Should have built-in BattlePlans
+        names = [f.name for f in BattlePlans]
+        # Built-in BattlePlans should exist if templates exist
+        assert isinstance(BattlePlans, list)
 
 
-class TestMailbox:
-    """Tests for Agent Mailbox system"""
+class TestSignal:
+    """Tests for Agent Signal system"""
     
     def setup_method(self):
         """Set up test workspace"""
@@ -269,7 +269,7 @@ class TestMailbox:
     
     def test_message_creation(self):
         """Test Message dataclass"""
-        from ai_squad.core.mailbox import Message, MessagePriority, MessageStatus
+        from ai_squad.core.signal import Signal as Message, MessagePriority, MessageStatus
         
         msg = Message(
             id="msg-test1",
@@ -287,7 +287,7 @@ class TestMailbox:
     
     def test_message_to_dict(self):
         """Test Message serialization"""
-        from ai_squad.core.mailbox import Message
+        from ai_squad.core.Signal import Message
         
         msg = Message(
             id="msg-test2",
@@ -301,18 +301,18 @@ class TestMailbox:
         assert data["id"] == "msg-test2"
         assert "priority" in data
     
-    def test_mailbox_manager_initialization(self):
-        """Test MailboxManager initialization"""
-        from ai_squad.core.mailbox import MailboxManager
+    def test_signal_manager_initialization(self):
+        """Test SignalManager initialization"""
+        from ai_squad.core.signal import SignalManager
         
-        manager = MailboxManager(self.workspace)
+        manager = SignalManager(self.workspace)
         assert manager.workspace_root == self.workspace
     
-    def test_mailbox_manager_send_message(self):
+    def test_Signal_manager_send_message(self):
         """Test sending messages"""
-        from ai_squad.core.mailbox import MailboxManager, MessageStatus
+        from ai_squad.core.Signal import SignalManager, MessageStatus
         
-        manager = MailboxManager(self.workspace)
+        manager = SignalManager(self.workspace)
         msg = manager.send_message(
             sender="pm",
             recipient="engineer",
@@ -323,11 +323,11 @@ class TestMailbox:
         assert msg.id.startswith("msg-")
         assert msg.status == MessageStatus.DELIVERED
     
-    def test_mailbox_manager_get_inbox(self):
+    def test_Signal_manager_get_inbox(self):
         """Test getting inbox messages"""
-        from ai_squad.core.mailbox import MailboxManager
+        from ai_squad.core.Signal import SignalManager
         
-        manager = MailboxManager(self.workspace)
+        manager = SignalManager(self.workspace)
         manager.send_message(
             sender="pm",
             recipient="engineer",
@@ -344,16 +344,16 @@ class TestMailbox:
         inbox = manager.get_inbox("engineer")
         assert len(inbox) == 2
     
-    def test_mailbox_manager_broadcast(self):
+    def test_Signal_manager_broadcast(self):
         """Test broadcast messages"""
-        from ai_squad.core.mailbox import MailboxManager
+        from ai_squad.core.Signal import SignalManager
         
-        manager = MailboxManager(self.workspace)
+        manager = SignalManager(self.workspace)
         
-        # Create some mailboxes first
-        manager._get_or_create_mailbox("pm")
-        manager._get_or_create_mailbox("engineer")
-        manager._get_or_create_mailbox("reviewer")
+        # Create some Signales first
+        manager._get_or_create_Signal("pm")
+        manager._get_or_create_Signal("engineer")
+        manager._get_or_create_Signal("reviewer")
         
         msg = manager.send_message(
             sender="system",
@@ -560,8 +560,10 @@ class TestCLIOrchestration:
         assert result.exit_code == 0
         assert "captain" in result.output
         assert "work" in result.output
-        assert "formulas" in result.output
+        assert "BattlePlans" in result.output
         assert "convoys" in result.output
-        assert "mailbox" in result.output
+        assert "Signal" in result.output
         assert "handoff" in result.output
         assert "status" in result.output
+
+

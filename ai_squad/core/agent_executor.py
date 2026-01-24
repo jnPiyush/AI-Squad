@@ -27,10 +27,13 @@ from ai_squad.agents.engineer import EngineerAgent
 from ai_squad.agents.ux_designer import UXDesignerAgent
 from ai_squad.agents.reviewer import ReviewerAgent
 from ai_squad.core.captain import Captain  # NEW: Meta-agent coordinator (in core, not agents!)
-from ai_squad.core.formula import FormulaManager, FormulaExecutor  # NEW: Workflow system
+from ai_squad.core.battle_plan import (
+    BattlePlanExecutor,
+    BattlePlanManager,
+)
 from ai_squad.core.convoy import ConvoyManager  # NEW: Parallel execution
 from ai_squad.core.workstate import WorkStateManager  # NEW: Work tracking
-from ai_squad.core.mailbox import MailboxManager
+from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
 
 logger = logging.getLogger(__name__)
@@ -54,9 +57,9 @@ class AgentExecutor:
         config_path: Optional[str] = None,
         config: Optional[Config] = None,
         workstate_manager: Optional[Any] = None,
-        formula_manager: Optional[Any] = None,
+        strategy_manager: Optional[Any] = None,
         convoy_manager: Optional[Any] = None,
-        mailbox_manager: Optional[Any] = None,
+        signal_manager: Optional[Any] = None,
         handoff_manager: Optional[Any] = None
     ):
         """Initialize agent executor with optional injected managers."""
@@ -95,13 +98,13 @@ class AgentExecutor:
         from pathlib import Path
         workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
         self.workstate_mgr = workstate_manager or WorkStateManager(workspace_root=workspace_root)
-        self.mailbox_mgr = mailbox_manager or MailboxManager(workspace_root=workspace_root)
+        self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root)
         self.handoff_mgr = handoff_manager or HandoffManager(
             work_state_manager=self.workstate_mgr,
-            mailbox_manager=self.mailbox_mgr,
+            signal_manager=self.signal_mgr,
             workspace_root=workspace_root
         )
-        self.formula_mgr = formula_manager or FormulaManager(workspace_root=workspace_root)
+        self.strategy_mgr = strategy_manager or BattlePlanManager(workspace_root=workspace_root)
         
         # Async agent executor for convoy with error handling
         async def _async_agent_executor(agent_type: str, work_item_id: str, 
@@ -129,9 +132,9 @@ class AgentExecutor:
         # Create orchestration context to inject into agents (DI pattern)
         self.orchestration = {
             'workstate': self.workstate_mgr,
-            'mailbox': self.mailbox_mgr,
+            'signal': self.signal_mgr,
             'handoff': self.handoff_mgr,
-            'formula': self.formula_mgr,
+            'strategy': self.strategy_mgr,
             'convoy': self.convoy_mgr
         }
         
@@ -206,50 +209,54 @@ class AgentExecutor:
         """Get list of available agents"""
         return list(self.agents.keys())
     
-    def execute_formula(self, formula_name: str, issue_number: int, 
-                        variables: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """
-        Execute a workflow formula
-        
-        Args:
-            formula_name: Name of the formula to execute
-            issue_number: GitHub issue number
-            variables: Optional variables for formula execution
-            
-        Returns:
-            Dict with execution result
-        """
+    def execute_strategy(
+        self,
+        strategy_name: str,
+        issue_number: int,
+        variables: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Execute a combat strategy workflow synchronously."""
+        import asyncio
+
+        async def _agent_callback(
+            issue_number: int,
+            agent_type: str,
+            action: Optional[str] = None,
+            step: Optional[Dict[str, Any]] = None,
+            **_: Any,
+        ) -> Dict[str, Any]:
+            return self.execute(agent_type, issue_number)
+
         try:
-            # Create formula executor with agent executor callback
-            executor = FormulaExecutor(
-                formula_manager=self.formula_mgr,
-                workstate_manager=self.workstate_mgr,
-                agent_executor=lambda agent_type, issue: self.execute(agent_type, issue)
+            executor = BattlePlanExecutor(
+                strategy_manager=self.strategy_mgr,
+                work_state_manager=self.workstate_mgr,
+                agent_executor=_agent_callback,
             )
-            
-            # Execute formula
-            execution_id = executor.execute_formula(
-                formula_name=formula_name,
-                issue_number=issue_number,
-                variables=variables or {}
+
+            execution_id = asyncio.run(
+                executor.execute_strategy(
+                    strategy_name=strategy_name,
+                    issue_number=issue_number,
+                    variables=variables or {},
+                )
             )
-            
-            # Wait for completion
-            execution = self.formula_mgr.get_execution(execution_id)
-            
+
+            execution = executor.get_execution(execution_id)
+
             return {
                 "success": True,
                 "execution_id": execution_id,
-                "status": execution.status,
-                "using_sdk": self.using_sdk
+                "status": execution.status if execution else "unknown",
+                "using_sdk": self.using_sdk,
             }
-            
+
         except (ValueError, KeyError, IOError, OSError) as e:
-            logger.error("Formula execution failed: %s", e)
+            logger.error("Strategy execution failed: %s", e)
             return {
                 "success": False,
                 "error": str(e),
-                "using_sdk": self.using_sdk
+                "using_sdk": self.using_sdk,
             }
     
     def execute_convoy(self, convoy_id: str) -> Dict[str, Any]:
@@ -301,7 +308,7 @@ class AgentExecutor:
             result = captain.coordinate(
                 work_items=work_item_ids,
                 workstate_manager=self.workstate_mgr,
-                formula_manager=self.formula_mgr,
+                plan_manager=None,
                 convoy_manager=self.convoy_mgr
             )
             
@@ -318,4 +325,6 @@ class AgentExecutor:
                 "error": str(e),
                 "using_sdk": self.using_sdk
             }
+
+
 

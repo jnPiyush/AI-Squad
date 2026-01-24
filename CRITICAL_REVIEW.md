@@ -29,10 +29,10 @@
 ```python
 # Captain.__init__ creates its own managers:
 self.work_state_manager = WorkStateManager(self.workspace_root)
-self.formula_manager = FormulaManager(self.workspace_root)
+self.BattlePlan_manager = BattlePlanManager(self.workspace_root)
 
 # But Captain.coordinate() receives managers as parameters:
-def coordinate(self, work_items, workstate_manager, formula_manager, convoy_manager):
+def coordinate(self, work_items, workstate_manager, BattlePlan_manager, convoy_manager):
     # Uses PASSED managers, not self.work_state_manager!
     items = [workstate_manager.get_work_item(wid) for wid in work_items]
 ```
@@ -44,7 +44,7 @@ def coordinate(self, work_items, workstate_manager, formula_manager, convoy_mana
 
 **Fix Required**:
 1. Remove manager parameters from `coordinate()`
-2. Use `self.work_state_manager`, `self.formula_manager` internally
+2. Use `self.work_state_manager`, `self.BattlePlan_manager` internally
 3. Or: Remove manager initialization from `__init__` if Captain is stateless coordinator
 
 ---
@@ -60,7 +60,7 @@ def coordinate(self, work_items, workstate_manager, formula_manager, convoy_mana
 class BaseAgent:
     def __init__(self, config, sdk):
         self.workstate = WorkStateManager(workspace_root=workspace_root)
-        self.mailbox = MailboxManager(workspace_root=workspace_root)
+        self.signal = SignalManager(workspace_root=workspace_root)
         self.handoff = HandoffManager(...)
 ```
 
@@ -77,7 +77,7 @@ class BaseAgent:
     def __init__(self, config, sdk, orchestration=None):
         self.orchestration = orchestration or {}
         self.workstate = orchestration.get('workstate')  # Shared instance
-        self.mailbox = orchestration.get('mailbox')      # Shared instance
+        self.signal = orchestration.get('signal')      # Shared instance
 ```
 
 ---
@@ -103,26 +103,26 @@ self.convoy_mgr = ConvoyManager(
 
 ---
 
-### 4. **Formula Execution - No Agent Callback** ⚠️ HIGH
+### 4. **BattlePlan Execution - No Agent Callback** ⚠️ HIGH
 
-**Issue**: FormulaExecutor needs agent_executor callback  
+**Issue**: BattlePlanExecutor needs agent_executor callback  
 **Location**: `ai_squad/core/agent_executor.py:186-217`
 
 **Problem**:
 ```python
-def execute_formula(self, formula_name, issue_number, variables):
-    executor = FormulaExecutor(
-        formula_manager=self.formula_mgr,
+def execute_BattlePlan(self, BattlePlan_name, issue_number, variables):
+    executor = BattlePlanExecutor(
+        BattlePlan_manager=self.BattlePlan_mgr,
         workstate_manager=self.workstate_mgr,
         agent_executor=lambda agent_type, issue: self.execute(agent_type, issue)
     )
 ```
 
 **Missing**:
-- FormulaExecutor constructor doesn't accept `agent_executor` parameter!
-- Check `ai_squad/core/formula.py` - FormulaExecutor.__init__ signature
+- BattlePlanExecutor constructor doesn't accept `agent_executor` parameter!
+- Check `ai_squad/core/BattlePlan.py` - BattlePlanExecutor.__init__ signature
 
-**Fix**: Verify FormulaExecutor signature and add parameter if missing
+**Fix**: Verify BattlePlanExecutor signature and add parameter if missing
 
 ---
 
@@ -197,7 +197,7 @@ class Captain(BaseAgent):  # ❌ Wrong inheritance
 class Captain:  # Don't inherit from BaseAgent
     def __init__(self, orchestration_managers):
         self.workstate = orchestration_managers.workstate
-        self.formula_mgr = orchestration_managers.formula_mgr
+        self.BattlePlan_mgr = orchestration_managers.BattlePlan_mgr
         # ...
 ```
 
@@ -209,9 +209,9 @@ class Captain:  # Don't inherit from BaseAgent
 
 **What's Missing**:
 - No E2E test for: Issue → WorkItem → Convoy → Agent Execution
-- No test for: Formula execution with multiple agents
+- No test for: BattlePlan execution with multiple agents
 - No test for: Captain coordination with real agents
-- No test for: Mailbox message passing during handoffs
+- No test for: signal message passing during handoffs
 
 **Current**: 33 unit tests for orchestration (isolated components)  
 **Needed**: 10+ integration tests for orchestration workflows
@@ -246,7 +246,7 @@ class Captain:  # Don't inherit from BaseAgent
 **Uncovered Critical Paths**:
 - `ai_squad/core/captain.py` - 17% coverage (212/256 lines uncovered)
 - `ai_squad/core/convoy.py` - 41% coverage (127/216 lines uncovered)
-- `ai_squad/core/formula.py` - 48% coverage (122/236 lines uncovered)
+- `ai_squad/core/BattlePlan.py` - 48% coverage (122/236 lines uncovered)
 - `ai_squad/core/handoff.py` - 46% coverage (127/236 lines uncovered)
 - `ai_squad/cli.py` - 20% coverage (343/429 lines uncovered)
 
@@ -271,13 +271,13 @@ class Captain:  # Don't inherit from BaseAgent
 
 ---
 
-### 14. No Message Cleanup in Mailbox
+### 14. No Message Cleanup in signal
 
-**Issue**: Messages accumulate forever in `.squad/mailbox/`  
+**Issue**: Messages accumulate forever in `.squad/signal/`  
 **Missing**: 
 - Message archival after N days
 - Message expiry enforcement
-- Mailbox size limits
+- signal size limits
 
 ---
 
@@ -285,8 +285,8 @@ class Captain:  # Don't inherit from BaseAgent
 
 **Missing**:
 - Convoy execution time benchmarks
-- Formula overhead measurement
-- Mailbox throughput limits
+- BattlePlan overhead measurement
+- signal throughput limits
 - WorkState I/O performance with large state files
 
 ---
@@ -302,7 +302,7 @@ class Captain:  # Don't inherit from BaseAgent
 5. ✅ **Logging** - Comprehensive logging added to all new modules
 6. ✅ **Enum Usage** - Status/Priority/Reason enums for type safety
 7. ✅ **File Persistence** - `.squad/` directory with JSON storage works
-8. ✅ **Formula Templates** - 5 builtin formulas (feature, bugfix, etc.)
+8. ✅ **BattlePlan Templates** - 5 builtin BattlePlans (feature, bugfix, etc.)
 
 ---
 
@@ -335,7 +335,7 @@ class Captain:  # Don't inherit from BaseAgent
    - Inject shared managers instead of creating new ones
    - Update AgentExecutor to provide shared managers
 
-4. **Verify FormulaExecutor signature** (#4)
+4. **Verify BattlePlanExecutor signature** (#4)
    - Check if agent_executor parameter exists
    - Add if missing
 
@@ -362,7 +362,7 @@ class Captain:  # Don't inherit from BaseAgent
 10. **Increase test coverage to 80%** (#11)
 11. **Address TODO comments** (#12)
 12. **Implement rollback mechanism** (#13)
-13. **Add mailbox cleanup** (#14)
+13. **Add signal cleanup** (#14)
 14. **Create performance benchmarks** (#15)
 
 ---
@@ -401,9 +401,9 @@ class Captain:  # Don't inherit from BaseAgent
    class OrchestrationContext:
        def __init__(self, workspace_root):
            self.workstate = WorkStateManager(workspace_root)
-           self.mailbox = MailboxManager(workspace_root)
+           self.signal = SignalManager(workspace_root)
            self.handoff = HandoffManager(...)
-           self.formula = FormulaManager(workspace_root)
+           self.BattlePlan = BattlePlanManager(workspace_root)
            self.convoy = ConvoyManager(...)
    ```
 
@@ -442,3 +442,4 @@ class Captain:  # Don't inherit from BaseAgent
 
 **Reviewed by**: GitHub Copilot (Reviewer Agent)  
 **Severity**: ⚠️ **BLOCK MERGE** - Critical issues must be resolved first
+

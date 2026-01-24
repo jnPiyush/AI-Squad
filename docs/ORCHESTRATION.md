@@ -1,6 +1,6 @@
 # AI-Squad Orchestration Guide
 
-Complete guide to orchestrating multi-agent workflows in AI-Squad using formulas, Captain coordination, convoys, and handoffs.
+Complete guide to orchestrating multi-agent workflows in AI-Squad using BattlePlans, Captain coordination, convoys, and handoffs.
 
 ---
 
@@ -8,11 +8,11 @@ Complete guide to orchestrating multi-agent workflows in AI-Squad using formulas
 
 - [Overview](#overview)
 - [Core Concepts](#core-concepts)
-- [Formula Workflows](#formula-workflows)
+- [BattlePlan Workflows](#BattlePlan-workflows)
 - [Captain Coordination](#captain-coordination)
 - [Convoy Parallel Execution](#convoy-parallel-execution)
 - [Work Handoffs](#work-handoffs)
-- [Mailbox Messaging](#mailbox-messaging)
+- [Signal Messaging](#Signal-messaging)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -22,11 +22,11 @@ Complete guide to orchestrating multi-agent workflows in AI-Squad using formulas
 
 AI-Squad provides powerful orchestration capabilities to coordinate multiple agents working together on complex tasks:
 
-- **Formulas**: YAML-based workflow definitions for sequential and conditional execution
+- **BattlePlans**: YAML-based workflow definitions for sequential and conditional execution
 - **Captain**: Meta-agent that analyzes tasks and coordinates agent teams
 - **Convoys**: Parallel execution of multiple tasks by the same or different agents
 - **Handoffs**: Structured work transfer protocol between agents
-- **Mailbox**: Asynchronous message passing for agent communication
+- **Signal**: Asynchronous message passing for agent communication
 - **WorkState**: Persistent tracking of work items, dependencies, and status
 
 ---
@@ -62,29 +62,29 @@ pending = work_mgr.list_work_items(status=WorkStatus.PENDING, agent="engineer")
 
 All orchestration operations track execution state persistently in `.squad/`:
 
-- **Executions**: Formula and convoy execution history
+- **Executions**: BattlePlan and convoy execution history
 - **Work Items**: Current and historical work state
-- **Messages**: Mailbox message queue
+- **Messages**: Signal message queue
 - **Handoffs**: Work transfer records
 
 ---
 
-## Formula Workflows
+## BattlePlan Workflows
 
-### What are Formulas?
+### What are BattlePlans?
 
-Formulas are YAML-based workflow definitions that specify:
+BattlePlans are YAML-based workflow definitions that specify:
 - Sequential execution order
 - Agent responsibilities
 - Dependencies between steps
 - Conditional execution
 - Error handling behavior
 
-### Built-in Formulas
+### Built-in BattlePlans
 
-AI-Squad includes 5 built-in formulas:
+AI-Squad includes 5 built-in BattlePlans:
 
-#### 1. Feature Formula
+#### 1. Feature BattlePlan
 
 Complete feature development workflow:
 
@@ -114,10 +114,10 @@ steps:
 
 **Usage:**
 ```bash
-squad formula run feature 123
+squad BattlePlan run feature 123
 ```
 
-#### 2. Bug Fix Formula
+#### 2. Bug Fix BattlePlan
 
 Streamlined bug fixing workflow:
 
@@ -142,10 +142,10 @@ steps:
 
 **Usage:**
 ```bash
-squad formula run bugfix 456
+squad BattlePlan run bugfix 456
 ```
 
-#### 3. Tech Debt Formula
+#### 3. Tech Debt BattlePlan
 
 Technical debt reduction:
 
@@ -170,10 +170,10 @@ steps:
 
 **Usage:**
 ```bash
-squad formula run tech-debt 789
+squad BattlePlan run tech-debt 789
 ```
 
-#### 4. Design Review Formula
+#### 4. Design Review BattlePlan
 
 UX-focused workflow:
 
@@ -203,10 +203,10 @@ steps:
 
 **Usage:**
 ```bash
-squad formula run design-review 101
+squad BattlePlan run design-review 101
 ```
 
-#### 5. Quick Fix Formula
+#### 5. Quick Fix BattlePlan
 
 Fast turnaround for simple changes:
 
@@ -222,22 +222,22 @@ steps:
 
 **Usage:**
 ```bash
-squad formula run quick-fix 202
+squad BattlePlan run quick-fix 202
 ```
 
-### Creating Custom Formulas
+### Creating Custom BattlePlans
 
-Create custom formulas using CLI:
+Create custom BattlePlans using CLI:
 
 ```bash
-# Interactive formula creation
-squad formula create
+# Interactive BattlePlan creation
+squad BattlePlan create
 
 # From YAML file
-squad formula create --file my-workflow.yaml
+squad BattlePlan create --file my-workflow.yaml
 ```
 
-**Custom Formula Example:**
+**Custom BattlePlan Example:**
 
 ```yaml
 name: api-feature
@@ -285,33 +285,33 @@ steps:
     condition: always
 ```
 
-### Executing Formulas
+### Executing BattlePlans
 
-Execute formulas programmatically:
+Execute BattlePlans programmatically:
 
 ```python
-from ai_squad.core.formula import FormulaManager, FormulaExecutor
+from ai_squad.core.BattlePlan import BattlePlanManager, BattlePlanExecutor
 from ai_squad.core.agent_executor import AgentExecutor
 
-# Load formula
-formula_mgr = FormulaManager(config)
-formula = formula_mgr.get_formula("api-feature")
+# Load BattlePlan
+BattlePlan_mgr = BattlePlanManager(config)
+BattlePlan = BattlePlan_mgr.get_BattlePlan("api-feature")
 
 # Create executor
-agent_exec = AgentExecutor(config, workstate, formula_mgr, convoy, mailbox, handoff)
-formula_exec = FormulaExecutor(formula_mgr, agent_executor=agent_exec.execute)
+agent_exec = AgentExecutor(config, workstate, BattlePlan_mgr, convoy, Signal, handoff)
+BattlePlan_exec = BattlePlanExecutor(BattlePlan_mgr, agent_executor=agent_exec.execute)
 
 # Execute workflow
-execution_id = await formula_exec.execute_formula(
-    formula_name="api-feature",
+execution_id = await BattlePlan_exec.execute_BattlePlan(
+    BattlePlan_name="api-feature",
     issue_number=123,
     variables={"api_version": "v2", "security_level": "high"}
 )
 
 # Track progress
-execution = formula_mgr.get_execution(execution_id)
+execution = BattlePlan_mgr.get_execution(execution_id)
 print(f"Status: {execution.status}")
-print(f"Completed: {len(execution.completed_steps)}/{len(formula.steps)}")
+print(f"Completed: {len(execution.completed_steps)}/{len(BattlePlan.steps)}")
 ```
 
 ### Step Conditions
@@ -344,11 +344,11 @@ Configure error behavior per step:
 steps:
   - name: risky_operation
     agent: engineer
-    continue_on_error: true  # Don't stop formula on failure
+    continue_on_error: true  # Don't stop BattlePlan on failure
     
   - name: critical_operation
     agent: engineer
-    continue_on_error: false  # Stop formula if this fails
+    continue_on_error: false  # Stop BattlePlan if this fails
 ```
 
 ---
@@ -380,7 +380,7 @@ squad captain coordinate item-1 item-2 item-3
 ```python
 from ai_squad.core.captain import Captain
 
-captain = Captain(config, workstate, formula_mgr, convoy, mailbox, handoff)
+captain = Captain(config, workstate, BattlePlan_mgr, convoy, Signal, handoff)
 
 # Analyze task
 breakdown = await captain.analyze_task(
@@ -390,7 +390,7 @@ breakdown = await captain.analyze_task(
 )
 
 print(f"Complexity: {breakdown.complexity}")
-print(f"Suggested formula: {breakdown.suggested_formula}")
+print(f"Suggested BattlePlan: {breakdown.suggested_BattlePlan}")
 print(f"Work items: {len(breakdown.work_items)}")
 
 # Create coordination plan
@@ -558,11 +558,11 @@ assert item.assigned_to == "architect"
 
 ---
 
-## Mailbox Messaging
+## Signal Messaging
 
-### What is Mailbox?
+### What is Signal?
 
-Mailbox provides asynchronous message passing between agents:
+Signal provides asynchronous message passing between agents:
 - Non-blocking communication
 - Message persistence
 - Broadcast capabilities
@@ -571,12 +571,12 @@ Mailbox provides asynchronous message passing between agents:
 ### Sending Messages
 
 ```python
-from ai_squad.core.mailbox import MailboxManager, Message, MessageType
+from ai_squad.core.Signal import SignalManager, Message, MessageType
 
-mailbox_mgr = MailboxManager(config)
+Signal_mgr = SignalManager(config)
 
 # Send direct message
-message = mailbox_mgr.send_message(
+message = Signal_mgr.send_message(
     from_agent="pm",
     to_agent="engineer",
     message_type=MessageType.CLARIFICATION,
@@ -586,7 +586,7 @@ message = mailbox_mgr.send_message(
 )
 
 # Broadcast to all agents
-mailbox_mgr.broadcast(
+Signal_mgr.broadcast(
     from_agent="architect",
     message_type=MessageType.NOTIFICATION,
     subject="New architecture guidelines published",
@@ -598,7 +598,7 @@ mailbox_mgr.broadcast(
 
 ```python
 # Check inbox
-messages = mailbox_mgr.get_messages("engineer", unread_only=True)
+messages = Signal_mgr.get_messages("engineer", unread_only=True)
 
 for msg in messages:
     print(f"From: {msg.from_agent}")
@@ -606,10 +606,10 @@ for msg in messages:
     print(f"Body: {msg.body}")
     
     # Mark as read
-    mailbox_mgr.mark_as_read(msg.id)
+    Signal_mgr.mark_as_read(msg.id)
     
     # Reply
-    mailbox_mgr.send_message(
+    Signal_mgr.send_message(
         from_agent="engineer",
         to_agent=msg.from_agent,
         message_type=MessageType.RESPONSE,
@@ -631,7 +631,7 @@ for msg in messages:
 
 ## Best Practices
 
-### Formula Design
+### BattlePlan Design
 
 1. **Keep steps focused**: Each step should have single responsibility
 2. **Use dependencies**: Declare dependencies explicitly for clarity
@@ -660,28 +660,28 @@ for msg in messages:
 3. **Check before accepting**: Review work before accepting handoff
 4. **Reject with feedback**: If rejecting, provide actionable feedback
 
-### Mailbox Communication
+### Signal Communication
 
 1. **Use appropriate types**: Choose correct `MessageType` for clarity
 2. **Be concise**: Keep messages focused and actionable
-3. **Check regularly**: Poll mailbox in agent loops
+3. **Check regularly**: Poll Signal in agent loops
 4. **Mark as read**: Keep inbox clean by marking processed messages
 
 ---
 
 ## Troubleshooting
 
-### Formula Execution Issues
+### BattlePlan Execution Issues
 
-**Problem**: Formula execution hangs or times out
+**Problem**: BattlePlan execution hangs or times out
 
 **Solutions**:
 - Check agent_executor is configured correctly
-- Verify all agents in formula are enabled
+- Verify all agents in BattlePlan are enabled
 - Add timeout_minutes to steps
-- Check logs: `.squad/logs/formula-execution.log`
+- Check logs: `.squad/logs/BattlePlan-execution.log`
 
-**Problem**: Step fails but formula doesn't stop
+**Problem**: Step fails but BattlePlan doesn't stop
 
 **Solutions**:
 - Set `continue_on_error: false` for critical steps
@@ -695,7 +695,7 @@ for msg in messages:
 **Solutions**:
 - Provide better context (labels, descriptions)
 - Use explicit agent assignments in work items
-- Consider creating custom formula instead
+- Consider creating custom BattlePlan instead
 
 **Problem**: execute_plan() doesn't run agents
 
@@ -762,15 +762,15 @@ squad config show
 
 ## Advanced Topics
 
-### Custom Formula Templates
+### Custom BattlePlan Templates
 
-Create reusable formula templates:
+Create reusable BattlePlan templates:
 
 ```python
-from ai_squad.core.formula import FormulaManager, FormulaStep
+from ai_squad.core.BattlePlan import BattlePlanManager, BattlePlanStep
 
-def create_microservice_formula(service_name: str):
-    """Generate formula for new microservice development"""
+def create_microservice_BattlePlan(service_name: str):
+    """Generate BattlePlan for new microservice development"""
     return {
         "name": f"microservice-{service_name}",
         "description": f"Development workflow for {service_name} microservice",
@@ -779,11 +779,11 @@ def create_microservice_formula(service_name: str):
             "tech_stack": "python-fastapi"
         },
         "steps": [
-            FormulaStep(name="requirements", agent="pm"),
-            FormulaStep(name="api_design", agent="architect", depends_on=["requirements"]),
-            FormulaStep(name="implement", agent="engineer", depends_on=["api_design"]),
-            FormulaStep(name="containerize", agent="engineer", depends_on=["implement"]),
-            FormulaStep(name="review", agent="reviewer", depends_on=["containerize"])
+            BattlePlanStep(name="requirements", agent="pm"),
+            BattlePlanStep(name="api_design", agent="architect", depends_on=["requirements"]),
+            BattlePlanStep(name="implement", agent="engineer", depends_on=["api_design"]),
+            BattlePlanStep(name="containerize", agent="engineer", depends_on=["implement"]),
+            BattlePlanStep(name="review", agent="reviewer", depends_on=["containerize"])
         ]
     }
 ```
@@ -793,22 +793,22 @@ def create_microservice_formula(service_name: str):
 Modify workflows at runtime:
 
 ```python
-# Start formula execution
-execution_id = await formula_exec.execute_formula("feature", 123)
+# Start BattlePlan execution
+execution_id = await BattlePlan_exec.execute_BattlePlan("feature", 123)
 
 # Monitor progress
 while execution.status == "running":
-    execution = formula_mgr.get_execution(execution_id)
+    execution = BattlePlan_mgr.get_execution(execution_id)
     
     # Check for issues
     if len(execution.failed_steps) > 0:
         # Decide: retry, skip, or abort
         if should_retry:
-            formula_exec.retry_step(execution_id, failed_step_name)
+            BattlePlan_exec.retry_step(execution_id, failed_step_name)
         elif should_continue:
-            formula_exec.skip_step(execution_id, failed_step_name)
+            BattlePlan_exec.skip_step(execution_id, failed_step_name)
         else:
-            formula_exec.abort_execution(execution_id)
+            BattlePlan_exec.abort_execution(execution_id)
             break
     
     await asyncio.sleep(5)
@@ -824,8 +824,8 @@ from ai_squad.core.metrics import OrchestrationMetrics
 metrics = OrchestrationMetrics(config)
 
 # Track execution
-with metrics.track_formula_execution("feature"):
-    await formula_exec.execute_formula("feature", 123)
+with metrics.track_BattlePlan_execution("feature"):
+    await BattlePlan_exec.execute_BattlePlan("feature", 123)
 
 # View metrics
 print(f"Total executions: {metrics.total_executions}")
@@ -849,3 +849,4 @@ print(f"Avg duration: {metrics.avg_duration_seconds}s")
 - 📖 [Documentation](README.md)
 - 🐛 [Report Issues](https://github.com/your-org/ai-squad/issues)
 - 💬 [Discussions](https://github.com/your-org/ai-squad/discussions)
+
