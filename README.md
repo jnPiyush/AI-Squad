@@ -50,7 +50,7 @@ graph TB
     
     subgraph "🎯 MISSION CONTROL"
         BP["📜 Battle Plans<br/><i>Workflows</i>"]
-        WI["🎒 Work Items<br/><i>Tasks</i>"]
+        WI["💼 Work Items<br/><i>Tasks</i>"]
         Convoy["� Convoys<br/><i>Parallel Batches</i>"]
     end
     
@@ -73,7 +73,7 @@ graph TB
 |------|---------------|--------|
 | **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
 | **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
-| **🎒 Work Item** | Single unit of work tracked in system | Issue #123 becomes work item `sq-abc12` |
+| **💼 Work Item** | Single unit of work tracked in system | Issue #123 becomes work item `sq-abc12` |
 | **🚐 Convoy** | Parallel batch of related work items | 5 stories from an epic processed together |
 | **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
 | **📡 Signal** | Message sent between agents | "PRD ready for review" notification |
@@ -750,6 +750,8 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
+
 
 
 
