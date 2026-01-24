@@ -329,7 +329,9 @@ class WorkflowValidator:
             issue = self.github.get_issue(issue_number)
             if issue is None:
                 return False
-            return issue.get("state") == "open"
+            # Handle both 'open' and 'OPEN' (GitHub API inconsistency)
+            state = issue.get("state", "").lower()
+            return state == "open"
         except (ConnectionError, TimeoutError, KeyError):
             return False
 
