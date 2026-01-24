@@ -43,18 +43,18 @@ AI-Squad uses military-inspired terminology to describe its orchestration system
 
 ```mermaid
 graph TB
-    subgraph "🏛️ COMMAND HQ"
+    subgraph "⚔️ COMMAND HQ"
         Captain["🎖️ Captain<br/><i>Coordinator</i>"]
-        Router["📡 OrgRouter<br/><i>Policy & Health</i>"]
+        Router["🛡️ OrgRouter<br/><i>Policy & Health</i>"]
     end
     
-    subgraph "📋 MISSION SQUAD"
+    subgraph "🎯 MISSION CONTROL"
         BP["📜 Battle Plans<br/><i>Workflows</i>"]
         WI["📦 Work Items<br/><i>Tasks</i>"]
         Convoy["🚛 Convoys<br/><i>Parallel Batches</i>"]
     end
     
-    subgraph "🎖️ FIELD AGENTS"
+    subgraph "🤖 FIELD AGENTS"
         PM["🎨 PM"]
         Arch["🏗️ Architect"]
         Eng["💻 Engineer"]
@@ -70,7 +70,7 @@ graph TB
 ```
 
 | Term | What It Means | Example |
-|------|---------------|---------|
+|------|---------------|--------|
 | **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
 | **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
 | **📦 Work Item** | Single unit of work tracked in system | Issue #123 becomes work item `sq-abc12` |
@@ -80,7 +80,8 @@ graph TB
 | **🔗 Delegation** | Explicit assignment with audit trail | PM delegates API design to Architect |
 | **🕸️ Graph** | Tracks relationships between entities | Shows which agent owns which work item |
 | **🪪 Identity** | Provenance metadata embedded in outputs | Tracks who created what, when, and why |
-| **📡 Scout** | Background worker for discovery tasks | Scans workspace for patterns |
+| **🔍 Scout** | Background worker for discovery tasks | Scans workspace for patterns |
+| **🛡️ Router** | Policy enforcement and health monitoring | Routes requests to healthy agents |
 
 ---
 
@@ -93,7 +94,7 @@ sequenceDiagram
     participant Dev as 👩‍💻 Developer
     participant CLI as 🖥️ CLI
     participant Captain as 🎖️ Captain
-    participant Router as 📡 Router
+    participant Router as �️ Router
     participant Agent as 🤖 Agent
     participant Output as 📄 Output
     
@@ -139,7 +140,7 @@ The **OrgRouter** ensures reliable execution with policy enforcement and health 
 
 ```mermaid
 flowchart TD
-    Req[🔄 Request] --> Policy{📋 Policy Check}
+    Req[🔄 Request] --> Policy{�️ Policy Check}
     Policy -->|Denied| Block[🚫 Blocked]
     Policy -->|Allowed| Health{❤️ Health Check}
     
