@@ -76,6 +76,35 @@ class TestTemplateEngine:
         assert "Test Title" in result
         assert "[TODO]" in result or "{{description}}" in result
 
+    def test_project_tier_wins_by_default(self, temp_project_dir):
+        """Project-level templates should override bundled ones when present."""
+
+        project_templates = temp_project_dir / ".squad" / "templates"
+        project_templates.mkdir(parents=True)
+        (project_templates / "prd.md").write_text("project-prd", encoding="utf-8")
+
+        engine = TemplateEngine(workspace_root=temp_project_dir)
+        content, trace = engine.get_template("prd", include_trace=True)
+
+        assert content == "project-prd"
+        assert trace.resolved["tier"] == "project"
+        assert any(a["exists"] for a in trace.attempts)
+
+    def test_force_tier_override_uses_system(self, temp_project_dir, monkeypatch):
+        """Force-tier override should bypass project/org templates."""
+
+        project_templates = temp_project_dir / ".squad" / "templates"
+        project_templates.mkdir(parents=True)
+        (project_templates / "prd.md").write_text("project-prd", encoding="utf-8")
+
+        monkeypatch.setenv("AI_SQUAD_TEMPLATE_FORCE_TIER", "system")
+        engine = TemplateEngine(workspace_root=temp_project_dir)
+        content, trace = engine.get_template("prd", include_trace=True)
+
+        assert "Product Requirements" in content or "PRD" in content
+        assert trace.order == ["system"]
+        assert trace.resolved and trace.resolved["tier"] == "system"
+
 
 class TestCodebaseSearch:
     """Test codebase search"""

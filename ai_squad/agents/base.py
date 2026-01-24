@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional, List
 import warnings
 import logging
 import importlib.util
+import subprocess
 
 logger = logging.getLogger(__name__)
 
@@ -231,6 +232,35 @@ class BaseAgent(ABC):
                     "success": False,
                     "error": f"Issue #{issue_number} not found"
                 }
+
+            identity_payload = None
+            identity_path = None
+            try:
+                from ai_squad.core.identity import IdentityManager
+
+                git_meta = self._get_git_metadata()
+                author = None
+                author_data = issue.get("author") or issue.get("user")
+                if isinstance(author_data, dict):
+                    author = author_data.get("login") or author_data.get("name")
+                elif isinstance(author_data, str):
+                    author = author_data
+
+                identity_mgr = IdentityManager()
+                dossier = identity_mgr.build(
+                    workspace_name=str(self.config.get("project.name", "AI-Squad Project")),
+                    agents=[self.agent_type],
+                    author=author,
+                    commit_sha=git_meta.get("commit_sha"),
+                    extra={
+                        "issue_number": str(issue_number),
+                        "issue_title": str(issue.get("title", "")),
+                    },
+                )
+                identity_path = identity_mgr.save(dossier)
+                identity_payload = dossier.to_dict()
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Identity dossier build failed: %s", e)
             
             # Update status to agent's start status
             start_status = self.status_manager.get_agent_start_status(self.agent_type)
@@ -246,12 +276,52 @@ class BaseAgent(ABC):
             
             # Get codebase context
             context = self.codebase.get_context(issue)
+            if identity_payload:
+                context["identity_dossier"] = identity_payload
+            if identity_path:
+                context["identity_path"] = str(identity_path)
+
+            # Update operational graph for issue/agent linkage
+            try:
+                from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
+
+                graph = OperationalGraph()
+                issue_node_id = f"issue-{issue_number}"
+                graph.add_node(
+                    issue_node_id,
+                    NodeType.WORK_ITEM,
+                    {"title": issue.get("title", ""), "issue_number": issue_number},
+                )
+                graph.add_node(self.agent_type, NodeType.AGENT, {"agent": self.agent_type})
+                graph.add_edge(issue_node_id, self.agent_type, EdgeType.OWNS, {"source": "agent_execute"})
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Operational graph update failed: %s", e)
             
             # Execute agent logic
             result = self._execute_agent(issue, context)
             
             # Add SDK usage info
             result["using_sdk"] = self._using_sdk
+            if identity_payload:
+                result["identity_dossier"] = identity_payload
+            if identity_path:
+                result["identity_path"] = str(identity_path)
+
+            # Attach artifacts to work items when possible
+            try:
+                if self.workstate and issue_number:
+                    work_item = self.workstate.get_work_item_by_issue(issue_number)
+                    if work_item:
+                        artifact_paths = []
+                        if "file_path" in result:
+                            artifact_paths.append(result["file_path"])
+                        if "artifacts" in result and isinstance(result["artifacts"], list):
+                            artifact_paths.extend(result["artifacts"])
+                        for artifact in artifact_paths:
+                            if artifact:
+                                self.workstate.add_artifact(work_item.id, str(artifact))
+            except (AttributeError, ValueError, OSError) as e:
+                logger.warning("Failed to attach artifacts: %s", e)
             
             # Update status to agent's complete status if successful
             if result.get("success"):
@@ -308,6 +378,33 @@ class BaseAgent(ABC):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(content, encoding="utf-8")
         return output_path
+
+    def _get_git_metadata(self) -> Dict[str, Optional[str]]:
+        """Best-effort git metadata for provenance."""
+        metadata = {"commit_sha": None, "author": None}
+        try:
+            commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if commit.returncode == 0:
+                metadata["commit_sha"] = commit.stdout.strip()
+
+            author = subprocess.run(
+                ["git", "config", "user.name"],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if author.returncode == 0:
+                metadata["author"] = author.stdout.strip()
+        except (OSError, ValueError) as e:
+            logger.debug("Git metadata unavailable: %s", e)
+        return metadata
     
     def _get_skills(self) -> str:
         """Get relevant skills for this agent"""

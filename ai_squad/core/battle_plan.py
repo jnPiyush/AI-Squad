@@ -29,7 +29,7 @@ class StepCondition(str, Enum):
 
 @dataclass
 class BattlePlanPhase:
-    """Single step in a combat strategy workflow."""
+    """Single step in a battle plan workflow."""
 
     name: str
     agent: str
@@ -68,7 +68,7 @@ class BattlePlanPhase:
 
 @dataclass
 class BattlePlan:
-    """A reusable combat strategy that orchestrates multiple agents."""
+    """A reusable battle plan that orchestrates multiple agents."""
 
     name: str
     description: str
@@ -149,7 +149,7 @@ class BattlePlan:
 
 
 class BattlePlanManager:
-    """Manages combat strategy definitions and execution."""
+    """Manages battle plan definitions and execution."""
 
     STRATEGIES_DIR = "strategies"
     BUILTIN_STRATEGIES_DIR = Path(__file__).parent.parent / "templates" / "strategies"
@@ -170,20 +170,20 @@ class BattlePlanManager:
                 try:
                     strategy = BattlePlan.from_file(path)
                     self._strategies[strategy.name] = strategy
-                    logger.debug("Loaded built-in combat strategy: %s", strategy.name)
+                    logger.debug("Loaded built-in battle plan: %s", strategy.name)
                 except Exception as exc:
-                    logger.warning("Failed to load built-in combat strategy %s: %s", path, exc)
+                    logger.warning("Failed to load built-in battle plan %s: %s", path, exc)
 
         if self.strategies_dir.exists():
             for path in self.strategies_dir.glob("*.yaml"):
                 try:
                     strategy = BattlePlan.from_file(path)
                     self._strategies[strategy.name] = strategy
-                    logger.debug("Loaded workspace combat strategy: %s", strategy.name)
+                    logger.debug("Loaded workspace battle plan: %s", strategy.name)
                 except Exception as exc:
-                    logger.warning("Failed to load combat strategy %s: %s", path, exc)
+                    logger.warning("Failed to load battle plan %s: %s", path, exc)
 
-        logger.info("Loaded %d combat strategies", len(self._strategies))
+        logger.info("Loaded %d battle plans", len(self._strategies))
 
     def get_strategy(self, name: str) -> Optional[BattlePlan]:
         return self._strategies.get(name)
@@ -198,7 +198,7 @@ class BattlePlanManager:
         self,
         name: str,
         description: str,
-        steps: List[BattlePlanPhase],
+        phases: List[BattlePlanPhase],
         variables: Optional[Dict[str, Any]] = None,
         labels: Optional[List[str]] = None,
     ) -> BattlePlan:
@@ -207,7 +207,7 @@ class BattlePlanManager:
         strategy = BattlePlan(
             name=name,
             description=description,
-            steps=steps,
+            phases=phases,
             variables=variables or {},
             labels=labels or [],
         )
@@ -215,7 +215,7 @@ class BattlePlanManager:
         path = self.strategies_dir / f"{name}.yaml"
         strategy.save(path)
         self._strategies[name] = strategy
-        logger.info("Created combat strategy: %s", name)
+        logger.info("Created battle plan: %s", name)
         return strategy
 
     def delete_strategy(self, name: str) -> bool:
@@ -232,7 +232,7 @@ class BattlePlanManager:
 
 @dataclass
 class BattlePlanExecution:
-    """Tracks execution of a combat strategy instance."""
+    """Tracks execution of a battle plan instance."""
 
     id: str
     strategy_name: str
@@ -249,7 +249,7 @@ class BattlePlanExecution:
 
 
 class BattlePlanExecutor:
-    """Executes combat strategies by coordinating agents."""
+    """Executes battle plans by coordinating agents."""
 
     def __init__(
         self,
@@ -270,7 +270,7 @@ class BattlePlanExecutor:
     ) -> Optional[BattlePlanExecution]:
         strategy = self.strategy_manager.get_strategy(strategy_name)
         if not strategy:
-            logger.error("Combat strategy not found: %s", strategy_name)
+            logger.error("Battle plan not found: %s", strategy_name)
             return None
 
         merged_vars = {**strategy.variables, **(variables or {})}
@@ -309,7 +309,7 @@ class BattlePlanExecutor:
         execution.status = "running"
         self._executions[execution.id] = execution
 
-        logger.info("Started combat strategy execution: %s (%s)", execution.id, strategy_name)
+        logger.info("Started battle plan execution: %s (%s)", execution.id, strategy_name)
         return execution
 
     def get_execution(self, execution_id: str) -> Optional[BattlePlanExecution]:
@@ -360,7 +360,7 @@ class BattlePlanExecutor:
         if len(execution.completed_steps) == len(strategy.phases):
             execution.status = "completed"
             execution.completed_at = datetime.now().isoformat()
-            logger.info("Combat strategy execution completed: %s", execution_id)
+            logger.info("Battle plan execution completed: %s", execution_id)
 
         return True
 
@@ -386,7 +386,7 @@ class BattlePlanExecutor:
         execution.error = error
         execution.status = "failed"
 
-        logger.error("Combat strategy step failed: %s/%s - %s", execution_id, step_name, error)
+        logger.error("Battle plan step failed: %s/%s - %s", execution_id, step_name, error)
         return True
 
     async def execute_strategy(
@@ -397,13 +397,13 @@ class BattlePlanExecutor:
 
         execution = self.start_execution(strategy_name, issue_number, variables)
         if not execution:
-            raise ValueError(f"Combat strategy not found: {strategy_name}")
+            raise ValueError(f"Battle plan not found: {strategy_name}")
 
-        logger.info("Executing combat strategy %s for issue #%s", strategy_name, issue_number)
+        logger.info("Executing battle plan %s for issue #%s", strategy_name, issue_number)
 
         strategy = self.strategy_manager.get_strategy(strategy_name)
         if not strategy:
-            raise ValueError(f"Combat strategy not found: {strategy_name}")
+            raise ValueError(f"Battle plan not found: {strategy_name}")
 
         while True:
             ready_steps = self.get_next_steps(execution.id)

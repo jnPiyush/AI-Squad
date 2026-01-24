@@ -90,6 +90,7 @@ class Handoff:
     context: Optional[HandoffContext] = None
     
     # Metadata
+    metadata: Dict[str, Any] = field(default_factory=dict)
     priority: MessagePriority = MessagePriority.NORMAL
     requires_ack: bool = True
     
@@ -116,6 +117,7 @@ class Handoff:
             "reason": reason_value,
             "status": self.status,
             "context": self.context.to_dict() if self.context else None,
+            "metadata": self.metadata,
             "priority": self.priority.value,
             "requires_ack": self.requires_ack,
             "initiated_at": self.initiated_at,
@@ -171,6 +173,7 @@ class HandoffManager:
         self,
         work_state_manager: Any,
         signal_manager: Optional[SignalManager] = None,
+        delegation_manager: Optional[Any] = None,
         workspace_root: Optional[Path] = None
     ):
         """
@@ -187,6 +190,7 @@ class HandoffManager:
         else:
             self.work_state_manager = WorkStateManager(_Path(work_state_manager))
         self.signal_manager = signal_manager
+        self.delegation_manager = delegation_manager
         self.workspace_root = workspace_root or Path.cwd()
         self.squad_dir = self.workspace_root / ".squad"
         self.handoffs_dir = self.squad_dir / self.HANDOFFS_DIR
@@ -297,7 +301,8 @@ class HandoffManager:
             reason=reason,
             context=context,
             priority=priority,
-            requires_ack=requires_ack
+            requires_ack=requires_ack,
+            metadata={},
         )
         
         handoff.add_audit_entry(
@@ -311,6 +316,36 @@ class HandoffManager:
         
         self._handoffs[handoff_id] = handoff
         self._save_state()
+
+        try:
+            from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
+
+            graph = OperationalGraph(self.workspace_root)
+            graph.add_node(from_agent, NodeType.AGENT, {"agent": from_agent})
+            graph.add_node(to_agent, NodeType.AGENT, {"agent": to_agent})
+            graph.add_node(work_item_id, NodeType.WORK_ITEM, {"title": work_item.title})
+            graph.add_edge(from_agent, to_agent, EdgeType.DELEGATES_TO, {"handoff_id": handoff_id})
+            graph.add_edge(work_item_id, to_agent, EdgeType.DELEGATES_TO, {"handoff_id": handoff_id})
+        except (ValueError, OSError, RuntimeError) as e:
+            logger.warning("Operational graph update failed for handoff %s: %s", handoff_id, e)
+
+        if self.delegation_manager:
+            try:
+                delegation = self.delegation_manager.create_delegation(
+                    from_agent=from_agent,
+                    to_agent=to_agent,
+                    work_item_id=work_item_id,
+                    scope=reason.value if hasattr(reason, "value") else str(reason),
+                )
+                handoff.metadata["delegation_id"] = delegation.id
+                handoff.add_audit_entry(
+                    action="delegation_created",
+                    agent=from_agent,
+                    details=f"Delegation {delegation.id} created",
+                )
+                self._save_state()
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Delegation create failed for handoff %s: %s", handoff_id, e)
         
         # Send notification via signal
         if self.signal_manager:
@@ -333,7 +368,7 @@ class HandoffManager:
                 priority=priority,
                 requires_ack=requires_ack,
                 work_item_id=work_item_id,
-                metadata={"handoff_id": handoff_id}
+                metadata={"handoff_id": handoff_id, **({"delegation_id": handoff.metadata.get("delegation_id")} if handoff.metadata else {})}
             )
         
         logger.info(
@@ -476,6 +511,18 @@ class HandoffManager:
         )
         
         self._save_state()
+
+        if self.delegation_manager and handoff.metadata.get("delegation_id"):
+            try:
+                from ai_squad.core.delegation import DelegationStatus
+
+                self.delegation_manager.complete_delegation(
+                    handoff.metadata["delegation_id"],
+                    status=DelegationStatus.FAILED,
+                    details=reason,
+                )
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Delegation rejection failed for %s: %s", handoff_id, e)
         
         # Send notification via signal
         if self.signal_manager:
@@ -532,6 +579,18 @@ class HandoffManager:
         )
         
         self._save_state()
+
+        if self.delegation_manager and handoff.metadata.get("delegation_id"):
+            try:
+                from ai_squad.core.delegation import DelegationStatus
+
+                self.delegation_manager.complete_delegation(
+                    handoff.metadata["delegation_id"],
+                    status=DelegationStatus.COMPLETED,
+                    details="Handoff completed",
+                )
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Delegation completion failed for %s: %s", handoff_id, e)
         
         logger.info("Handoff completed: %s", handoff_id)
         return True
@@ -572,6 +631,18 @@ class HandoffManager:
         )
         
         self._save_state()
+
+        if self.delegation_manager and handoff.metadata.get("delegation_id"):
+            try:
+                from ai_squad.core.delegation import DelegationStatus
+
+                self.delegation_manager.complete_delegation(
+                    handoff.metadata["delegation_id"],
+                    status=DelegationStatus.CANCELLED,
+                    details=reason,
+                )
+            except (ValueError, OSError, RuntimeError) as e:
+                logger.warning("Delegation cancel failed for %s: %s", handoff_id, e)
         
         # Notify recipient
         if self.signal_manager:

@@ -779,7 +779,9 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
         
         work_manager = WorkStateManager()
         signal_manager = SignalManager()
-        handoff_manager = HandoffManager(work_manager, signal_manager)
+        from ai_squad.core.delegation import DelegationManager
+        delegation_manager = DelegationManager(workspace_root=Path.cwd(), signal_manager=signal_manager)
+        handoff_manager = HandoffManager(work_manager, signal_manager, delegation_manager)
         
         # Map reason string to enum
         reason_map = {
@@ -838,7 +840,9 @@ def status():
         work_manager = WorkStateManager()
         convoy_manager = ConvoyManager(work_manager)
         signal_manager = SignalManager()
-        handoff_manager = HandoffManager(work_manager, signal_manager)
+        from ai_squad.core.delegation import DelegationManager
+        delegation_manager = DelegationManager(workspace_root=Path.cwd(), signal_manager=signal_manager)
+        handoff_manager = HandoffManager(work_manager, signal_manager, delegation_manager)
         
         console.print("[bold cyan]📊 AI-Squad Orchestration Status[/bold cyan]\n")
         
@@ -892,6 +896,351 @@ def status():
         console.print("[dim]  • squad convoys         - View convoys[/dim]")
         console.print("[dim]  • squad signal <agent> - View agent signal[/dim]")
         console.print("[dim]  • squad captain <issue> - Coordinate issue[/dim]")
+        console.print("[dim]  • squad health          - View routing health[/dim]")
+        console.print("[dim]  • squad capabilities    - Manage capability packages[/dim]")
+        console.print("[dim]  • squad scout           - View scout runs[/dim]")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.command()
+def health():
+    """View routing health and circuit breaker status"""
+    try:
+        from ai_squad.core.router import HealthView, HealthConfig
+        
+        console.print("[bold cyan]📊 Routing Health Status[/bold cyan]\n")
+        
+        health_view = HealthView()
+        health_cfg = HealthConfig()
+        summary = health_view.summarize(config=health_cfg)
+        
+        # Overall stats
+        console.print(Panel(
+            f"[bold]Total Events:[/bold] {summary['total']}\n"
+            f"[green]Routed:[/green] {summary['routed']}\n"
+            f"[red]Blocked:[/red] {summary['blocked']}\n"
+            f"[yellow]Block Rate:[/yellow] {summary.get('block_rate', 0):.1%}\n"
+            f"[bold]Status:[/bold] {summary.get('overall_status', 'unknown')}",
+            title="Overall Health",
+            border_style="cyan"
+        ))
+        
+        # By destination
+        if summary.get("by_destination"):
+            table = Table(title="Destination Health")
+            table.add_column("Destination", style="cyan")
+            table.add_column("Total", style="white")
+            table.add_column("Routed", style="green")
+            table.add_column("Blocked", style="red")
+            table.add_column("Block Rate", style="yellow")
+            
+            for dest, stats in summary["by_destination"].items():
+                total = stats["total"]
+                routed = stats["routed"]
+                blocked = stats["blocked"]
+                block_rate = (blocked / total * 100) if total else 0
+                table.add_row(
+                    dest,
+                    str(total),
+                    str(routed),
+                    str(blocked),
+                    f"{block_rate:.1f}%"
+                )
+            
+            console.print(table)
+        
+        # By priority
+        if summary.get("by_priority"):
+            console.print("\n[bold]By Priority:[/bold]")
+            for priority, stats in summary["by_priority"].items():
+                console.print(f"  {priority}: {stats['routed']}/{stats['total']} routed")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.group()
+def capabilities():
+    """Manage capability packages"""
+    pass
+
+
+@capabilities.command("list")
+def capabilities_list():
+    """List installed capability packages"""
+    try:
+        from ai_squad.core.capability_registry import CapabilityRegistry
+        
+        registry = CapabilityRegistry()
+        packages = registry.list()
+        
+        if not packages:
+            console.print("[yellow]No capability packages installed[/yellow]")
+            return
+        
+        table = Table(title="Installed Capabilities")
+        table.add_column("Name", style="cyan")
+        table.add_column("Version", style="white")
+        table.add_column("Scope", style="yellow")
+        table.add_column("Tags", style="green")
+        
+        for pkg in packages:
+            table.add_row(
+                pkg.name,
+                pkg.version,
+                pkg.scope,
+                ", ".join(pkg.capability_tags)
+            )
+        
+        console.print(table)
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@capabilities.command("install")
+@click.argument("package_path", type=click.Path(exists=True))
+def capabilities_install(package_path):
+    """Install a capability package from directory or tarball"""
+    try:
+        from ai_squad.core.capability_registry import CapabilityRegistry
+        
+        registry = CapabilityRegistry()
+        pkg = registry.install(Path(package_path))
+        
+        console.print(f"[bold green]✅ Installed {pkg.name} v{pkg.version}[/bold green]")
+        console.print(f"   Scope: {pkg.scope}")
+        console.print(f"   Tags: {', '.join(pkg.capability_tags)}")
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@capabilities.command("key")
+@click.option("--set", "set_key", help="Set signature key for capability verification")
+@click.option("--show", "show_key", is_flag=True, help="Show whether a key is configured")
+def capabilities_key(set_key, show_key):
+    """Manage capability signature key"""
+    try:
+        key_path = Path.cwd() / ".squad" / "capabilities" / "signature.key"
+        key_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if set_key:
+            key_path.write_text(set_key.strip(), encoding="utf-8")
+            console.print("[bold green]✅ Signature key saved[/bold green]")
+            return
+
+        if show_key:
+            if key_path.exists():
+                console.print("[green]Signature key is configured[/green]")
+            else:
+                console.print("[yellow]No signature key configured[/yellow]")
+            return
+
+        console.print("[yellow]Provide --set or --show[/yellow]")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.group()
+def delegation():
+    """Manage delegation links"""
+    pass
+
+
+@delegation.command("list")
+def delegation_list():
+    """List all delegation links"""
+    try:
+        from ai_squad.core.delegation import DelegationManager
+        
+        manager = DelegationManager()
+        links = manager.list()
+        
+        if not links:
+            console.print("[yellow]No delegation links found[/yellow]")
+            return
+        
+        table = Table(title="Delegation Links")
+        table.add_column("ID", style="cyan")
+        table.add_column("From", style="white")
+        table.add_column("To", style="white")
+        table.add_column("Work Item", style="yellow")
+        table.add_column("Status", style="green")
+        table.add_column("Created", style="dim")
+        
+        for link in links:
+            table.add_row(
+                link.id,
+                link.from_agent,
+                link.to_agent,
+                link.work_item_id,
+                link.status.value,
+                link.created_at[:19]  # Trim timestamp
+            )
+        
+        console.print(table)
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.group()
+def graph():
+    """Manage operational graph"""
+    pass
+
+
+@main.group()
+def scout():
+    """Manage scout worker runs"""
+    pass
+
+
+@scout.command("list")
+def scout_list():
+    """List scout worker runs"""
+    try:
+        from ai_squad.core.scout_worker import ScoutWorker
+
+        worker = ScoutWorker()
+        runs = worker.list_runs()
+
+        if not runs:
+            console.print("[yellow]No scout runs found[/yellow]")
+            return
+
+        table = Table(title="Scout Runs")
+        table.add_column("Run ID", style="cyan")
+        table.add_column("Tasks", style="white")
+        table.add_column("Completed", style="green")
+
+        for run_id in runs:
+            run = worker.load_run(run_id)
+            tasks = len(run.tasks) if run else 0
+            completed = len([t for t in (run.tasks if run else []) if t.status == "completed"])
+            table.add_row(run_id, str(tasks), str(completed))
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@scout.command("show")
+@click.argument("run_id")
+def scout_show(run_id):
+    """Show details for a scout run"""
+    try:
+        from ai_squad.core.scout_worker import ScoutWorker
+
+        worker = ScoutWorker()
+        run = worker.load_run(run_id)
+
+        if not run:
+            console.print("[yellow]Scout run not found[/yellow]")
+            return
+
+        console.print(Panel(f"Run: {run.run_id}\nCreated: {run.created_at}", title="Scout Run"))
+        table = Table(title="Tasks")
+        table.add_column("Task", style="cyan")
+        table.add_column("Status", style="white")
+        table.add_column("Error", style="red")
+
+        for task in run.tasks:
+            table.add_row(task.name, task.status, task.error or "")
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@scout.command("run")
+@click.option("--task", "tasks", multiple=True, help="Scout task to run (repeatable)")
+def scout_run(tasks):
+    """Run a scout worker task"""
+    try:
+        from ai_squad.core.scout_worker import ScoutWorker
+
+        selected = list(tasks) or ["noop"]
+        task_map = {
+            "noop": lambda: "ok",
+            "list_squad_files": lambda: [p.name for p in (Path.cwd() / ".squad").glob("*")],
+            "check_routing_events": lambda: (Path.cwd() / ".squad" / "events" / "routing.jsonl").exists(),
+        }
+        run_tasks = {name: task_map[name] for name in selected if name in task_map}
+        if not run_tasks:
+            console.print("[yellow]No valid tasks selected[/yellow]")
+            return
+
+        worker = ScoutWorker()
+        run = worker.run(run_tasks, metadata={"tasks": selected})
+        console.print(f"[bold green]✅ Scout run completed[/bold green] {run.run_id}")
+
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@graph.command("export")
+@click.option("--format", type=click.Choice(["mermaid"]), default="mermaid", help="Export format")
+def graph_export(format):
+    """Export operational graph"""
+    try:
+        from ai_squad.core.operational_graph import OperationalGraph
+        
+        op_graph = OperationalGraph()
+        
+        if format == "mermaid":
+            diagram = op_graph.export_mermaid()
+            console.print(diagram)
+        
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@graph.command("impact")
+@click.argument("node_id")
+def graph_impact(node_id):
+    """Analyze impact of changes to a node"""
+    try:
+        from ai_squad.core.operational_graph import OperationalGraph
+        
+        op_graph = OperationalGraph()
+        impact = op_graph.impact_analysis(node_id)
+        
+        if "error" in impact:
+            console.print(f"[bold red]❌ {impact['error']}[/bold red]")
+            return
+        
+        console.print(f"[bold cyan]Impact Analysis for {node_id}[/bold cyan]\n")
+        console.print(f"[bold]Direct Dependents:[/bold] {len(impact['direct_dependents'])}")
+        console.print(f"[bold]Total Affected:[/bold] {impact['total_affected']}")
+        
+        if impact['owners']:
+            console.print(f"\n[bold]Owners:[/bold]")
+            for owner in impact['owners']:
+                console.print(f"  • {owner}")
+        
+        if impact['affected_nodes']:
+            console.print(f"\n[bold]Affected Nodes:[/bold]")
+            for node in impact['affected_nodes'][:10]:  # Limit to first 10
+                console.print(f"  • {node}")
+            if len(impact['affected_nodes']) > 10:
+                console.print(f"  ... and {len(impact['affected_nodes']) - 10} more")
         
     except Exception as e:
         console.print(f"[bold red]❌ Error: {e}[/bold red]")

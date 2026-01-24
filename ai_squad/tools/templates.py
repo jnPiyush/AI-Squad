@@ -3,35 +3,172 @@ Template Engine
 
 Loads and renders document templates.
 """
+from dataclasses import dataclass, field
+from enum import Enum
+import logging
+import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 import re
 
 
+logger = logging.getLogger(__name__)
+
+
+class TemplateTier(str, Enum):
+    """Lookup tiers for templates/prompts."""
+
+    SYSTEM = "system"
+    ORG = "org"
+    PROJECT = "project"
+
+
+@dataclass
+class TemplateResolutionTrace:
+    """Trace data for template resolution attempts."""
+
+    template: str
+    force_tier: Optional[str]
+    order: List[str] = field(default_factory=list)
+    attempts: List[Dict[str, Any]] = field(default_factory=list)
+    resolved: Optional[Dict[str, Any]] = None
+    fallback: Optional[str] = None
+
+
 class TemplateEngine:
-    """Template loading and rendering"""
-    
-    def __init__(self):
-        """Initialize template engine"""
-        self.templates_dir = Path(__file__).parent.parent / "templates"
-        
-    def get_template(self, template_name: str) -> str:
-        """
-        Get template by name
-        
+    """Template loading and rendering with tiered resolution."""
+
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        org_templates_dir: Optional[Path] = None,
+        force_tier: Optional[str] = None,
+    ):
+        """Initialize template engine with tiered lookup.
+
         Args:
-            template_name: Template name (prd, adr, spec, ux, review)
-            
-        Returns:
-            Template content
+            workspace_root: Project root; defaults to cwd.
+            org_templates_dir: Optional organization-level templates root.
+            force_tier: Force resolution to a specific tier (system/org/project).
         """
-        template_file = self.templates_dir / f"{template_name}.md"
+
+        self.workspace_root = workspace_root or Path.cwd()
+        self.templates_dir = Path(__file__).parent.parent / "templates"
+        self.org_templates_dir = org_templates_dir or Path.home() / ".ai-squad" / "templates"
+        self.project_templates_dir = self.workspace_root / ".squad" / "templates"
+        self.force_tier_override = (force_tier or os.getenv("AI_SQUAD_TEMPLATE_FORCE_TIER"))
         
-        if template_file.exists():
-            return template_file.read_text(encoding="utf-8")
-        
-        # Return default template
-        return self._get_default_template(template_name)
+    def get_template(
+        self,
+        template_name: str,
+        *,
+        force_tier: Optional[str] = None,
+        include_trace: bool = False,
+    ) -> Union[str, Tuple[str, TemplateResolutionTrace]]:
+        """Get a template by name with tiered resolution.
+
+        Args:
+            template_name: Template name (prd, adr, spec, ux, review, strategy, etc.)
+            force_tier: Optional tier override (system/org/project) for this lookup.
+            include_trace: When True, also return the resolution trace object.
+
+        Returns:
+            Template content, or (content, trace) when include_trace=True.
+        """
+
+        content, trace = self._resolve_template(template_name, force_tier=force_tier)
+        if include_trace:
+            return content, trace
+        return content
+
+    def _resolve_template(
+        self,
+        template_name: str,
+        *,
+        force_tier: Optional[str] = None,
+    ) -> Tuple[str, TemplateResolutionTrace]:
+        """Resolve a template across project/org/system tiers."""
+
+        normalized_force = self._normalize_force_tier(force_tier or self.force_tier_override)
+        resolution_order = self._compute_resolution_order(normalized_force)
+        trace = TemplateResolutionTrace(
+            template=template_name,
+            force_tier=normalized_force,
+            order=[tier.value for tier in resolution_order],
+        )
+
+        extensions = self._candidate_extensions(template_name)
+        template_stem = Path(template_name).stem
+
+        for tier in resolution_order:
+            tier_root = self._tier_roots()[tier]
+            for ext in extensions:
+                candidate = tier_root / f"{template_stem}{ext}"
+                trace.attempts.append({
+                    "tier": tier.value,
+                    "path": str(candidate),
+                    "exists": candidate.exists(),
+                })
+                if candidate.exists():
+                    content = candidate.read_text(encoding="utf-8")
+                    trace.resolved = {
+                        "tier": tier.value,
+                        "path": str(candidate),
+                        "extension": ext,
+                    }
+                    logger.info(
+                        "template_resolution_success",
+                        extra={"template_resolution": trace.__dict__},
+                    )
+                    return content, trace
+
+        fallback = self._get_default_template(template_stem)
+        trace.fallback = "default"
+        logger.info(
+            "template_resolution_fallback",
+            extra={"template_resolution": trace.__dict__},
+        )
+        return fallback, trace
+
+    def _tier_roots(self) -> Dict[TemplateTier, Path]:
+        """Return tier roots for resolution."""
+
+        return {
+            TemplateTier.SYSTEM: self.templates_dir,
+            TemplateTier.ORG: self.org_templates_dir,
+            TemplateTier.PROJECT: self.project_templates_dir,
+        }
+
+    @staticmethod
+    def _candidate_extensions(template_name: str) -> List[str]:
+        """Determine candidate extensions for a template name."""
+
+        suffix = Path(template_name).suffix
+        if suffix:
+            return [suffix]
+        return [".md", ".yaml", ".yml", ".json"]
+
+    @staticmethod
+    def _normalize_force_tier(force_tier: Optional[str]) -> Optional[str]:
+        """Normalize force-tier input."""
+
+        if not force_tier:
+            return None
+        force_tier = force_tier.strip().lower()
+        if force_tier in {t.value for t in TemplateTier}:
+            return force_tier
+        logger.warning("Invalid force tier '%s' provided; ignoring", force_tier)
+        return None
+
+    @staticmethod
+    def _compute_resolution_order(force_tier: Optional[str]) -> List[TemplateTier]:
+        """Compute the lookup order respecting force-tier overrides."""
+
+        default_order = [TemplateTier.PROJECT, TemplateTier.ORG, TemplateTier.SYSTEM]
+        if not force_tier:
+            return default_order
+        forced = TemplateTier(force_tier)
+        return [forced]
     
     def render(self, template: str, variables: Dict[str, Any]) -> str:
         """

@@ -3,6 +3,7 @@ Agent Communication Tests
 
 Tests for agent-to-agent communication and clarification framework.
 """
+import json
 import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -16,6 +17,7 @@ from ai_squad.core.agent_comm import (
 )
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.config import Config
+from ai_squad.core.events import StructuredEventEmitter
 
 
 class TestAgentMessage:
@@ -94,19 +96,23 @@ class TestAgentCommunicator:
         return github
     
     @pytest.fixture
-    def communicator_automated(self, mock_github):
+    def communicator_automated(self, mock_github, temp_project_dir):
         """Create communicator in automated mode"""
+        emitter = StructuredEventEmitter(workspace_root=temp_project_dir)
         return AgentCommunicator(
             execution_mode="automated",
-            github_tool=mock_github
+            github_tool=mock_github,
+            event_emitter=emitter
         )
     
     @pytest.fixture
-    def communicator_manual(self, mock_github):
+    def communicator_manual(self, mock_github, temp_project_dir):
         """Create communicator in manual mode"""
+        emitter = StructuredEventEmitter(workspace_root=temp_project_dir)
         return AgentCommunicator(
             execution_mode="manual",
-            github_tool=mock_github
+            github_tool=mock_github,
+            event_emitter=emitter
         )
     
     def test_communicator_initialization(self, communicator_automated):
@@ -135,6 +141,35 @@ class TestAgentCommunicator:
         
         # Should post to GitHub for visibility
         mock_github.add_comment.assert_called_once()
+
+    def test_emits_structured_routing_event(self, temp_project_dir, mock_github):
+        """Structured routing events should be persisted for observability."""
+
+        emitter = StructuredEventEmitter(workspace_root=temp_project_dir)
+        communicator = AgentCommunicator(
+            execution_mode="automated",
+            github_tool=mock_github,
+            event_emitter=emitter,
+        )
+
+        question_id = communicator.ask(
+            from_agent="architect",
+            to_agent="pm",
+            question="Should we use microservices?",
+            context={"issue": 123},
+            issue_number=123,
+        )
+
+        routing_file = temp_project_dir / ".squad" / "events" / "routing.jsonl"
+        assert routing_file.exists()
+
+        lines = routing_file.read_text(encoding="utf-8").strip().splitlines()
+        payloads = [json.loads(line) for line in lines]
+        accepted = next(p for p in payloads if p["status"] == "accepted")
+
+        assert accepted["message_id"] == question_id
+        assert accepted["source"] == "architect"
+        assert accepted["destination"] == "pm"
     
     def test_ask_question_manual(self, communicator_manual):
         """Test asking question in manual mode"""
@@ -247,6 +282,7 @@ class TestClarificationMixin:
     
     class TestAgent(ClarificationMixin, BaseAgent):
         """Test agent with clarification support"""
+        __test__ = False
         
         def get_system_prompt(self):
             return "Test"

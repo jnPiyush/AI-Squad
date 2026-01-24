@@ -34,6 +34,13 @@ from ai_squad.core.handoff import (
     HandoffStatus,
     HandoffReason,
 )
+from ai_squad.core.capability_registry import CapabilityRegistry
+from ai_squad.core.delegation import DelegationManager, DelegationStatus
+from ai_squad.core.router import OrgRouter, PolicyRule, HealthView
+from ai_squad.core.discovery import DiscoveryIndex
+from ai_squad.core.identity import IdentityDossier, IdentityManager
+from ai_squad.core.scout_worker import ScoutWorker
+from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
 
 __all__ = [
     # Original exports
@@ -71,4 +78,18 @@ __all__ = [
     "HandoffManager",
     "HandoffStatus",
     "HandoffReason",
+    # Enhancements
+    "CapabilityRegistry",
+    "DelegationManager",
+    "DelegationStatus",
+    "OrgRouter",
+    "PolicyRule",
+    "HealthView",
+    "DiscoveryIndex",
+    "IdentityDossier",
+    "IdentityManager",
+    "ScoutWorker",
+    "OperationalGraph",
+    "NodeType",
+    "EdgeType",
 ]

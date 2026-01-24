@@ -5,7 +5,7 @@ Creates Product Requirements Documents (PRDs) and user stories.
 """
 import logging
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from ai_squad.agents.base import BaseAgent
 from ai_squad.core.agent_comm import ClarificationMixin
@@ -171,6 +171,60 @@ Generate a complete, production-ready PRD following the template structure.
     
     def _create_feature_issues(self, epic: Dict[str, Any], prd_content: str) -> list:
         """Create feature issues from epic PRD"""
-        # TODO: Parse PRD and create feature issues
-        # This would extract user stories/features from PRD and create GitHub issues
-        return []
+        features: List[str] = []
+
+        lines = prd_content.splitlines()
+        current_section = ""
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("## "):
+                current_section = stripped[3:].strip().lower()
+                continue
+            if current_section in {"user stories", "features", "functional requirements"}:
+                if stripped.startswith("-") or stripped.startswith("*"):
+                    title = stripped.lstrip("-* ").strip()
+                    if title:
+                        features.append(title)
+
+        if not features:
+            for line in lines:
+                stripped = line.strip()
+                if stripped.lower().startswith("feature:"):
+                    title = stripped.split(":", 1)[1].strip()
+                    if title:
+                        features.append(title)
+                if stripped.lower().startswith("user story:"):
+                    title = stripped.split(":", 1)[1].strip()
+                    if title:
+                        features.append(title)
+
+        epic_title = epic.get("title", "Epic")
+        epic_number = epic.get("number")
+        created = []
+
+        if not features:
+            return created
+
+        auto_create = self.config.get("github.auto_create_issues", True)
+        labels_config = self.config.get("github.labels.feature", "type:feature")
+        labels = [labels_config] if isinstance(labels_config, str) else list(labels_config)
+
+        for feature in features:
+            title = f"{feature}" if feature else "Feature"
+            body = (
+                f"Feature from epic: {epic_title}"
+                + (f" (#{epic_number})" if epic_number else "")
+                + "\n\n"
+                + "Derived from PRD."
+            )
+
+            issue_number = None
+            if auto_create:
+                issue_number = self.github.create_issue(title, body, labels=labels)
+
+            created.append({
+                "title": title,
+                "issue_number": issue_number,
+            })
+
+        return created

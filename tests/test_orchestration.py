@@ -115,6 +115,26 @@ class TestWorkState:
         assert item.issue_number == 123
         # Should be ready since no dependencies
         assert item.status == WorkStatus.READY
+
+    def test_work_state_updates_operational_graph(self):
+        """Test work item creates graph nodes and edges"""
+        from ai_squad.core.workstate import WorkStateManager
+        from ai_squad.core.operational_graph import OperationalGraph, EdgeType
+
+        manager = WorkStateManager(self.workspace)
+        item = manager.create_work_item(
+            title="Test graph item",
+            description="Test description",
+            issue_number=123,
+            agent="engineer",
+        )
+
+        graph = OperationalGraph(self.workspace)
+        node = graph.get_node(item.id)
+        assert node is not None
+
+        edges = graph.get_outgoing_edges(item.id, EdgeType.OWNS)
+        assert any(e.to_node == "engineer" for e in edges)
     
     def test_work_state_manager_persistence(self):
         """Test work state persists to disk"""
@@ -172,10 +192,10 @@ class TestBattlePlan:
         shutil.rmtree(self.temp_dir, ignore_errors=True)
     
     def test_BattlePlan_step_creation(self):
-        """Test BattlePlanStep dataclass"""
-        from ai_squad.core.battle_plan import BattlePlanStep
+        """Test BattlePlanPhase dataclass"""
+        from ai_squad.core.battle_plan import BattlePlanPhase
         
-        step = BattlePlanStep(
+        step = BattlePlanPhase(
             name="test_step",
             agent="engineer",
             action="implement"
@@ -187,31 +207,31 @@ class TestBattlePlan:
     
     def test_BattlePlan_creation(self):
         """Test BattlePlan dataclass"""
-        from ai_squad.core.battle_plan import BattlePlan, BattlePlanStep
+        from ai_squad.core.battle_plan import BattlePlan, BattlePlanPhase
         
-        BattlePlan = BattlePlan(
+        battle_plan = BattlePlan(
             name="test_BattlePlan",
             description="Test description",
-            steps=[
-                BattlePlanStep(name="step1", agent="pm", action="prd"),
-                BattlePlanStep(name="step2", agent="engineer", action="implement"),
+            phases=[
+                BattlePlanPhase(name="step1", agent="pm", action="prd"),
+                BattlePlanPhase(name="step2", agent="engineer", action="implement"),
             ]
         )
         
-        assert BattlePlan.name == "test_BattlePlan"
-        assert len(BattlePlan.steps) == 2
+        assert battle_plan.name == "test_BattlePlan"
+        assert len(battle_plan.phases) == 2
     
     def test_BattlePlan_to_yaml(self):
         """Test BattlePlan YAML serialization"""
-        from ai_squad.core.battle_plan import BattlePlan, BattlePlanStep
+        from ai_squad.core.battle_plan import BattlePlan, BattlePlanPhase
         
-        BattlePlan = BattlePlan(
+        battle_plan = BattlePlan(
             name="test",
             description="Test",
-            steps=[BattlePlanStep(name="s1", agent="pm", action="prd")]
+            phases=[BattlePlanPhase(name="s1", agent="pm", action="prd")]
         )
         
-        yaml_str = BattlePlan.to_yaml()
+        yaml_str = battle_plan.to_yaml()
         assert "name: test" in yaml_str
         assert "steps:" in yaml_str
     
@@ -230,10 +250,10 @@ steps:
 labels:
   - test
 """
-        BattlePlan = BattlePlan.from_yaml(yaml_content)
-        assert BattlePlan.name == "test_yaml"
-        assert len(BattlePlan.steps) == 1
-        assert "test" in BattlePlan.labels
+        battle_plan = BattlePlan.from_yaml(yaml_content)
+        assert battle_plan.name == "test_yaml"
+        assert len(battle_plan.phases) == 1
+        assert "test" in battle_plan.labels
     
     def test_BattlePlan_manager_initialization(self):
         """Test BattlePlanManager initialization"""
@@ -247,12 +267,12 @@ labels:
         from ai_squad.core.battle_plan import BattlePlanManager
         
         manager = BattlePlanManager(self.workspace)
-        BattlePlans = manager.list_BattlePlans()
+        strategies = manager.list_strategies()
         
-        # Should have built-in BattlePlans
-        names = [f.name for f in BattlePlans]
-        # Built-in BattlePlans should exist if templates exist
-        assert isinstance(BattlePlans, list)
+        # Should have built-in strategies
+        names = [f.name for f in strategies]
+        # Built-in strategies should exist if templates exist
+        assert isinstance(strategies, list)
 
 
 class TestSignal:
@@ -269,7 +289,7 @@ class TestSignal:
     
     def test_message_creation(self):
         """Test Message dataclass"""
-        from ai_squad.core.signal import Signal as Message, MessagePriority, MessageStatus
+        from ai_squad.core.signal import Message, MessagePriority, MessageStatus
         
         msg = Message(
             id="msg-test1",
@@ -287,7 +307,7 @@ class TestSignal:
     
     def test_message_to_dict(self):
         """Test Message serialization"""
-        from ai_squad.core.Signal import Message
+        from ai_squad.core.signal import Message
         
         msg = Message(
             id="msg-test2",
@@ -310,7 +330,7 @@ class TestSignal:
     
     def test_Signal_manager_send_message(self):
         """Test sending messages"""
-        from ai_squad.core.Signal import SignalManager, MessageStatus
+        from ai_squad.core.signal import SignalManager, MessageStatus
         
         manager = SignalManager(self.workspace)
         msg = manager.send_message(
@@ -325,7 +345,7 @@ class TestSignal:
     
     def test_Signal_manager_get_inbox(self):
         """Test getting inbox messages"""
-        from ai_squad.core.Signal import SignalManager
+        from ai_squad.core.signal import SignalManager
         
         manager = SignalManager(self.workspace)
         manager.send_message(
@@ -346,11 +366,11 @@ class TestSignal:
     
     def test_Signal_manager_broadcast(self):
         """Test broadcast messages"""
-        from ai_squad.core.Signal import SignalManager
+        from ai_squad.core.signal import SignalManager
         
         manager = SignalManager(self.workspace)
         
-        # Create some Signales first
+        # Create some Signals first
         manager._get_or_create_Signal("pm")
         manager._get_or_create_Signal("engineer")
         manager._get_or_create_Signal("reviewer")
@@ -560,9 +580,9 @@ class TestCLIOrchestration:
         assert result.exit_code == 0
         assert "captain" in result.output
         assert "work" in result.output
-        assert "BattlePlans" in result.output
+        assert "plans" in result.output
         assert "convoys" in result.output
-        assert "Signal" in result.output
+        assert "signal" in result.output
         assert "handoff" in result.output
         assert "status" in result.output
 

@@ -10,6 +10,8 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
+from ai_squad.core.events import RoutingEvent, StructuredEventEmitter
+
 
 class MessageType(Enum):
     """Types of messages between agents"""
@@ -56,18 +58,20 @@ class AgentCommunicator:
     - Manual Mode: User-to-agent clarifications via GitHub Copilot Chat
     """
     
-    def __init__(self, github_tool=None, execution_mode: str = "manual"):
+    def __init__(self, github_tool=None, execution_mode: str = "manual", event_emitter: Optional[StructuredEventEmitter] = None):
         """
         Initialize communicator
         
         Args:
             github_tool: GitHub tool for storing messages as issue comments
             execution_mode: "automated" (watch mode) or "manual" (CLI)
+            event_emitter: Optional structured event emitter for routing telemetry
         """
         self.github = github_tool
         self.execution_mode = execution_mode
         self.message_queue: List[AgentMessage] = []
         self.responses: Dict[str, str] = {}
+        self.event_emitter = event_emitter or StructuredEventEmitter()
     
     def ask(
         self,
@@ -105,6 +109,11 @@ class AgentCommunicator:
         
         # Store message
         self.message_queue.append(message)
+        self._emit_routing_event(
+            message,
+            status="accepted",
+            reason="queued",
+        )
         
         # Post to GitHub as comment for visibility
         if self.github and issue_number:
@@ -214,8 +223,38 @@ class AgentCommunicator:
         # For now, return a placeholder response
         # In a full implementation, this would instantiate the target agent
         # and call its handle_message method
+
+        self._emit_routing_event(
+            message,
+            status="not_implemented",
+            reason="routing_placeholder",
+        )
         
         return None
+
+    def _emit_routing_event(
+        self,
+        message: AgentMessage,
+        *,
+        status: str,
+        reason: Optional[str] = None,
+    ) -> None:
+        """Emit a structured routing event for observability."""
+
+        if not self.event_emitter:
+            return
+
+        event = RoutingEvent.create(
+            source=message.from_agent,
+            destination=message.to_agent,
+            status=status,
+            execution_mode=self.execution_mode,
+            message_id=message.id,
+            issue_number=message.issue_number,
+            reason=reason,
+            metadata={"context_keys": sorted(message.context.keys()) if message.context else []},
+        )
+        self.event_emitter.emit_routing(event)
     
     def _request_user_clarification(self, message: AgentMessage) -> Optional[str]:
         """

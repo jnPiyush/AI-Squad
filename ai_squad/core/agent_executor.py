@@ -35,6 +35,8 @@ from ai_squad.core.convoy import ConvoyManager  # NEW: Parallel execution
 from ai_squad.core.workstate import WorkStateManager  # NEW: Work tracking
 from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
+from ai_squad.core.delegation import DelegationManager
+from ai_squad.core.router import OrgRouter, PolicyRule, HealthConfig
 
 logger = logging.getLogger(__name__)
 
@@ -99,12 +101,35 @@ class AgentExecutor:
         workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
         self.workstate_mgr = workstate_manager or WorkStateManager(workspace_root=workspace_root)
         self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root)
+        self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr)
         self.handoff_mgr = handoff_manager or HandoffManager(
             work_state_manager=self.workstate_mgr,
             signal_manager=self.signal_mgr,
+            delegation_manager=self.delegation_mgr,
             workspace_root=workspace_root
         )
         self.strategy_mgr = strategy_manager or BattlePlanManager(workspace_root=workspace_root)
+
+        routing_cfg = self.config.get("routing", {}) or {}
+        policy = PolicyRule(
+            allowed_capability_tags=routing_cfg.get("allowed_capability_tags", []),
+            denied_capability_tags=routing_cfg.get("denied_capability_tags", []),
+            required_trust_levels=routing_cfg.get("required_trust_levels", []),
+            max_data_sensitivity=routing_cfg.get("max_data_sensitivity", "restricted"),
+        )
+        health_config = HealthConfig(
+            warn_block_rate=routing_cfg.get("warn_block_rate", 0.25),
+            critical_block_rate=routing_cfg.get("critical_block_rate", 0.5),
+            circuit_breaker_block_rate=routing_cfg.get("circuit_breaker_block_rate", 0.7),
+            throttle_block_rate=routing_cfg.get("throttle_block_rate", 0.5),
+            min_events=routing_cfg.get("min_events", 5),
+            window=routing_cfg.get("window", 200),
+        )
+        self.org_router = OrgRouter(
+            policy=policy,
+            health_config=health_config,
+            workspace_root=workspace_root,
+        )
         
         # Async agent executor for convoy with error handling
         async def _async_agent_executor(agent_type: str, work_item_id: str, 
@@ -134,6 +159,9 @@ class AgentExecutor:
             'workstate': self.workstate_mgr,
             'signal': self.signal_mgr,
             'handoff': self.handoff_mgr,
+            'delegation': self.delegation_mgr,
+            'router': self.org_router,
+            'routing_config': routing_cfg,
             'strategy': self.strategy_mgr,
             'convoy': self.convoy_mgr
         }
@@ -170,6 +198,32 @@ class AgentExecutor:
                 "error": f"Unknown agent type: {agent_type}. Available: {list(self.agents.keys())}"
             }
         
+        if self.org_router and agent_type != "captain":
+            enforce_cli = self.orchestration.get("routing_config", {}).get("enforce_cli_routing", False)
+            if enforce_cli:
+                from ai_squad.core.router import Candidate
+
+                candidate = Candidate(
+                    name=agent_type,
+                    capability_tags=[agent_type],
+                    trust_level=self.orchestration.get("routing_config", {}).get("trust_level", "high"),
+                    data_sensitivity=self.orchestration.get("routing_config", {}).get("data_sensitivity", "internal"),
+                )
+                chosen = self.org_router.route(
+                    candidates=[candidate],
+                    requested_capability_tags=[agent_type],
+                    data_sensitivity=candidate.data_sensitivity,
+                    trust_level=candidate.trust_level,
+                    priority=self.orchestration.get("routing_config", {}).get("priority", "normal"),
+                    metadata={"issue_number": issue_number, "origin": "cli"},
+                )
+                if not chosen:
+                    return {
+                        "success": False,
+                        "error": "Routing policy blocked this agent",
+                        "using_sdk": self.using_sdk,
+                    }
+
         agent = self.agents[agent_type]
         
         try:
@@ -215,7 +269,7 @@ class AgentExecutor:
         issue_number: int,
         variables: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """Execute a combat strategy workflow synchronously."""
+        """Execute a battle plan workflow synchronously."""
         import asyncio
 
         async def _agent_callback(
@@ -308,7 +362,6 @@ class AgentExecutor:
             result = captain.coordinate(
                 work_items=work_item_ids,
                 workstate_manager=self.workstate_mgr,
-                plan_manager=None,
                 convoy_manager=self.convoy_mgr
             )
             

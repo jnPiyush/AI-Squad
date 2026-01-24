@@ -5,6 +5,7 @@ The Captain (inspired by Gastown's Mayor) is a meta-agent that coordinates other
 It breaks down complex tasks, creates convoys, dispatches work, and monitors progress.
 """
 import logging
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,7 @@ from .battle_plan import (
     BattlePlanPhase,
 )
 from .workstate import WorkItem, WorkStateManager, WorkStatus
+from .router import Candidate
 
 if SDK_AVAILABLE:
     try:
@@ -62,7 +64,7 @@ class Captain(BaseAgent):
     
     Responsibilities:
     - Analyze complex tasks and break them down
-    - Select appropriate combat strategies (workflows)
+    - Select appropriate battle plans (workflows)
     - Create convoys for parallel execution
     - Dispatch work to appropriate agents
     - Monitor progress and handle blockers
@@ -78,7 +80,7 @@ You are the Captain - a meta-agent coordinator for AI-Squad.
 
 Your role:
 - Analyze GitHub issues and break them into manageable work items
-- Select appropriate combat strategies
+- Select appropriate battle plans
 - Create convoys for parallel execution
 - Dispatch work to specialized agents (PM, Architect, Engineer, UX, Reviewer)
 - Monitor progress and resolve blockers
@@ -123,6 +125,8 @@ Always provide clear, structured coordination plans.
         self.convoy_manager = convoy_manager or self.convoy or None
         self.signal_manager = signal_manager or self.signal
         self.handoff_manager = handoff_manager or self.handoff
+        self.org_router = self.orchestration.get("router")
+        self.routing_config = self.orchestration.get("routing_config", {}) or {}
         # Keep orchestration in sync for downstream consumers
         self.orchestration.update({
             "workstate": self.work_state_manager,
@@ -185,7 +189,7 @@ Always provide clear, structured coordination plans.
                 
                 # Set up dependencies
                 for i, step in enumerate(strategy.phases):
-                    for dep_name in phase.depends_on:
+                    for dep_name in step.depends_on:
                         dep_idx = next(
                             (j for j, s in enumerate(strategy.phases) 
                              if s.name == dep_name),
@@ -233,7 +237,7 @@ Always provide clear, structured coordination plans.
         context: Optional[Dict[str, Any]]
     ) -> Tuple[str, Optional[str]]:
         """
-        Assess task complexity and suggest a combat strategy.
+        Assess task complexity and suggest a battle plan.
         
         Returns:
             Tuple of (complexity, strategy_name)
@@ -241,13 +245,20 @@ Always provide clear, structured coordination plans.
         # Use SDK if available for intelligent assessment
         if SDK_AVAILABLE:
             try:
-                result = await self._call_sdk(
-                    "assess_task",
-                    task=task_description,
-                    context=context
+                system_prompt = "You are a task triage assistant. Respond in JSON only."
+                user_prompt = (
+                    "Assess task complexity and suggest a battle plan name. "
+                    "Return JSON with keys: complexity (low|medium|high|critical) and strategy (string or null).\n\n"
+                    f"Task: {task_description}\n\n"
+                    f"Context: {context or {}}"
                 )
-                if result:
-                    return result.get("complexity", "medium"), result.get("strategy")
+                raw = self._call_sdk(system_prompt, user_prompt)
+                if raw:
+                    try:
+                        parsed = json.loads(raw)
+                        return parsed.get("complexity", "medium"), parsed.get("strategy")
+                    except json.JSONDecodeError:
+                        logger.warning("SDK returned non-JSON complexity assessment")
             except Exception as e:
                 logger.warning("SDK assessment failed: %s", e)
         
@@ -286,7 +297,7 @@ Always provide clear, structured coordination plans.
         context: Optional[Dict[str, Any]]
     ) -> List[WorkItem]:
         """
-        Create a generic breakdown when no combat strategy matches.
+        Create a generic breakdown when no battle plan matches.
         """
         work_items = []
         
@@ -724,6 +735,16 @@ Always provide clear, structured coordination plans.
             
             # Determine agent from labels or title
             agent = self._detect_agent(item)
+            routed_agent = self._route_agent_for_item(item, agent)
+            if routed_agent is None:
+                item.metadata["routing_blocked"] = True
+                ws_mgr.update_work_item(item)
+                agent = "blocked"
+            else:
+                if routed_agent != agent:
+                    item.metadata["routed_agent"] = routed_agent
+                    ws_mgr.update_work_item(item)
+                agent = routed_agent
             if agent not in agent_groups:
                 agent_groups[agent] = []
             agent_groups[agent].append(item)
@@ -765,6 +786,54 @@ Always provide clear, structured coordination plans.
                    len(plan["parallel_batches"]), len(plan["sequential_steps"]))
         
         return plan
+
+    def _route_agent_for_item(self, item: WorkItem, default_agent: str) -> Optional[str]:
+        """Use org router to select an agent when configured."""
+        if not self.org_router:
+            return default_agent
+
+        requested_tags = item.labels or [default_agent]
+        trust_level = self.routing_config.get("trust_level", "high")
+        data_sensitivity = self.routing_config.get("data_sensitivity", "internal")
+
+        enabled_agents = [
+            name for name in ["pm", "architect", "engineer", "ux", "reviewer"]
+            if self.config.get(f"agents.{name}.enabled", True)
+        ]
+
+        candidates = []
+        for name in enabled_agents:
+            tags = list({name, *requested_tags})
+            candidates.append(
+                Candidate(
+                    name=name,
+                    capability_tags=tags,
+                    trust_level=trust_level,
+                    data_sensitivity=data_sensitivity,
+                )
+            )
+
+        priority_label = self._priority_label(item.priority)
+        chosen = self.org_router.route(
+            candidates=candidates,
+            requested_capability_tags=requested_tags,
+            data_sensitivity=data_sensitivity,
+            trust_level=trust_level,
+            priority=priority_label,
+            metadata={"work_item_id": item.id},
+        )
+
+        return chosen.name if chosen else None
+
+    @staticmethod
+    def _priority_label(priority: int) -> str:
+        if priority >= 8:
+            return "urgent"
+        if priority >= 5:
+            return "high"
+        if priority <= 0:
+            return "low"
+        return "normal"
     
     async def execute_plan(
         self,
@@ -850,8 +919,8 @@ Always provide clear, structured coordination plans.
         
         # Execute sequential steps
         for phase in plan.get("sequential_steps", []):
-            agent = step["agent"]
-            item_id = step["item_id"]
+            agent = phase["agent"]
+            item_id = phase["item_id"]
             
             logger.info(f"Executing {agent} for {item_id}")
             

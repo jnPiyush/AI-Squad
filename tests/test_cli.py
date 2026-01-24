@@ -57,6 +57,73 @@ class TestCLI:
             # Should pass or provide clear errors
             assert "check" in result.output.lower()
 
+    def test_health_command(self, runner, tmp_path):
+        """Test squad health command"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["health"])
+            assert result.exit_code == 0
+            assert "Routing Health Status" in result.output
+
+    def test_capabilities_list_empty(self, runner, tmp_path):
+        """Test empty capabilities list"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["capabilities", "list"])
+            assert result.exit_code == 0
+            assert "No capability packages installed" in result.output
+
+    def test_capabilities_key_set_and_show(self, runner, tmp_path):
+        """Test capability signature key management"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["capabilities", "key", "--set", "test-key"])
+            assert result.exit_code == 0
+            assert "Signature key saved" in result.output
+
+            result = runner.invoke(main, ["capabilities", "key", "--show"])
+            assert result.exit_code == 0
+            assert "Signature key is configured" in result.output
+
+    def test_delegation_list_empty(self, runner, tmp_path):
+        """Test empty delegation list"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["delegation", "list"])
+            assert result.exit_code == 0
+            assert "No delegation links found" in result.output
+
+    def test_graph_export_empty(self, runner, tmp_path):
+        """Test graph export output"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["graph", "export"])
+            assert result.exit_code == 0
+            assert "graph TD" in result.output
+
+    def test_graph_impact_missing_node(self, runner, tmp_path):
+        """Test graph impact missing node"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["graph", "impact", "missing-node"])
+            assert result.exit_code == 0
+            assert "Node not found" in result.output
+
+    def test_scout_list_empty(self, runner, tmp_path):
+        """Test scout list with no runs"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["scout", "list"])
+            assert result.exit_code == 0
+            assert "No scout runs found" in result.output
+
+    def test_scout_show_missing(self, runner, tmp_path):
+        """Test scout show missing run"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["scout", "show", "scout-missing"])
+            assert result.exit_code == 0
+            assert "Scout run not found" in result.output
+
+    def test_scout_run_noop(self, runner, tmp_path):
+        """Test scout run noop task"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["scout", "run"])
+            assert result.exit_code == 0
+            assert "Scout run completed" in result.output
+
 
 class TestAgentCommands:
     """Test agent execution commands"""

@@ -153,6 +153,7 @@ class WorkStateManager:
         
         self._work_items: Dict[str, WorkItem] = {}
         self._in_transaction: bool = False
+        self._graph = None
         self._load_state()
 
     # --- Locking helpers -------------------------------------------------
@@ -324,6 +325,8 @@ class WorkStateManager:
 
             self._work_items[item.id] = item
             mark_dirty()
+
+        self._update_operational_graph(item)
         
         logger.info("Created work item: %s (%s)", item.id, title)
         return item
@@ -392,6 +395,9 @@ class WorkStateManager:
             mark_dirty()
         
         logger.info("Assigned %s to agent %s", item_id, agent)
+        item = self.get_work_item(item_id)
+        if item:
+            self._update_operational_graph(item)
         return True
     
     def unassign_from_agent(self, item_id: str) -> bool:
@@ -484,6 +490,46 @@ class WorkStateManager:
                 mark_dirty()
             
             return True
+        
+        if item:
+            self._update_operational_graph(item)
+
+    def _update_operational_graph(self, item: WorkItem) -> None:
+        """Synchronize work item changes into the operational graph."""
+        try:
+            from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
+
+            if self._graph is None:
+                self._graph = OperationalGraph(workspace_root=self.workspace_root)
+
+            self._graph.add_node(
+                item.id,
+                NodeType.WORK_ITEM,
+                {
+                    "title": item.title,
+                    "issue_number": item.issue_number,
+                    "labels": item.labels,
+                    "status": item.status.value,
+                },
+            )
+
+            if item.issue_number:
+                issue_node_id = f"issue-{item.issue_number}"
+                self._graph.add_node(
+                    issue_node_id,
+                    NodeType.WORK_ITEM,
+                    {"issue_number": item.issue_number},
+                )
+                self._graph.add_edge(issue_node_id, item.id, EdgeType.DEPENDS_ON, {"source": "workstate"})
+
+            if item.agent_assignee:
+                self._graph.add_node(item.agent_assignee, NodeType.AGENT, {"agent": item.agent_assignee})
+                self._graph.add_edge(item.id, item.agent_assignee, EdgeType.OWNS, {"source": "workstate"})
+
+            for dep_id in item.depends_on:
+                self._graph.add_edge(item.id, dep_id, EdgeType.DEPENDS_ON, {"source": "workstate"})
+        except (ValueError, OSError, RuntimeError) as e:
+            logger.warning("Operational graph update failed for %s: %s", item.id, e)
     
     # Artifact Management
     

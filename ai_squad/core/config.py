@@ -59,6 +59,22 @@ class Config:
             "wcag_level": "AA",
             "contrast_ratio": 4.5,
         },
+        "routing": {
+            "allowed_capability_tags": [],
+            "denied_capability_tags": [],
+            "required_trust_levels": [],
+            "max_data_sensitivity": "restricted",
+            "trust_level": "high",
+            "data_sensitivity": "internal",
+            "priority": "normal",
+            "warn_block_rate": 0.25,
+            "critical_block_rate": 0.5,
+            "circuit_breaker_block_rate": 0.7,
+            "throttle_block_rate": 0.5,
+            "min_events": 5,
+            "window": 200,
+            "enforce_cli_routing": False,
+        },
         "design": {
             "breakpoints": {
                 "mobile": "320px-767px",
