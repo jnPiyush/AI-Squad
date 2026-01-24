@@ -25,7 +25,7 @@ from .router import Candidate
 
 if SDK_AVAILABLE:
     try:
-        from github_copilot_sdk import CopilotClient
+        from copilot import CopilotClient
     except ImportError:
         pass
 

@@ -14,7 +14,7 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 # Detect GitHub Copilot SDK availability without importing unused symbols
-SDK_AVAILABLE = importlib.util.find_spec("github_copilot_sdk") is not None
+SDK_AVAILABLE = importlib.util.find_spec("copilot") is not None
 
 from ai_squad.core.config import Config
 from ai_squad.tools.github import GitHubTool

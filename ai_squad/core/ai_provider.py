@@ -9,6 +9,10 @@ Handles AI generation with fallback chain:
 """
 import os
 import logging
+import asyncio
+import shutil
+import subprocess
+import threading
 from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -68,6 +72,7 @@ class CopilotProvider(AIProvider):
         self.token = token or os.getenv("GITHUB_TOKEN")
         self._sdk = None
         self._initialized = False
+        self._model_cache: Optional[str] = None
         
     @property
     def provider_type(self) -> AIProviderType:
@@ -79,13 +84,14 @@ class CopilotProvider(AIProvider):
         
         self._initialized = True
         
-        if not self.token:
-            logger.debug("Copilot: No GITHUB_TOKEN set")
+        if not self._is_copilot_cli_available():
+            logger.debug("Copilot CLI not available or not authenticated")
             return False
         
         try:
             from copilot import CopilotClient
-            self._sdk = CopilotClient(token=self.token)
+            # CopilotClient uses CLI auth; no token parameter is required.
+            self._sdk = CopilotClient()
             logger.info("Copilot SDK initialized successfully")
             return True
         except ImportError:
@@ -107,27 +113,159 @@ class CopilotProvider(AIProvider):
             return None
         
         try:
-            # Try chat completion API
-            response = self._sdk.chat.completions.create(
-                model=model or "gpt-4",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=temperature,
-                max_tokens=max_tokens
-            )
-            
-            if response and response.choices:
-                return AIResponse(
-                    content=response.choices[0].message.content,
-                    provider=AIProviderType.COPILOT,
-                    model=model or "gpt-4",
-                    usage=getattr(response, "usage", None)
+            return self._run_async(
+                self._generate_async(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens
                 )
+            )
         except Exception as e:
             logger.warning(f"Copilot generation failed: {e}")
-        
+            return None
+
+    def _is_copilot_cli_available(self) -> bool:
+        if shutil.which("copilot") is None:
+            return False
+
+        try:
+            version = subprocess.run(
+                ["copilot", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if version.returncode != 0:
+                return False
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+
+        return self._is_copilot_cli_authenticated()
+
+    @staticmethod
+    def _is_copilot_cli_authenticated() -> bool:
+        try:
+            auth = subprocess.run(
+                ["copilot", "auth", "status"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return auth.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+
+    def _select_model(self, requested_model: Optional[str]) -> str:
+        if requested_model:
+            return requested_model
+
+        if self._model_cache:
+            return self._model_cache
+
+        try:
+            if hasattr(self._sdk, "models"):
+                models = self._sdk.models.list()
+                items = None
+                if isinstance(models, dict):
+                    items = models.get("data")
+                elif hasattr(models, "data"):
+                    items = models.data
+                elif isinstance(models, list):
+                    items = models
+
+                if items:
+                    for item in items:
+                        if isinstance(item, dict):
+                            model_id = item.get("id") or item.get("name")
+                        else:
+                            model_id = getattr(item, "id", None) or getattr(item, "name", None)
+                        if model_id:
+                            self._model_cache = model_id
+                            return model_id
+        except Exception as e:
+            logger.debug(f"Copilot model discovery failed: {e}")
+
+        self._model_cache = os.getenv("COPILOT_MODEL", "gpt-4.1")
+        return self._model_cache
+
+    def _run_async(self, coroutine):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coroutine)
+
+        result: Dict[str, Any] = {"value": None, "error": None}
+
+        def _runner():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                result["value"] = loop.run_until_complete(coroutine)
+            except Exception as e:
+                result["error"] = e
+            finally:
+                loop.close()
+
+        thread = threading.Thread(target=_runner, daemon=True)
+        thread.start()
+        thread.join()
+
+        if result["error"]:
+            raise result["error"]
+        return result["value"]
+
+    async def _generate_async(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: Optional[str],
+        temperature: float,
+        max_tokens: int
+    ) -> Optional[AIResponse]:
+        from copilot import CopilotClient
+
+        client = CopilotClient()
+        await client.start()
+
+        model_name = self._select_model(model)
+        session_options: Dict[str, Any] = {"model": model_name}
+        if system_prompt:
+            session_options["systemMessage"] = {"content": system_prompt}
+
+        session = await client.create_session(session_options)
+
+        done = asyncio.Event()
+        last_message: Dict[str, Optional[str]] = {"content": None}
+
+        def on_event(event):
+            event_type = getattr(event.type, "value", event.type)
+            if event_type == "assistant.message":
+                content = getattr(event.data, "content", None)
+                if content is None and isinstance(event.data, dict):
+                    content = event.data.get("content")
+                if content:
+                    last_message["content"] = content
+            elif event_type == "session.idle":
+                done.set()
+
+        session.on(on_event)
+        await session.send({"prompt": user_prompt})
+
+        await asyncio.wait_for(done.wait(), timeout=120)
+
+        await session.destroy()
+        await client.stop()
+
+        if last_message["content"]:
+            return AIResponse(
+                content=last_message["content"],
+                provider=AIProviderType.COPILOT,
+                model=model_name,
+                usage=None
+            )
+
         return None
 
 
@@ -285,7 +423,7 @@ class AIProviderChain:
     Chain of AI providers with automatic fallback.
     
     Priority order:
-    1. GitHub Copilot SDK (requires GITHUB_TOKEN with Copilot access)
+    1. GitHub Copilot SDK (requires Copilot CLI installed and authenticated)
     2. OpenAI API (requires OPENAI_API_KEY)
     3. Azure OpenAI (requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
     4. Template-based fallback (always available)

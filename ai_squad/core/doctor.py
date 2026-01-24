@@ -2,9 +2,10 @@
 Diagnostic checks for AI-Squad setup
 """
 import os
+import shutil
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Tuple
 
 
 def _check_gh_auth() -> bool:
@@ -19,6 +20,37 @@ def _check_gh_auth() -> bool:
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
         return False
+
+
+def _check_copilot_cli() -> Tuple[bool, str]:
+    """Check if Copilot CLI is installed and authenticated"""
+    if shutil.which("copilot") is None:
+        return False, "Copilot CLI not found. Install and run 'copilot --version'"
+
+    try:
+        version = subprocess.run(
+            ["copilot", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if version.returncode != 0:
+            return False, "Copilot CLI not responding. Reinstall or check PATH"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return False, "Copilot CLI not available. Install and retry"
+
+    try:
+        auth = subprocess.run(
+            ["copilot", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if auth.returncode == 0:
+            return True, "Authenticated"
+        return False, "Not authenticated. Run 'copilot auth login'"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return False, "Unable to verify Copilot auth. Run 'copilot auth login'"
 
 
 def run_doctor_checks() -> Dict[str, Any]:
@@ -49,8 +81,16 @@ def run_doctor_checks() -> Dict[str, Any]:
         "passed": auth_passed,
         "message": auth_message
     })
+
+    # Check 2: Copilot CLI (installed + authenticated)
+    copilot_ok, copilot_message = _check_copilot_cli()
+    checks.append({
+        "name": "Copilot CLI",
+        "passed": copilot_ok,
+        "message": copilot_message
+    })
     
-    # Check 2: squad.yaml exists
+    # Check 3: squad.yaml exists
     config_file = Path.cwd() / "squad.yaml"
     checks.append({
         "name": "Configuration",
@@ -58,7 +98,7 @@ def run_doctor_checks() -> Dict[str, Any]:
         "message": "Found squad.yaml" if config_file.exists() else "Run 'squad init' first"
     })
     
-    # Check 3: Output directories
+    # Check 4: Output directories
     directories = ["docs/prd", "docs/adr", "docs/specs", "docs/ux", "docs/reviews"]
     all_dirs_exist = all((Path.cwd() / d).exists() for d in directories)
     checks.append({
@@ -67,7 +107,7 @@ def run_doctor_checks() -> Dict[str, Any]:
         "message": "All directories exist" if all_dirs_exist else "Some directories missing"
     })
     
-    # Check 4: AI Provider (Copilot -> OpenAI -> Azure -> Template)
+    # Check 5: AI Provider (Copilot -> OpenAI -> Azure -> Template)
     try:
         from ai_squad.core.ai_provider import get_ai_provider, AIProviderType
         provider = get_ai_provider()
@@ -89,7 +129,7 @@ def run_doctor_checks() -> Dict[str, Any]:
             checks.append({
                 "name": "AI Provider",
                 "passed": False,
-                "message": "No AI provider. Set GITHUB_TOKEN, OPENAI_API_KEY, or AZURE_OPENAI_*"
+                "message": "No AI provider. Ensure Copilot CLI auth or set OPENAI_API_KEY/AZURE_OPENAI_*"
             })
     except Exception as e:
         checks.append({
@@ -98,7 +138,7 @@ def run_doctor_checks() -> Dict[str, Any]:
             "message": f"Error checking AI providers: {e}"
         })
     
-    # Check 5: Git repository
+    # Check 6: Git repository
     git_dir = Path.cwd() / ".git"
     checks.append({
         "name": "Git Repository",
