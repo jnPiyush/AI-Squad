@@ -104,17 +104,18 @@ class AgentExecutor:
             workspace_root=workspace_root,
             config=self.config.data,
         )
-        self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root)
-        self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root)
-        self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr)
-        self.report_mgr = ReportManager(workspace_root=workspace_root)
+        self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root, config=self.config.data)
+        self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root, config=self.config.data)
+        self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr, config=self.config.data)
+        self.report_mgr = ReportManager(workspace_root=workspace_root, config=self.config.data)
         self.handoff_mgr = handoff_manager or HandoffManager(
             work_state_manager=self.workstate_mgr,
             signal_manager=self.signal_mgr,
             delegation_manager=self.delegation_mgr,
-            workspace_root=workspace_root
+            workspace_root=workspace_root,
+            config=self.config.data,
         )
-        self.strategy_mgr = strategy_manager or BattlePlanManager(workspace_root=workspace_root)
+        self.strategy_mgr = strategy_manager or BattlePlanManager(workspace_root=workspace_root, config=self.config.data)
 
         routing_cfg = self.config.get("routing", {}) or {}
         policy = PolicyRule(
@@ -135,6 +136,7 @@ class AgentExecutor:
             policy=policy,
             health_config=health_config,
             workspace_root=workspace_root,
+            config=self.config.data,
         )
         
         # Async agent executor for convoy with error handling

@@ -8,10 +8,12 @@ import logging
 import shutil
 import tarfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import hashlib
 import hmac
 import yaml
+
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +66,10 @@ class CapabilityRegistry:
 
     MANIFEST_FILES = ["capability.yaml", "capability.yml", "capability.json"]
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict[str, Any]] = None, base_dir: Optional[str] = None):
         self.workspace_root = workspace_root or Path.cwd()
-        self.registry_dir = self.workspace_root / ".squad" / "capabilities"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.registry_dir = runtime_dir / "capabilities"
         self.installed_file = self.registry_dir / "installed.json"
         self.registry_dir.mkdir(parents=True, exist_ok=True)
         self._installed: Dict[str, CapabilityPackage] = {}
@@ -102,7 +105,7 @@ class CapabilityRegistry:
         pkg.checksum_sha256 = pkg.checksum_sha256 or computed_checksum
 
         if pkg.signature:
-            secret = (Path.cwd() / ".squad" / "capabilities" / "signature.key")
+            secret = self.registry_dir / "signature.key"
             key = None
             if secret.exists():
                 key = secret.read_text(encoding="utf-8").strip()

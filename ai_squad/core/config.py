@@ -88,6 +88,7 @@ class Config:
             "command": None,
             "args": [],
             "prompt_mode": "none",
+            "base_dir": ".squad",
         },
         "hooks": {
             "enabled": True,

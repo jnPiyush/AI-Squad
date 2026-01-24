@@ -11,6 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,10 +32,16 @@ class WorkerInstance:
 class WorkerLifecycleManager:
     """Persist worker lifecycle state under .squad/workers.json."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         self.workspace_root = workspace_root or Path.cwd()
-        self.squad_dir = self.workspace_root / ".squad"
-        self.workers_file = self.squad_dir / "workers.json"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.squad_dir = runtime_dir
+        self.workers_file = runtime_dir / "workers.json"
         self._ensure_dir()
 
     def spawn(self, agent_type: str, issue_number: Optional[int] = None, work_item_id: Optional[str] = None) -> WorkerInstance:

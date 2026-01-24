@@ -248,7 +248,7 @@ class TestE2ECaptainCoordination:
         )
     
     @pytest.mark.asyncio
-    async def test_captain_coordinates_and_executes_work(self, captain, _config):
+    async def test_captain_coordinates_and_executes_work(self, captain, config):
         """Test: Captain creates plan and executes it"""
         # Create work items
         item1 = captain.work_state_manager.create_work_item(

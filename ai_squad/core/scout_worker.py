@@ -5,6 +5,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
+
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -55,9 +57,15 @@ class ScoutRun:
 class ScoutWorker:
     """Executes deterministic, non-LLM tasks with checkpoints."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         self.workspace_root = workspace_root or Path.cwd()
-        self.scout_dir = self.workspace_root / ".squad" / "scout_workers"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.scout_dir = runtime_dir / "scout_workers"
         self.scout_dir.mkdir(parents=True, exist_ok=True)
 
     def run(

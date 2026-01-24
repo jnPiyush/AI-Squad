@@ -5,6 +5,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -39,9 +41,10 @@ class RemoteEntry:
 class DiscoveryIndex:
     """Stores remote discovery metadata with privacy defaults."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict[str, Any]] = None, base_dir: Optional[str] = None):
         self.workspace_root = workspace_root or Path.cwd()
-        self.discovery_file = self.workspace_root / ".squad" / "discovery.json"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.discovery_file = runtime_dir / "discovery.json"
         self.discovery_file.parent.mkdir(parents=True, exist_ok=True)
         self._remotes: Dict[str, RemoteEntry] = {}
         self._load()

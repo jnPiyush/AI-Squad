@@ -8,6 +8,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from ai_squad.core.signal import SignalManager, MessagePriority
 
 logger = logging.getLogger(__name__)
@@ -67,10 +69,11 @@ class DelegationLink:
 class DelegationManager:
     """Manages delegation links and propagates completion to originator."""
 
-    def __init__(self, workspace_root: Optional[Path] = None, signal_manager: Optional[SignalManager] = None):
+    def __init__(self, workspace_root: Optional[Path] = None, signal_manager: Optional[SignalManager] = None, config: Optional[Dict[str, Any]] = None, base_dir: Optional[str] = None):
         self.workspace_root = workspace_root or Path.cwd()
         self.signal_manager = signal_manager
-        self.delegations_dir = self.workspace_root / ".squad" / "delegations"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.delegations_dir = runtime_dir / "delegations"
         self.delegations_file = self.delegations_dir / "delegations.json"
         self.delegations_dir.mkdir(parents=True, exist_ok=True)
         self._delegations: Dict[str, DelegationLink] = {}

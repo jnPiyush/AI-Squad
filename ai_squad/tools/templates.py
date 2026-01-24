@@ -9,6 +9,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 import re
 
 
@@ -43,6 +44,8 @@ class TemplateEngine:
         workspace_root: Optional[Path] = None,
         org_templates_dir: Optional[Path] = None,
         force_tier: Optional[str] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ):
         """Initialize template engine with tiered lookup.
 
@@ -55,7 +58,8 @@ class TemplateEngine:
         self.workspace_root = workspace_root or Path.cwd()
         self.templates_dir = Path(__file__).parent.parent / "templates"
         self.org_templates_dir = org_templates_dir or Path.home() / ".ai-squad" / "templates"
-        self.project_templates_dir = self.workspace_root / ".squad" / "templates"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.project_templates_dir = runtime_dir / "templates"
         self.force_tier_override = (force_tier or os.getenv("AI_SQUAD_TEMPLATE_FORCE_TIER"))
         
     def get_template(

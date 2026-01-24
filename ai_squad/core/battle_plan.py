@@ -11,6 +11,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 import yaml
 
 from .workstate import WorkStateManager, WorkStatus
@@ -154,10 +155,15 @@ class BattlePlanManager:
     STRATEGIES_DIR = "strategies"
     BUILTIN_STRATEGIES_DIR = Path(__file__).parent.parent / "templates" / "strategies"
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         self.workspace_root = workspace_root or Path.cwd()
-        self.squad_dir = self.workspace_root / ".squad"
-        self.strategies_dir = self.squad_dir / self.STRATEGIES_DIR
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.strategies_dir = runtime_dir / self.STRATEGIES_DIR
         self._strategies: Dict[str, BattlePlan] = {}
         self._load_strategies()
 

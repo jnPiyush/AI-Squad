@@ -9,6 +9,8 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,9 +77,10 @@ class RoutingEvent:
 class StructuredEventEmitter:
     """Persists structured events to .squad/events/*.jsonl."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict[str, Any]] = None, base_dir: Optional[str] = None):
         self.workspace_root = workspace_root or Path.cwd()
-        self.events_dir = self.workspace_root / ".squad" / "events"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.events_dir = runtime_dir / "events"
         self.routing_file = self.events_dir / "routing.jsonl"
         self.events_dir.mkdir(parents=True, exist_ok=True)
 

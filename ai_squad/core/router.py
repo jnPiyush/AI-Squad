@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ai_squad.core.events import StructuredEventEmitter, RoutingEvent
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +82,13 @@ class OrgRouter:
         event_emitter: Optional[StructuredEventEmitter] = None,
         health_config: Optional[HealthConfig] = None,
         workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ):
         self.policy = policy
-        self.event_emitter = event_emitter or StructuredEventEmitter(workspace_root=workspace_root)
+        self.event_emitter = event_emitter or StructuredEventEmitter(workspace_root=workspace_root, config=config, base_dir=base_dir)
         self.health_config = health_config or HealthConfig()
-        self.health_view = HealthView(workspace_root=workspace_root or getattr(self.event_emitter, "workspace_root", None), window=self.health_config.window)
+        self.health_view = HealthView(workspace_root=workspace_root or getattr(self.event_emitter, "workspace_root", None), window=self.health_config.window, config=config, base_dir=base_dir)
 
     def route(
         self,
@@ -168,9 +171,10 @@ class OrgRouter:
 class HealthView:
     """Aggregated health view using routing events."""
 
-    def __init__(self, workspace_root: Optional[Path] = None, window: int = 200):
+    def __init__(self, workspace_root: Optional[Path] = None, window: int = 200, config: Optional[Dict[str, Any]] = None, base_dir: Optional[str] = None):
         self.workspace_root = workspace_root or Path.cwd()
-        self.events_dir = self.workspace_root / ".squad" / "events"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.events_dir = runtime_dir / "events"
         self.routing_file = self.events_dir / "routing.jsonl"
         self.window = window
 

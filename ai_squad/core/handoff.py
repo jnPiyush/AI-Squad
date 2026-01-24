@@ -13,6 +13,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from .workstate import WorkItem, WorkStateManager, WorkStatus
 from .signal import SignalManager, MessagePriority
 
@@ -174,7 +176,9 @@ class HandoffManager:
         work_state_manager: Any,
         signal_manager: Optional[SignalManager] = None,
         delegation_manager: Optional[Any] = None,
-        workspace_root: Optional[Path] = None
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ):
         """
         Initialize handoff manager.
@@ -191,8 +195,8 @@ class HandoffManager:
         self.signal_manager = signal_manager
         self.delegation_manager = delegation_manager
         self.workspace_root = workspace_root or Path.cwd()
-        self.squad_dir = self.workspace_root / ".squad"
-        self.handoffs_dir = self.squad_dir / self.HANDOFFS_DIR
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.handoffs_dir = runtime_dir / self.HANDOFFS_DIR
         
         self._handoffs: Dict[str, Handoff] = {}
         self._load_state()

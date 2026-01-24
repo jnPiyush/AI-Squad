@@ -5,6 +5,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional
+
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -31,9 +33,15 @@ class IdentityDossier:
 class IdentityManager:
     """Builds and persists identity dossiers."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, str]] = None,
+        base_dir: Optional[str] = None,
+    ):
         self.workspace_root = workspace_root or Path.cwd()
-        self.identity_dir = self.workspace_root / ".squad" / "identity"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.identity_dir = runtime_dir / "identity"
         self.identity_file = self.identity_dir / "identity.json"
         self.identity_dir.mkdir(parents=True, exist_ok=True)
 

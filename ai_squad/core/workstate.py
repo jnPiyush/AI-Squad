@@ -13,6 +13,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, Any, List, Optional, ContextManager
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from .hooks import HookManager
 
 # Cross-platform file locking for safe persistence
@@ -143,7 +145,12 @@ class WorkStateManager:
     SQUAD_DIR = ".squad"
     WORKSTATE_FILE = "workstate.json"
     
-    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         """
         Initialize work state manager.
         
@@ -158,10 +165,13 @@ class WorkStateManager:
             workspace_root=self.workspace_root,
             hooks_dir=hooks_cfg.get("hooks_dir", ".squad/hooks"),
             use_git_worktree=hooks_cfg.get("use_git_worktree", False),
+            config=self.config,
+            base_dir=base_dir,
         )
-        self.squad_dir = self.workspace_root / self.SQUAD_DIR
-        self.workstate_file = self.squad_dir / self.WORKSTATE_FILE
-        self.lock_file = self.squad_dir / f"{self.WORKSTATE_FILE}.lock"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=self.config, base_dir=base_dir)
+        self.squad_dir = runtime_dir
+        self.workstate_file = runtime_dir / self.WORKSTATE_FILE
+        self.lock_file = runtime_dir / f"{self.WORKSTATE_FILE}.lock"
         
         self._work_items: Dict[str, WorkItem] = {}
         self._in_transaction: bool = False

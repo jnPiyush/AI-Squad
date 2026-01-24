@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from ai_squad.core.router import HealthConfig, HealthView
 from ai_squad.core.signal import SignalManager
 from ai_squad.core.workstate import WorkStateManager
@@ -40,12 +42,15 @@ class ReconManager:
         workstate_manager: Optional[WorkStateManager] = None,
         signal_manager: Optional[SignalManager] = None,
         routing_config: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ) -> None:
         self.workspace_root = workspace_root or Path.cwd()
-        self.workstate_manager = workstate_manager or WorkStateManager(self.workspace_root)
-        self.signal_manager = signal_manager or SignalManager(self.workspace_root)
+        self.workstate_manager = workstate_manager or WorkStateManager(self.workspace_root, config=config)
+        self.signal_manager = signal_manager or SignalManager(self.workspace_root, config=config, base_dir=base_dir)
         self.routing_config = routing_config or {}
-        self.recon_dir = self.workspace_root / ".squad" / "recon"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.recon_dir = runtime_dir / "recon"
 
     def build_summary(self) -> ReconSummary:
         health_cfg = HealthConfig(

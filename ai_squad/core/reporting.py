@@ -7,6 +7,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from ai_squad.core.convoy import Convoy
 
 logger = logging.getLogger(__name__)
@@ -43,9 +45,19 @@ class AfterOperationReport:
 class ReportManager:
     """Generates and stores after-operation reports."""
 
-    def __init__(self, workspace_root: Optional[Path] = None, reports_dir: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        reports_dir: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ) -> None:
         self.workspace_root = workspace_root or Path.cwd()
-        self.reports_dir = reports_dir or (self.workspace_root / ".squad" / "reports")
+        if reports_dir is not None:
+            self.reports_dir = reports_dir
+        else:
+            runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+            self.reports_dir = runtime_dir / "reports"
 
     def write_convoy_report(self, convoy: Convoy) -> Path:
         progress = convoy.get_progress()

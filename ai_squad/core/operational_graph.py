@@ -10,6 +10,8 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -89,9 +91,15 @@ class GraphEdge:
 class OperationalGraph:
     """Manages the operational graph with nodes and typed edges."""
 
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         self.workspace_root = workspace_root or Path.cwd()
-        self.graph_dir = self.workspace_root / ".squad" / "graph"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.graph_dir = runtime_dir / "graph"
         self.nodes_file = self.graph_dir / "nodes.json"
         self.edges_file = self.graph_dir / "edges.json"
         self.graph_dir.mkdir(parents=True, exist_ok=True)

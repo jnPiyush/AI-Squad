@@ -159,6 +159,7 @@ def _create_config(path: Path) -> None:
             "command": None,
             "args": [],
             "prompt_mode": "none",
+            "base_dir": ".squad",
         },
         "hooks": {
             "enabled": True,

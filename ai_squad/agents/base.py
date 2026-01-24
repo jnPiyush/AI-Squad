@@ -58,7 +58,7 @@ class BaseAgent(ABC):
         self.config = config
         self.sdk = sdk  # Legacy - kept for compatibility
         self.github = GitHubTool(config)
-        self.templates = TemplateEngine()
+        self.templates = TemplateEngine(config=self.config.data)
         self.codebase = CodebaseSearch()
         self.agent_type = self.__class__.__name__.replace("Agent", "").lower()
         
@@ -248,7 +248,7 @@ class BaseAgent(ABC):
                 elif isinstance(author_data, str):
                     author = author_data
 
-                identity_mgr = IdentityManager()
+                identity_mgr = IdentityManager(config=self.config.data)
                 dossier = identity_mgr.build(
                     workspace_name=str(self.config.get("project.name", "AI-Squad Project")),
                     agents=[self.agent_type],
@@ -287,7 +287,7 @@ class BaseAgent(ABC):
             try:
                 from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
 
-                graph = OperationalGraph()
+                graph = OperationalGraph(config=self.config.data)
                 issue_node_id = f"issue-{issue_number}"
                 graph.add_node(
                     issue_node_id,

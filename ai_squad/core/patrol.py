@@ -9,6 +9,8 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 from ai_squad.core.workstate import WorkStateManager, WorkStatus
 
 logger = logging.getLogger(__name__)
@@ -45,12 +47,15 @@ class PatrolManager:
         workstate_manager: Optional[WorkStateManager] = None,
         stale_minutes: int = 120,
         statuses: Optional[List[str]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ) -> None:
         self.workspace_root = workspace_root or Path.cwd()
-        self.workstate_manager = workstate_manager or WorkStateManager(self.workspace_root)
+        self.workstate_manager = workstate_manager or WorkStateManager(self.workspace_root, config=config)
         self.stale_minutes = stale_minutes
         self.statuses = statuses or [WorkStatus.IN_PROGRESS.value, WorkStatus.HOOKED.value, WorkStatus.BLOCKED.value]
-        self.events_dir = self.workspace_root / ".squad" / "events"
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.events_dir = runtime_dir / "events"
         self.patrol_file = self.events_dir / "patrol.jsonl"
 
     def run(self) -> List[PatrolEvent]:

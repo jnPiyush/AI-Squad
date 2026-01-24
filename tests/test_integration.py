@@ -136,7 +136,7 @@ class TestEndToEndWorkflow:
         assert result["success"] is True
         assert (temp_dir / "adr" / "ADR-123.md").exists()
     
-    def test_status_transitions_through_workflow(self, _config, mock_github):
+    def test_status_transitions_through_workflow(self, config, mock_github):
         """Test status transitions from Backlog to Done"""
         # Track current labels to simulate real behavior
         current_labels = [{"name": "type:feature"}]
@@ -205,7 +205,7 @@ class TestEndToEndWorkflow:
         assert history[0].from_status == IssueStatus.BACKLOG
         assert history[-1].to_status == IssueStatus.DONE
     
-    def test_invalid_status_transition(self, _config, mock_github):
+    def test_invalid_status_transition(self, config, mock_github):
         """Test that invalid transitions are rejected"""
         from ai_squad.core.status import StatusTransitionError
         
@@ -220,7 +220,7 @@ class TestEndToEndWorkflow:
                 "Trying to skip steps"
             )
     
-    def test_agent_communication_workflow(self, _config, mock_github):
+    def test_agent_communication_workflow(self, config, mock_github):
         """Test agent-to-agent communication"""
         communicator = AgentCommunicator(
             execution_mode="automated",
@@ -415,7 +415,7 @@ class TestErrorScenarios:
         assert result["success"] is False
         assert "prerequisites" in result["error"].lower()
     
-    def test_status_manager_resets_on_failure(self, _config):
+    def test_status_manager_resets_on_failure(self, config):
         """Test status can be reset on failure"""
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = {
@@ -457,7 +457,7 @@ class TestMultiAgentCollaboration:
             }
         })
     
-    def test_agents_can_clarify_with_each_other(self, _config):
+    def test_agents_can_clarify_with_each_other(self, config):
         """Test agents can ask each other for clarification"""
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = {"number": 123, "state": "open"}
@@ -484,7 +484,7 @@ class TestMultiAgentCollaboration:
         assert len(pm_questions) == 2  # From architect and ux
         assert len(architect_questions) == 1  # From engineer
     
-    def test_conversation_thread_tracking(self, _config):
+    def test_conversation_thread_tracking(self, config):
         """Test conversation threads are tracked properly"""
         github = Mock(spec=GitHubTool)
         communicator = AgentCommunicator(

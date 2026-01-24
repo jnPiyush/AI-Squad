@@ -17,6 +17,7 @@ from .convoy import ConvoyManager
 from .battle_plan import BattlePlanManager
 from .workstate import WorkItem, WorkStateManager, WorkStatus
 from .router import Candidate
+from .runtime_paths import resolve_runtime_dir
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +86,8 @@ Always provide clear, structured coordination plans.
     
     def get_output_path(self, issue_number: int) -> str:
         """Captain doesn't create files directly"""
-        return f".squad/captain-coordination-{issue_number}.md"
+        runtime_dir = resolve_runtime_dir(Path.cwd(), config=self.config.data)
+        return str(runtime_dir / f"captain-coordination-{issue_number}.md")
     
     def __init__(
         self,
@@ -113,7 +115,7 @@ Always provide clear, structured coordination plans.
             Path.cwd(),
             config=self.config.data,
         )
-        self.strategy_manager = strategy_manager or self.strategy or BattlePlanManager(Path.cwd())
+        self.strategy_manager = strategy_manager or self.strategy or BattlePlanManager(Path.cwd(), config=self.config.data)
         self.convoy_manager = convoy_manager or self.convoy or None
         self.signal_manager = signal_manager or self.signal
         self.handoff_manager = handoff_manager or self.handoff

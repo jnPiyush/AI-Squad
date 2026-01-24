@@ -13,6 +13,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -163,7 +165,12 @@ class SignalManager:
     MESSAGES_FILE = "messages.json"
     SignalES_FILE = "Signales.json"
     
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
+    ):
         """
         Initialize Signal manager.
         
@@ -171,8 +178,8 @@ class SignalManager:
             workspace_root: Root directory of the workspace (defaults to cwd)
         """
         self.workspace_root = workspace_root or Path.cwd()
-        self.squad_dir = self.workspace_root / ".squad"
-        self.Signal_dir = self.squad_dir / self.Signal_DIR
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        self.Signal_dir = runtime_dir / self.Signal_DIR
         
         self._messages: Dict[str, Message] = {}
         self._Signales: Dict[str, Signal] = {}

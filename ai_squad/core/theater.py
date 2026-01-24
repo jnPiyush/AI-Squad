@@ -10,6 +10,8 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from ai_squad.core.runtime_paths import resolve_runtime_dir
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,9 +36,14 @@ class TheaterRegistry:
 
     FILE_NAME = "theater.json"
 
-    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict] = None) -> None:
+    def __init__(
+        self,
+        workspace_root: Optional[Path] = None,
+        config: Optional[Dict] = None,
+        base_dir: Optional[str] = None,
+    ) -> None:
         self.workspace_root = workspace_root or Path.cwd()
-        self.squad_dir = self.workspace_root / ".squad"
+        self.squad_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
         self.registry_file = self.squad_dir / self.FILE_NAME
         self.config = config or {}
         self._theaters: Dict[str, Theater] = {}

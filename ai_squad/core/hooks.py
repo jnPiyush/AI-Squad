@@ -10,7 +10,9 @@ import subprocess
 from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
+
+from ai_squad.core.runtime_paths import resolve_runtime_dir
 
 if TYPE_CHECKING:
     from .workstate import WorkItem
@@ -26,9 +28,19 @@ class HookManager:
         workspace_root: Path,
         hooks_dir: Optional[str] = None,
         use_git_worktree: bool = False,
+        config: Optional[Dict[str, Any]] = None,
+        base_dir: Optional[str] = None,
     ):
         self.workspace_root = workspace_root
-        self.hooks_dir = workspace_root / (hooks_dir or ".squad/hooks")
+        runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
+        resolved_hooks_dir = hooks_dir
+        if resolved_hooks_dir is None and isinstance(config, dict):
+            resolved_hooks_dir = config.get("hooks", {}).get("hooks_dir")
+        if not resolved_hooks_dir or resolved_hooks_dir == ".squad/hooks":
+            self.hooks_dir = runtime_dir / "hooks"
+        else:
+            hooks_path = Path(resolved_hooks_dir)
+            self.hooks_dir = hooks_path if hooks_path.is_absolute() else self.workspace_root / hooks_path
         self.use_git_worktree = use_git_worktree
 
     def ensure_hook(self, item: "WorkItem") -> Path:
