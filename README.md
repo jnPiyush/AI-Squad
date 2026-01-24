@@ -127,10 +127,10 @@ flowchart LR
         P3 -->|handoff| P4
     end
     
-    style P1 fill:#e3f2fd
-    style P2 fill:#fff3e0
-    style P3 fill:#e8f5e9
-    style P4 fill:#fce4ec
+    style P1 fill:#ec4899,color:#fff
+    style P2 fill:#f59e0b,color:#fff
+    style P3 fill:#10b981,color:#fff
+    style P4 fill:#3b82f6,color:#fff
 ```
 
 ### Routing & Health
@@ -151,9 +151,10 @@ flowchart TD
     Alt -->|Yes| Route
     Alt -->|No| Fallback[⚠️ Fallback]
     
-    style Route fill:#c8e6c9
-    style Block fill:#ffcdd2
-    style CB fill:#ffcdd2
+    style Route fill:#10b981,color:#fff
+    style Block fill:#ef4444,color:#fff
+    style CB fill:#ef4444,color:#fff
+    style Fallback fill:#f59e0b,color:#fff
 ```
 
 ---
