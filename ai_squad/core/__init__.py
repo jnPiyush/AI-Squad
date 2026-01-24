@@ -13,8 +13,10 @@ from ai_squad.core.ai_provider import (
     generate_content,
 )
 
-# Gastown-inspired orchestration modules
+# AI-Squad orchestration modules
 from ai_squad.core.workstate import WorkItem, WorkStateManager, WorkStatus
+from ai_squad.core.hooks import HookManager
+from ai_squad.core.worker_lifecycle import WorkerLifecycleManager
 from ai_squad.core.battle_plan import (
     BattlePlan,
     BattlePlanPhase,
@@ -60,6 +62,8 @@ __all__ = [
     "WorkItem",
     "WorkStateManager",
     "WorkStatus",
+    "HookManager",
+    "WorkerLifecycleManager",
     # Battle Plan
     "BattlePlan",
     "BattlePlanPhase",

@@ -138,6 +138,14 @@ class OperationalGraph:
         """Get a node by ID."""
         return self._nodes.get(node_id)
 
+    def get_nodes(self) -> List[GraphNode]:
+        """Get all nodes."""
+        return list(self._nodes.values())
+
+    def get_edges(self) -> List[GraphEdge]:
+        """Get all edges."""
+        return list(self._edges)
+
     def get_nodes_by_type(self, node_type: NodeType) -> List[GraphNode]:
         """Get all nodes of a specific type."""
         return [n for n in self._nodes.values() if n.type == node_type]

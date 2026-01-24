@@ -1,7 +1,6 @@
 """
 Configuration management for AI-Squad
 """
-import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 import yaml
@@ -83,6 +82,18 @@ class Config:
             },
             "touch_target_min": "44px",
         },
+        "runtime": {
+            "provider": "copilot",
+            "provider_order": ["copilot", "openai", "azure_openai"],
+            "command": None,
+            "args": [],
+            "prompt_mode": "none",
+        },
+        "hooks": {
+            "enabled": True,
+            "use_git_worktree": False,
+            "hooks_dir": ".squad/hooks",
+        },
     }
     
     def __init__(self, data: Dict[str, Any]):
@@ -114,7 +125,7 @@ class Config:
             # Return default config
             return cls(cls.DEFAULT_CONFIG.copy())
         
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         
         # Merge with defaults
@@ -142,7 +153,7 @@ class Config:
         if path is None:
             path = Path.cwd() / "squad.yaml"
         
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             yaml.dump(self.data, f, default_flow_style=False, sort_keys=False)
     
     def get(self, key: str, default: Any = None) -> Any:

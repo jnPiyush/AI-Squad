@@ -3,23 +3,24 @@ Dashboard Flask Application
 
 Provides web UI for monitoring AI-Squad orchestration.
 """
-import json
 import logging
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional, TYPE_CHECKING
 
 try:
-    from flask import Flask, render_template, jsonify, request
+    from flask import Flask, render_template, jsonify, request  # type: ignore[import-not-found]
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
     Flask = None
 
+if TYPE_CHECKING:
+    from flask import Flask as FlaskType  # type: ignore[import-not-found]
+
 logger = logging.getLogger(__name__)
 
 
-def create_app(workspace_root: Optional[Path] = None) -> "Flask":
+def create_app(workspace_root: Optional[Path] = None) -> "FlaskType":
     """Create and configure the Flask dashboard application."""
     if not FLASK_AVAILABLE:
         raise ImportError(
@@ -42,7 +43,7 @@ def create_app(workspace_root: Optional[Path] = None) -> "Flask":
     return app
 
 
-def register_routes(app: Flask) -> None:
+def register_routes(app: "FlaskType") -> None:
     """Register all dashboard routes."""
     
     @app.route("/")
@@ -88,7 +89,7 @@ def register_routes(app: Flask) -> None:
             summary = health_view.summarize(config=health_cfg)
             
             return jsonify({"success": True, "data": summary})
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching health data")
             return jsonify({"success": False, "error": str(e)}), 500
     
@@ -106,7 +107,7 @@ def register_routes(app: Flask) -> None:
                 "success": True,
                 "data": [link.to_dict() for link in links]
             })
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching delegations")
             return jsonify({"success": False, "error": str(e)}), 500
     
@@ -120,8 +121,8 @@ def register_routes(app: Flask) -> None:
             graph = OperationalGraph(workspace_root=workspace)
             
             # Get all nodes and edges
-            nodes = [node.to_dict() for node in graph._nodes.values()]
-            edges = [edge.to_dict() for edge in graph._edges]
+            nodes = [node.to_dict() for node in graph.get_nodes()]
+            edges = [edge.to_dict() for edge in graph.get_edges()]
             
             return jsonify({
                 "success": True,
@@ -131,7 +132,7 @@ def register_routes(app: Flask) -> None:
                     "mermaid": graph.export_mermaid()
                 }
             })
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching graph data")
             return jsonify({"success": False, "error": str(e)}), 500
     
@@ -146,7 +147,7 @@ def register_routes(app: Flask) -> None:
             impact = graph.impact_analysis(node_id)
             
             return jsonify({"success": True, "data": impact})
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error computing impact analysis")
             return jsonify({"success": False, "error": str(e)}), 500
     
@@ -177,7 +178,6 @@ def register_routes(app: Flask) -> None:
             
             items = manager.list_work_items(status=status_filter, agent=agent)
             stats = manager.get_stats()
-            
             return jsonify({
                 "success": True,
                 "data": {
@@ -185,8 +185,38 @@ def register_routes(app: Flask) -> None:
                     "stats": stats
                 }
             })
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching work items")
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route("/api/workers")
+    def api_workers():
+        """Get worker lifecycle data."""
+        try:
+            from ai_squad.core.worker_lifecycle import WorkerLifecycleManager
+
+            workspace = app.config["WORKSPACE_ROOT"]
+            manager = WorkerLifecycleManager(workspace_root=workspace)
+            workers = manager.list()
+
+            return jsonify({"success": True, "data": [w.__dict__ for w in workers]})
+        except (RuntimeError, OSError, ValueError) as e:
+            logger.exception("Error fetching workers")
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    @app.route("/api/hooks")
+    def api_hooks():
+        """Get hook metadata list."""
+        try:
+            from ai_squad.core.hooks import HookManager
+
+            workspace = app.config["WORKSPACE_ROOT"]
+            manager = HookManager(workspace_root=workspace)
+            hooks = manager.list_hooks()
+
+            return jsonify({"success": True, "data": hooks})
+        except (RuntimeError, OSError, ValueError) as e:
+            logger.exception("Error fetching hooks")
             return jsonify({"success": False, "error": str(e)}), 500
     
     @app.route("/api/convoys")
@@ -214,7 +244,7 @@ def register_routes(app: Flask) -> None:
                     for c in convoys
                 ]
             })
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching convoys")
             return jsonify({"success": False, "error": str(e)}), 500
     
@@ -245,66 +275,53 @@ def register_routes(app: Flask) -> None:
                     for msg in messages
                 ]
             })
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError) as e:
             logger.exception("Error fetching signals")
             return jsonify({"success": False, "error": str(e)}), 500
     
     @app.route("/api/identity")
     def api_identity():
         """Get current identity dossier."""
-        try:
-            from ai_squad.core.identity import IdentityManager
-            
-            workspace = app.config["WORKSPACE_ROOT"]
-            manager = IdentityManager(workspace_root=workspace)
-            dossier = manager.load()
-            
-            if dossier:
-                return jsonify({"success": True, "data": dossier.to_dict()})
-            else:
-                return jsonify({"success": True, "data": None})
-        except Exception as e:
-            logger.exception("Error fetching identity")
-            return jsonify({"success": False, "error": str(e)}), 500
+        from ai_squad.core.identity import IdentityManager
+
+        workspace = app.config["WORKSPACE_ROOT"]
+        manager = IdentityManager(workspace_root=workspace)
+        dossier = manager.load()
+
+        if dossier:
+            return jsonify({"success": True, "data": dossier.to_dict()})
+        return jsonify({"success": True, "data": None})
     
     @app.route("/api/capabilities")
     def api_capabilities():
         """Get installed capabilities."""
-        try:
-            from ai_squad.core.capability_registry import CapabilityRegistry
-            
-            workspace = app.config["WORKSPACE_ROOT"]
-            registry = CapabilityRegistry(workspace_root=workspace)
-            packages = registry.list()
-            
-            return jsonify({
-                "success": True,
-                "data": [pkg.to_dict() for pkg in packages]
-            })
-        except Exception as e:
-            logger.exception("Error fetching capabilities")
-            return jsonify({"success": False, "error": str(e)}), 500
+        from ai_squad.core.capability_registry import CapabilityRegistry
+
+        workspace = app.config["WORKSPACE_ROOT"]
+        registry = CapabilityRegistry(workspace_root=workspace)
+        packages = registry.list()
+
+        return jsonify({
+            "success": True,
+            "data": [pkg.to_dict() for pkg in packages]
+        })
     
     @app.route("/api/scout")
     def api_scout():
         """Get scout worker runs."""
-        try:
-            from ai_squad.core.scout_worker import ScoutWorker
-            
-            workspace = app.config["WORKSPACE_ROOT"]
-            worker = ScoutWorker(workspace_root=workspace)
-            runs = worker.list_runs()
-            
-            data = []
-            for run_id in runs:
-                run = worker.load_run(run_id)
-                if run:
-                    data.append(run.to_dict())
-            
-            return jsonify({"success": True, "data": data})
-        except Exception as e:
-            logger.exception("Error fetching scout runs")
-            return jsonify({"success": False, "error": str(e)}), 500
+        from ai_squad.core.scout_worker import ScoutWorker
+
+        workspace = app.config["WORKSPACE_ROOT"]
+        worker = ScoutWorker(workspace_root=workspace)
+        runs = worker.list_runs()
+
+        data = []
+        for run_id in runs:
+            run = worker.load_run(run_id)
+            if run:
+                data.append(run.to_dict())
+
+        return jsonify({"success": True, "data": data})
 
 
 def run_dashboard(host: str = "127.0.0.1", port: int = 5050, debug: bool = False) -> None:

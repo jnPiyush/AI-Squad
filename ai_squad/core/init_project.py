@@ -47,6 +47,7 @@ def initialize_project(force: bool = False) -> Dict[str, Any]:
             ".github/agents",
             ".github/skills",
             ".github/templates",
+            ".squad/hooks",
         ]
         
         for dir_path in directories:
@@ -152,6 +153,18 @@ def _create_config(path: Path) -> None:
             },
         },
         "skills": ["all"],  # or list specific skills: ["testing", "security", ...]
+        "runtime": {
+            "provider": "copilot",
+            "provider_order": ["copilot", "openai", "azure_openai"],
+            "command": None,
+            "args": [],
+            "prompt_mode": "none",
+        },
+        "hooks": {
+            "enabled": True,
+            "use_git_worktree": False,
+            "hooks_dir": ".squad/hooks",
+        },
     }
     
     with open(path, "w") as f:

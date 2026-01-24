@@ -13,11 +13,10 @@ from ai_squad.agents.base import InvalidIssueNumberError, SDKExecutionError
 
 # GitHub Copilot SDK - Primary choice for AI-powered agent execution
 try:
-    from github_copilot_sdk import CopilotSDK, Agent
+    from github_copilot_sdk import CopilotSDK
     SDK_AVAILABLE = True
 except ImportError:
     CopilotSDK = None
-    Agent = None
     SDK_AVAILABLE = False
 
 from ai_squad.core.config import Config
@@ -33,6 +32,7 @@ from ai_squad.core.battle_plan import (
 )
 from ai_squad.core.convoy import ConvoyManager  # NEW: Parallel execution
 from ai_squad.core.workstate import WorkStateManager  # NEW: Work tracking
+from ai_squad.core.worker_lifecycle import WorkerLifecycleManager
 from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.delegation import DelegationManager
@@ -99,7 +99,11 @@ class AgentExecutor:
         # NEW: Create shared orchestration managers FIRST (single source of truth)
         from pathlib import Path
         workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
-        self.workstate_mgr = workstate_manager or WorkStateManager(workspace_root=workspace_root)
+        self.workstate_mgr = workstate_manager or WorkStateManager(
+            workspace_root=workspace_root,
+            config=self.config.data,
+        )
+        self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root)
         self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root)
         self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr)
         self.handoff_mgr = handoff_manager or HandoffManager(
@@ -132,8 +136,7 @@ class AgentExecutor:
         )
         
         # Async agent executor for convoy with error handling
-        async def _async_agent_executor(agent_type: str, work_item_id: str, 
-                                         context: Optional[Dict[str, Any]] = None) -> str:
+        async def _async_agent_executor(agent_type: str, work_item_id: str, **_: Any) -> str:
             """Async wrapper for agent execution in convoys with error handling"""
             try:
                 work_item = self.workstate_mgr.get_work_item(work_item_id)
@@ -146,7 +149,7 @@ class AgentExecutor:
                 
                 return str(result.get("output", "Completed"))
             except Exception as e:
-                logger.error(f"Convoy agent execution failed for {work_item_id}: {e}")
+                logger.error("Convoy agent execution failed for %s: %s", work_item_id, e)
                 raise
         
         self.convoy_mgr = convoy_manager or ConvoyManager(
@@ -225,6 +228,7 @@ class AgentExecutor:
                     }
 
         agent = self.agents[agent_type]
+        worker = self.worker_lifecycle.spawn(agent_type=agent_type, issue_number=issue_number)
         
         try:
             result = agent.execute(issue_number)
@@ -235,10 +239,12 @@ class AgentExecutor:
                     "Generated using template-based fallback. "
                     "Install github-copilot-sdk for AI-powered generation."
                 )
+            self.worker_lifecycle.complete(worker.id)
             return result
             
         except InvalidIssueNumberError as e:
             logger.error("Invalid issue number: %s", e)
+            self.worker_lifecycle.fail(worker.id, str(e))
             return {
                 "success": False,
                 "error": f"Invalid issue number: {e}",
@@ -246,6 +252,7 @@ class AgentExecutor:
             }
         except SDKExecutionError as e:
             logger.error("SDK execution failed: %s", e)
+            self.worker_lifecycle.fail(worker.id, str(e))
             return {
                 "success": False,
                 "error": f"SDK error: {e}",
@@ -253,6 +260,7 @@ class AgentExecutor:
             }
         except (ValueError, KeyError, IOError, OSError) as e:
             logger.error("Agent execution failed: %s", e)
+            self.worker_lifecycle.fail(worker.id, str(e))
             return {
                 "success": False,
                 "error": str(e),
@@ -275,8 +283,6 @@ class AgentExecutor:
         async def _agent_callback(
             issue_number: int,
             agent_type: str,
-            action: Optional[str] = None,
-            step: Optional[Dict[str, Any]] = None,
             **_: Any,
         ) -> Dict[str, Any]:
             return self.execute(agent_type, issue_number)

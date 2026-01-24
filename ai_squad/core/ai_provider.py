@@ -45,12 +45,12 @@ class AIProvider(ABC):
     @abstractmethod
     def provider_type(self) -> AIProviderType:
         """Get provider type"""
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def is_available(self) -> bool:
         """Check if provider is available"""
-        pass
+        raise NotImplementedError
     
     @abstractmethod
     def generate(
@@ -62,7 +62,7 @@ class AIProvider(ABC):
         max_tokens: int = 4096
     ) -> Optional[AIResponse]:
         """Generate content using this provider"""
-        pass
+        raise NotImplementedError
 
 
 class CopilotProvider(AIProvider):
@@ -97,8 +97,8 @@ class CopilotProvider(AIProvider):
         except ImportError:
             logger.debug("Copilot SDK not installed")
             return False
-        except Exception as e:
-            logger.warning(f"Copilot SDK initialization failed: {e}")
+        except (OSError, RuntimeError, ValueError) as e:
+            logger.warning("Copilot SDK initialization failed: %s", e)
             return False
     
     def generate(
@@ -115,15 +115,15 @@ class CopilotProvider(AIProvider):
         try:
             return self._run_async(
                 self._generate_async(
-                    system_prompt=system_prompt,
-                    user_prompt=user_prompt,
-                    model=model,
-                    temperature=temperature,
-                    max_tokens=max_tokens
+                    system_prompt,
+                    user_prompt,
+                    model,
+                    temperature,
+                    max_tokens,
                 )
             )
-        except Exception as e:
-            logger.warning(f"Copilot generation failed: {e}")
+        except (RuntimeError, ValueError, OSError) as e:
+            logger.warning("Copilot generation failed: %s", e)
             return None
 
     def _is_copilot_cli_available(self) -> bool:
@@ -138,16 +138,17 @@ class CopilotProvider(AIProvider):
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             return False
 
-        return self._is_copilot_cli_authenticated(copilot_path)
+        return self._is_copilot_cli_authenticated()
 
     @staticmethod
-    def _is_copilot_cli_authenticated(copilot_path: str) -> bool:
+    def _is_copilot_cli_authenticated() -> bool:
         try:
             auth = subprocess.run(
                 ["gh", "auth", "status"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
+                check=False,
             )
             return auth.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -160,14 +161,16 @@ class CopilotProvider(AIProvider):
                 ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", copilot_path, *args],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
+                check=False,
             )
 
         return subprocess.run(
             [copilot_path, *args],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False,
         )
 
     def _select_model(self, requested_model: Optional[str]) -> str:
@@ -197,15 +200,15 @@ class CopilotProvider(AIProvider):
                         if model_id:
                             self._model_cache = model_id
                             return model_id
-        except Exception as e:
-            logger.debug(f"Copilot model discovery failed: {e}")
+        except (AttributeError, ValueError, OSError) as e:
+            logger.debug("Copilot model discovery failed: %s", e)
 
         self._model_cache = os.getenv("COPILOT_MODEL", "gpt-4.1")
         return self._model_cache
 
     def _run_async(self, coroutine):
         try:
-            running_loop = asyncio.get_running_loop()
+            _ = asyncio.get_running_loop()
         except RuntimeError:
             return asyncio.run(coroutine)
 
@@ -216,7 +219,7 @@ class CopilotProvider(AIProvider):
             asyncio.set_event_loop(loop)
             try:
                 result["value"] = loop.run_until_complete(coroutine)
-            except Exception as e:
+            except (RuntimeError, ValueError, OSError) as e:
                 result["error"] = e
             finally:
                 loop.close()
@@ -225,8 +228,9 @@ class CopilotProvider(AIProvider):
         thread.start()
         thread.join()
 
-        if result["error"]:
-            raise result["error"]
+        error = result["error"]
+        if error is not None:
+            raise error
         return result["value"]
 
     async def _generate_async(
@@ -238,6 +242,8 @@ class CopilotProvider(AIProvider):
         max_tokens: int
     ) -> Optional[AIResponse]:
         from copilot import CopilotClient
+
+        _ = (temperature, max_tokens)
 
         client = CopilotClient()
         await client.start()
@@ -305,15 +311,15 @@ class OpenAIProvider(AIProvider):
             return False
         
         try:
-            from openai import OpenAI
+            from openai import OpenAI  # type: ignore[import-not-found]
             self._client = OpenAI(api_key=self.api_key)
             logger.info("OpenAI client initialized successfully")
             return True
         except ImportError:
             logger.debug("OpenAI SDK not installed (pip install openai)")
             return False
-        except Exception as e:
-            logger.warning(f"OpenAI initialization failed: {e}")
+        except (OSError, RuntimeError, ValueError) as e:
+            logger.warning("OpenAI initialization failed: %s", e)
             return False
     
     def generate(
@@ -345,8 +351,8 @@ class OpenAIProvider(AIProvider):
                     model=model or "gpt-4",
                     usage=response.usage.model_dump() if response.usage else None
                 )
-        except Exception as e:
-            logger.warning(f"OpenAI generation failed: {e}")
+        except (RuntimeError, ValueError, OSError) as e:
+            logger.warning("OpenAI generation failed: %s", e)
         
         return None
 
@@ -381,7 +387,7 @@ class AzureOpenAIProvider(AIProvider):
             return False
         
         try:
-            from openai import AzureOpenAI
+            from openai import AzureOpenAI  # type: ignore[import-not-found]
             self._client = AzureOpenAI(
                 api_key=self.api_key,
                 api_version="2024-02-15-preview",
@@ -392,8 +398,8 @@ class AzureOpenAIProvider(AIProvider):
         except ImportError:
             logger.debug("OpenAI SDK not installed (pip install openai)")
             return False
-        except Exception as e:
-            logger.warning(f"Azure OpenAI initialization failed: {e}")
+        except (OSError, RuntimeError, ValueError) as e:
+            logger.warning("Azure OpenAI initialization failed: %s", e)
             return False
     
     def generate(
@@ -425,8 +431,8 @@ class AzureOpenAIProvider(AIProvider):
                     model=model or self.deployment,
                     usage=response.usage.model_dump() if response.usage else None
                 )
-        except Exception as e:
-            logger.warning(f"Azure OpenAI generation failed: {e}")
+        except (RuntimeError, ValueError, OSError) as e:
+            logger.warning("Azure OpenAI generation failed: %s", e)
         
         return None
 
@@ -447,6 +453,25 @@ class AIProviderChain:
         self._providers: List[AIProvider] = []
         self._active_provider: Optional[AIProvider] = None
         self._initialized = False
+        self._provider_order: List[str] = ["copilot", "openai", "azure_openai"]
+        self.configure(self.config)
+
+    def configure(self, config: Optional[Dict[str, Any]] = None) -> None:
+        """Update runtime configuration for provider order selection."""
+        if config is not None:
+            self.config = config
+
+        runtime_cfg = {}
+        if isinstance(self.config, dict):
+            runtime_cfg = self.config.get("runtime", {}) or {}
+
+        provider_order = runtime_cfg.get("provider_order")
+        if isinstance(provider_order, list) and provider_order:
+            self._provider_order = [p for p in provider_order if isinstance(p, str)]
+        else:
+            provider = runtime_cfg.get("provider")
+            if isinstance(provider, str):
+                self._provider_order = [provider, "openai", "azure_openai"]
     
     def _initialize_providers(self):
         """Initialize provider chain in priority order"""
@@ -456,24 +481,27 @@ class AIProviderChain:
         self._initialized = True
         
         # Priority order: Copilot -> OpenAI -> Azure OpenAI
-        providers_config = [
-            ("copilot", CopilotProvider),
-            ("openai", OpenAIProvider),
-            ("azure_openai", AzureOpenAIProvider),
-        ]
+        providers_config = {
+            "copilot": CopilotProvider,
+            "openai": OpenAIProvider,
+            "azure_openai": AzureOpenAIProvider,
+        }
         
-        for name, provider_class in providers_config:
+        for name in self._provider_order:
+            provider_class = providers_config.get(name)
+            if not provider_class:
+                continue
             try:
                 provider = provider_class()
                 if provider.is_available():
                     self._providers.append(provider)
-                    logger.info(f"AI Provider available: {name}")
-            except Exception as e:
-                logger.debug(f"AI Provider {name} initialization error: {e}")
+                    logger.info("AI Provider available: %s", name)
+            except (OSError, RuntimeError, ValueError) as e:
+                logger.debug("AI Provider %s initialization error: %s", name, e)
         
         if self._providers:
             self._active_provider = self._providers[0]
-            logger.info(f"Primary AI Provider: {self._active_provider.provider_type.value}")
+            logger.info("Primary AI Provider: %s", self._active_provider.provider_type.value)
         else:
             logger.warning("No AI providers available. Using template fallback.")
     
@@ -526,26 +554,25 @@ class AIProviderChain:
                     max_tokens=max_tokens
                 )
                 if response:
-                    logger.info(f"Generated using {provider.provider_type.value}")
+                    logger.info("Generated using %s", provider.provider_type.value)
                     return response
-            except Exception as e:
-                logger.warning(f"Provider {provider.provider_type.value} failed: {e}")
+            except (RuntimeError, ValueError, OSError) as e:
+                logger.warning("Provider %s failed: %s", provider.provider_type.value, e)
                 continue
         
         logger.warning("All AI providers failed. Falling back to templates.")
         return None
 
 
-# Global singleton for easy access
-_provider_chain: Optional[AIProviderChain] = None
-
-
-def get_ai_provider() -> AIProviderChain:
+def get_ai_provider(config: Optional[Dict[str, Any]] = None) -> AIProviderChain:
     """Get the global AI provider chain"""
-    global _provider_chain
-    if _provider_chain is None:
-        _provider_chain = AIProviderChain()
-    return _provider_chain
+    instance = getattr(get_ai_provider, "_instance", None)
+    if instance is None:
+        instance = AIProviderChain(config=config)
+        setattr(get_ai_provider, "_instance", instance)
+    elif config is not None:
+        instance.configure(config)
+    return instance
 
 
 def generate_content(

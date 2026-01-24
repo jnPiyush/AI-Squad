@@ -567,6 +567,7 @@ def plans(label):
                 f"[bold]Description:[/bold] {plan.description}\n"
                 f"[bold]Phases:[/bold] {len(plan.phases)}\n"
                 f"[bold]Labels:[/bold] {', '.join(plan.labels) if plan.labels else 'none'}\n\n"
+                f"[bold]Variables:[/bold] {', '.join(plan.variables.keys()) if plan.variables else 'none'}\n\n"
                 f"[dim]Phases: {' → '.join(p.name for p in plan.phases)}[/dim]",
                 title=f"📋 {plan.name}",
                 border_style="cyan"
@@ -580,7 +581,8 @@ def plans(label):
 @main.command()
 @click.argument("plan_name")
 @click.argument("issue_number", type=int)
-def run_plan(plan_name, issue_number):
+@click.option("--var", "vars", multiple=True, help="Variable override (key=value)")
+def run_plan(plan_name, issue_number, vars):
     """
     Execute a battle plan on an issue
     
@@ -601,8 +603,10 @@ def run_plan(plan_name, issue_number):
         plan_manager = BattlePlanManager()
         executor = BattlePlanExecutor(plan_manager, work_manager)
         
+        variables = _parse_variables(vars)
+
         # Start execution
-        execution = executor.start_execution(plan_name, issue_number)
+        execution = executor.start_execution(plan_name, issue_number, variables)
         
         if not execution:
             console.print(f"[bold red]❌ Battle plan '{plan_name}' not found[/bold red]")
@@ -623,6 +627,16 @@ def run_plan(plan_name, issue_number):
     except Exception as e:
         console.print(f"[bold red]❌ Error: {e}[/bold red]")
         sys.exit(1)
+
+
+def _parse_variables(values):
+    variables = {}
+    for entry in values or []:
+        if "=" not in entry:
+            continue
+        key, value = entry.split("=", 1)
+        variables[key.strip()] = value.strip()
+    return variables
 
 
 @main.command()

@@ -1,7 +1,7 @@
 """
 Work State Management
 
-Persistent work state tracking inspired by Gastown's Hooks/Beads pattern.
+Persistent work state tracking with Squad Hooks and Work Items.
 Work items survive agent crashes and restarts, enabling reliable multi-agent workflows.
 """
 import json
@@ -13,12 +13,16 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, Any, List, Optional, ContextManager
 
+from .hooks import HookManager
+
 # Cross-platform file locking for safe persistence
 try:  # POSIX
     import fcntl  # type: ignore
 except ImportError:  # Windows
     fcntl = None
     import msvcrt  # type: ignore
+else:
+    msvcrt = None
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +43,7 @@ class WorkStatus(str, Enum):
 class WorkItem:
     """
     A unit of work that can be assigned to agents.
-    Similar to Gastown's "Bead" concept.
+    Core AI-Squad Work Item concept.
     """
     id: str
     title: str
@@ -139,7 +143,7 @@ class WorkStateManager:
     SQUAD_DIR = ".squad"
     WORKSTATE_FILE = "workstate.json"
     
-    def __init__(self, workspace_root: Optional[Path] = None):
+    def __init__(self, workspace_root: Optional[Path] = None, config: Optional[Dict[str, Any]] = None):
         """
         Initialize work state manager.
         
@@ -147,6 +151,14 @@ class WorkStateManager:
             workspace_root: Root directory of the workspace (defaults to cwd)
         """
         self.workspace_root = workspace_root or Path.cwd()
+        self.config = config or {}
+        hooks_cfg = self.config.get("hooks", {}) if isinstance(self.config, dict) else {}
+        self.hooks_enabled = hooks_cfg.get("enabled", True)
+        self.hook_manager = HookManager(
+            workspace_root=self.workspace_root,
+            hooks_dir=hooks_cfg.get("hooks_dir", ".squad/hooks"),
+            use_git_worktree=hooks_cfg.get("use_git_worktree", False),
+        )
         self.squad_dir = self.workspace_root / self.SQUAD_DIR
         self.workstate_file = self.squad_dir / self.WORKSTATE_FILE
         self.lock_file = self.squad_dir / f"{self.WORKSTATE_FILE}.lock"
@@ -160,17 +172,17 @@ class WorkStateManager:
     def _acquire_lock(self) -> ContextManager:
         """Context manager to acquire file lock for state operations."""
         self._ensure_squad_dir()
-        lock_handle = open(self.lock_file, "a+")
+        lock_handle = open(self.lock_file, "a+", encoding="utf-8")
 
         class _LockCtx:
-            def __enter__(self_nonlocal):
+            def __enter__(self):
                 if fcntl:
                     fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
                 else:  # Windows
                     msvcrt.locking(lock_handle.fileno(), msvcrt.LK_LOCK, 1)
                 return lock_handle
 
-            def __exit__(self_nonlocal, exc_type, exc, tb):
+            def __exit__(self, exc_type, exc, tb):
                 try:
                     if fcntl:
                         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
@@ -251,26 +263,31 @@ class WorkStateManager:
         """Lock the state, optionally reload, and save only if marked dirty."""
         self._ensure_squad_dir()
         lock = self._acquire_lock()
+        manager = self
 
         class _TxnCtx:
-            def __enter__(self_nonlocal):
-                self._in_transaction = True
-                self_nonlocal.lock_ctx = lock.__enter__()
+            def __init__(self):
+                self.lock_ctx = None
+                self.dirty = False
+
+            def __enter__(self):
+                manager._in_transaction = True
+                self.lock_ctx = lock.__enter__()
                 if reload:
-                    self._load_state_locked()
-                self_nonlocal.dirty = False
+                    manager._load_state_locked()
+                self.dirty = False
 
                 def mark_dirty():
-                    self_nonlocal.dirty = True
+                    self.dirty = True
 
                 return mark_dirty
 
-            def __exit__(self_nonlocal, exc_type, exc, tb):
+            def __exit__(self, exc_type, exc, tb):
                 try:
-                    if exc_type is None and self_nonlocal.dirty:
-                        self._save_state_locked()
+                    if exc_type is None and self.dirty:
+                        manager._save_state_locked()
                 finally:
-                    self._in_transaction = False
+                    manager._in_transaction = False
                     lock.__exit__(exc_type, exc, tb)
                 return False  # Do not suppress exceptions
 
@@ -326,6 +343,8 @@ class WorkStateManager:
             self._work_items[item.id] = item
             mark_dirty()
 
+        if self.hooks_enabled:
+            self.hook_manager.ensure_hook(item)
         self._update_operational_graph(item)
         
         logger.info("Created work item: %s (%s)", item.id, title)
@@ -352,6 +371,8 @@ class WorkStateManager:
             item.updated_at = datetime.now().isoformat()
             self._work_items[item.id] = item
             mark_dirty()
+        if self.hooks_enabled:
+            self.hook_manager.write_metadata(item)
     
     def delete_work_item(self, item_id: str) -> bool:
         """Delete a work item"""
@@ -359,6 +380,8 @@ class WorkStateManager:
             if item_id in self._work_items:
                 del self._work_items[item_id]
                 mark_dirty()
+                if self.hooks_enabled:
+                    self.hook_manager.remove_hook(item_id)
                 return True
             return False
     
@@ -397,6 +420,8 @@ class WorkStateManager:
         logger.info("Assigned %s to agent %s", item_id, agent)
         item = self.get_work_item(item_id)
         if item:
+            if self.hooks_enabled:
+                self.hook_manager.ensure_hook(item)
             self._update_operational_graph(item)
         return True
     
@@ -411,6 +436,8 @@ class WorkStateManager:
             item.unassign()
             mark_dirty()
         
+        if item and self.hooks_enabled:
+            self.hook_manager.write_metadata(item)
         logger.info("Unassigned %s from agent %s", item_id, old_agent)
         return True
     
@@ -438,6 +465,8 @@ class WorkStateManager:
             
             item.save_context(context)
             mark_dirty()
+            if self.hooks_enabled:
+                self.hook_manager.write_metadata(item)
             return True
     
     def restore_agent_context(self, item_id: str) -> Optional[Dict[str, Any]]:
@@ -542,6 +571,8 @@ class WorkStateManager:
             
             item.add_artifact(artifact_path)
             mark_dirty()
+            if self.hooks_enabled:
+                self.hook_manager.write_metadata(item)
             return True
     
     # Status Transitions
@@ -565,6 +596,9 @@ class WorkStateManager:
                 item.save_context(context)
             
             mark_dirty()
+        
+        if item and self.hooks_enabled:
+            self.hook_manager.write_metadata(item)
         
         logger.info(
             "Transitioned %s from %s to %s",
@@ -595,6 +629,9 @@ class WorkStateManager:
             item.unassign()
             item.update_status(WorkStatus.DONE)
             mark_dirty()
+        
+        if item and self.hooks_enabled:
+            self.hook_manager.write_metadata(item)
         
         # Unblock dependent items
         self.update_blocked_items()

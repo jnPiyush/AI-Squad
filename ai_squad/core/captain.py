@@ -120,7 +120,10 @@ Always provide clear, structured coordination plans.
         super().__init__(config, sdk, orchestration)
         
         # Use injected managers (DI pattern) or create local ones as fallback
-        self.work_state_manager = work_state_manager or self.workstate or WorkStateManager(Path.cwd())
+        self.work_state_manager = work_state_manager or self.workstate or WorkStateManager(
+            Path.cwd(),
+            config=self.config.data,
+        )
         self.strategy_manager = strategy_manager or self.strategy or BattlePlanManager(Path.cwd())
         self.convoy_manager = convoy_manager or self.convoy or None
         self.signal_manager = signal_manager or self.signal

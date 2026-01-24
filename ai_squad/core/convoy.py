@@ -1,7 +1,7 @@
 """
 Convoy System
 
-Parallel work execution batching inspired by Gastown's Convoy pattern.
+Parallel work execution batching for AI-Squad.
 Convoys allow multiple agents to work simultaneously on independent tasks.
 """
 import asyncio
@@ -58,8 +58,8 @@ class Convoy:
     """
     A convoy groups multiple work items for parallel execution.
     
-    Similar to Gastown's Convoy concept - a batch of independent
-    tasks that can be executed simultaneously by different agents.
+    A batch of independent tasks that can be executed simultaneously
+    by different agents.
     """
     id: str
     name: str

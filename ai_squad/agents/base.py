@@ -63,7 +63,7 @@ class BaseAgent(ABC):
         self.agent_type = self.__class__.__name__.replace("Agent", "").lower()
         
         # NEW: AI Provider chain (Copilot -> OpenAI -> Azure -> Template)
-        self.ai_provider = get_ai_provider()
+        self.ai_provider = get_ai_provider(self.config.data)
         
         # Orchestration managers (shared instances via dependency injection)
         self.orchestration = orchestration or {}

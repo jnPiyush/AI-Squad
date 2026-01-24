@@ -13,7 +13,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 
-from .workstate import WorkItem, WorkStateManager, WorkStatus
+from .workstate import WorkStateManager, WorkStatus
 
 logger = logging.getLogger(__name__)
 
@@ -286,9 +286,11 @@ class BattlePlanExecutor:
         )
 
         for step in strategy.phases:
+            rendered_name = self._render_template(step.name, merged_vars)
+            rendered_description = self._render_template(step.description, merged_vars)
             work_item = self.work_state_manager.create_work_item(
-                title=f"[{strategy_name}] {step.name}",
-                description=step.description,
+                title=f"[{strategy_name}] {rendered_name}",
+                description=rendered_description,
                 issue_number=issue_number,
                 labels=[strategy_name, step.agent, "strategy-step"],
             )
@@ -438,5 +440,14 @@ class BattlePlanExecutor:
             kwargs["step"] = step.to_dict()
 
         return await self.agent_executor(**kwargs)  # type: ignore[arg-type]
+
+    @staticmethod
+    def _render_template(value: str, variables: Dict[str, Any]) -> str:
+        if not isinstance(value, str) or not variables:
+            return value
+        try:
+            return value.format(**variables)
+        except (KeyError, ValueError):
+            return value
 
 
