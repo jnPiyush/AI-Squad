@@ -285,7 +285,7 @@ squad dashboard
 - **Convoys** - Monitor parallel work batches
 - **Graph** - Interactive operational graph visualization
 
-### 🧠 Multi-Agent Collaboration
+### 🗣️👥 Multi-Agent Collaboration
 
 ```bash
 # PM and Architect collaborate on Epic planning
@@ -750,6 +750,7 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 
 
 
