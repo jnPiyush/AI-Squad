@@ -29,6 +29,7 @@ The Product Manager agent analyzes business requirements and creates comprehensi
 - **Acceptance Criteria** - Defines clear success criteria for requirements
 - **Prioritization** - Recommends feature priority based on business value
 - **User Story Mapping** - Creates structured user stories with context
+- **Self-Review & Quality Assurance** - Reviews own PRD outputs for completeness, clarity, and alignment with business goals
 
 ### What It Produces
 
@@ -94,6 +95,7 @@ The Architect agent designs scalable, maintainable solutions and documents techn
 - **API Design** - Defines contracts, endpoints, and data models
 - **Diagram Generation** - Creates architecture diagrams (Mermaid format)
 - **Pattern Application** - Applies appropriate design patterns
+- **Self-Review & Quality Assurance** - Reviews own ADRs and specifications for technical soundness, scalability considerations, and completeness
 
 ### What It Produces
 
@@ -164,6 +166,7 @@ The Engineer agent implements features following specifications, writes comprehe
 - **Design Patterns** - Applies SOLID principles
 - **Test Coverage** - Ensures ≥80% coverage
 - **Best Practices** - Follows language-specific conventions
+- **Self-Review & Quality Assurance** - Reviews own code for SOLID principles, test coverage, security vulnerabilities, and documentation completeness before submission
 
 ### What It Produces
 
@@ -250,6 +253,7 @@ The UX Designer agent creates user-centered designs, wireframes, and ensures acc
 - **Responsive Design** - Plans mobile-first, responsive layouts
 - **Interaction Design** - Defines UI behaviors and animations
 - **Design Systems** - Applies consistent patterns
+- **Self-Review & Quality Assurance** - Reviews own designs for WCAG 2.1 AA compliance, user flow clarity, responsive design completeness, and consistency with design patterns
 
 ### What It Produces
 
@@ -334,6 +338,7 @@ The Reviewer agent performs comprehensive code reviews, checking for quality, se
 - **Performance Assessment** - Evaluates efficiency and scalability
 - **Documentation Check** - Ensures completeness
 - **Standards Compliance** - Validates coding standards
+- **Self-Review & Quality Assurance** - Reviews own review reports for thoroughness, actionable feedback, balanced critique, and constructive recommendations
 
 ### What It Produces
 
@@ -558,30 +563,35 @@ export AI_SQUAD_TEMPERATURE="0.5"
 - Include user personas and use cases
 - Specify business goals and metrics
 - Use labels for better categorization
+- **Self-Review**: Verify PRD has clear acceptance criteria, measurable success metrics, and addresses all business requirements before submission
 
 ### For Architect
 - Review existing codebase patterns first
 - Consider scalability and maintainability
 - Document decisions with clear rationale
 - Include diagrams for complex systems
+- **Self-Review**: Ensure ADR includes all alternatives considered, consequences are documented, and technical decisions align with existing architecture patterns
 
 ### For Engineer
 - Follow the technical specification
 - Write tests before implementation (TDD)
 - Commit frequently with clear messages
 - Update documentation as you go
+- **Self-Review**: Run all tests locally, check code coverage ≥80%, verify SOLID principles, scan for security issues, and ensure documentation is complete before creating PR
 
 ### For UX Designer
 - Reference existing design systems
 - Consider accessibility from the start
 - Test designs with real users when possible
 - Document interaction patterns clearly
+- **Self-Review**: Validate WCAG 2.1 AA compliance using accessibility checklist, test responsive breakpoints, ensure color contrast ratios meet standards, and verify navigation flows are intuitive
 
 ### For Reviewer
 - Review with constructive feedback
 - Suggest improvements, don't just criticize
 - Consider context and constraints
 - Approve when quality standards are met
+- **Self-Review**: Ensure review covers all checklist items (code quality, testing, security, performance, documentation), feedback is actionable and specific, and approval decision is justified
 
 ---
 
