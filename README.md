@@ -14,7 +14,7 @@
 
 <p align="center">
   <strong>🎖️ Five expert AI agents orchestrated by a Captain</strong><br/>
-  <em>Zero hosting costs • Production-ready skills • Full audit trails</em>
+  <em>Squad Assembled • Mission Ready • Awaiting Orders</em>
 </p>
 
 ---
