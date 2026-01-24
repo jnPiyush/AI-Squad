@@ -41,6 +41,8 @@ class GitHubTool:
         self.token = os.getenv("GITHUB_TOKEN")
         self.owner = config.github_owner
         self.repo = config.github_repo
+        self._gh_auth_checked = False
+        self._gh_authenticated = False
         
         # Initialize retry components
         self.rate_limiter = RateLimiter(calls_per_hour=5000, burst_size=100)
@@ -403,8 +405,66 @@ class GitHubTool:
             raise GitHubCommandError(f"Command failed: {result.stderr}")
     
     def _is_configured(self) -> bool:
-        """Check if GitHub is properly configured"""
-        return bool(self.token and self.owner and self.repo)
+        """
+        Check if GitHub is properly configured.
+        
+        Supports two authentication methods:
+        1. GitHub CLI OAuth (gh auth login) - Preferred
+        2. GITHUB_TOKEN environment variable - Fallback
+        
+        Returns:
+            True if either auth method is available and repo is configured
+        """
+        # Must have repo configured
+        if not (self.owner and self.repo):
+            return False
+        
+        # Check 1: GITHUB_TOKEN env var
+        if self.token:
+            return True
+        
+        # Check 2: gh CLI OAuth (cached check)
+        if not self._gh_auth_checked:
+            self._gh_auth_checked = True
+            self._gh_authenticated = self._check_gh_auth()
+        
+        return self._gh_authenticated
+    
+    def _check_gh_auth(self) -> bool:
+        """Check if gh CLI is authenticated via OAuth"""
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            # gh auth status returns 0 if authenticated
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+    
+    def get_auth_method(self) -> str:
+        """
+        Get the current authentication method being used.
+        
+        Returns:
+            'oauth' if using gh CLI, 'token' if using GITHUB_TOKEN, 'none' if not configured
+        """
+        if not (self.owner and self.repo):
+            return "none"
+        
+        if self.token:
+            return "token"
+        
+        if not self._gh_auth_checked:
+            self._gh_auth_checked = True
+            self._gh_authenticated = self._check_gh_auth()
+        
+        if self._gh_authenticated:
+            return "oauth"
+        
+        return "none"
     
     def search_issues_by_labels(self, include_labels: List[str], 
                                 exclude_labels: List[str] = None) -> List[Dict[str, Any]]:

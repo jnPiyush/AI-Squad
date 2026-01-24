@@ -2,8 +2,23 @@
 Diagnostic checks for AI-Squad setup
 """
 import os
+import subprocess
 from pathlib import Path
 from typing import Dict, Any, List
+
+
+def _check_gh_auth() -> bool:
+    """Check if gh CLI is authenticated via OAuth"""
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        return False
 
 
 def run_doctor_checks() -> Dict[str, Any]:
@@ -15,12 +30,24 @@ def run_doctor_checks() -> Dict[str, Any]:
     """
     checks = []
     
-    # Check 1: GITHUB_TOKEN
+    # Check 1: GitHub Authentication (Token or OAuth)
     github_token = os.getenv("GITHUB_TOKEN")
+    gh_oauth = _check_gh_auth()
+    
+    if github_token:
+        auth_message = "Token (GITHUB_TOKEN)"
+        auth_passed = True
+    elif gh_oauth:
+        auth_message = "OAuth (gh auth login)"
+        auth_passed = True
+    else:
+        auth_message = "Not configured. Use 'gh auth login' (recommended) or set GITHUB_TOKEN"
+        auth_passed = False
+    
     checks.append({
-        "name": "GitHub Token",
-        "passed": bool(github_token),
-        "message": "Found" if github_token else "Not set (export GITHUB_TOKEN=...)"
+        "name": "GitHub Auth",
+        "passed": auth_passed,
+        "message": auth_message
     })
     
     # Check 2: squad.yaml exists

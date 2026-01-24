@@ -4,7 +4,7 @@
     "to_node": "architect",
     "type": "delegates_to",
     "metadata": {
-      "handoff_id": "handoff-a90b2f96"
+      "handoff_id": "handoff-8577646b"
     },
     "created_at": "2026-01-23T21:14:56.304689"
   },
@@ -106,5 +106,14 @@
       "handoff_id": "handoff-a90b2f96"
     },
     "created_at": "2026-01-24T09:00:39.259162"
+  },
+  {
+    "from_node": "sq-60b93",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-8577646b"
+    },
+    "created_at": "2026-01-24T09:09:33.442683"
   }
 ]

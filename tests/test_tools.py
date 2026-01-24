@@ -14,9 +14,16 @@ class TestGitHubTool:
     """Test GitHub integration"""
     
     @pytest.fixture
-    def github_tool(self, mock_config):
-        """Create GitHub tool"""
-        return GitHubTool(mock_config)
+    def github_tool(self, mock_config, monkeypatch):
+        """Create GitHub tool with no auth"""
+        # Clear any env token
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        
+        tool = GitHubTool(mock_config)
+        tool.token = None  # Ensure no token
+        tool._gh_auth_checked = True  # Mark as checked
+        tool._gh_authenticated = False  # But not authenticated
+        return tool
     
     def test_get_issue_mock(self, github_tool):
         """Test get_issue returns mock when not configured"""

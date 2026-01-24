@@ -531,5 +531,46 @@
         "details": null
       }
     ]
+  },
+  "handoff-8577646b": {
+    "id": "handoff-8577646b",
+    "work_item_id": "sq-60b93",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-24T09:09:33.246764",
+    "accepted_at": "2026-01-24T09:09:33.458302",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-24T09:09:33.246764",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-24T09:09:33.458302",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
   }
 }
