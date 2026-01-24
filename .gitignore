@@ -57,6 +57,7 @@ dmypy.json
 
 # AI-Squad specific
 squad.yaml
+.squad/
 docs/prd/
 docs/adr/
 docs/specs/
