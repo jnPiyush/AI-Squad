@@ -75,8 +75,8 @@ graph TB
 | **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
 | **📦 Work Item** | Single unit of work tracked in system | Issue #123 becomes work item `sq-abc12` |
 | **� Convoy** | Parallel batch of related work items | 5 stories from an epic processed together |
-| **🤝 Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
-| **📻 Signal** | Message sent between agents | "PRD ready for review" notification |
+| **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
+| **📟 Signal** | Message sent between agents | "PRD ready for review" notification |
 | **🔗 Delegation** | Explicit assignment with audit trail | PM delegates API design to Architect |
 | **🕸️ Graph** | Tracks relationships between entities | Shows which agent owns which work item |
 | **🪪 Identity** | Provenance metadata embedded in outputs | Tracks who created what, when, and why |
@@ -254,8 +254,8 @@ graph LR
 | **🎖️ Captain** | Intelligent coordinator that analyzes issues and delegates to agents |
 | **📜 Battle Plans** | Pre-defined workflows (feature, bugfix, epic) with phase dependencies |
 | **� Convoys** | Parallel processing of related work items |
-| **🤝 Handoffs** | Automatic work transfer between agents with context |
-| **📻 Signals** | Inter-agent messaging system |
+| **👋➡️ Handoffs** | Automatic work transfer between agents with context |
+| **📟 Signals** | Inter-agent messaging system |
 | **🔗 Delegations** | Explicit assignments with full audit trails |
 
 ### 🤖 Five Expert Agents
@@ -551,8 +551,8 @@ graph TB
     
     subgraph "⚙️ Core Services"
         WS["📦 WorkState"]
-        Signal["� Signals"]
-        Handoff["🤝 Handoffs"]
+        Signal["📟 Signals"]
+        Handoff["👋➡️ Handoffs"]
         Del["🔗 Delegations"]
     end
     
