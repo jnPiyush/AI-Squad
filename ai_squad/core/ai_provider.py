@@ -203,7 +203,7 @@ class CopilotProvider(AIProvider):
         except (AttributeError, ValueError, OSError) as e:
             logger.debug("Copilot model discovery failed: %s", e)
 
-        self._model_cache = os.getenv("COPILOT_MODEL", "gpt-4.1")
+        self._model_cache = os.getenv("COPILOT_MODEL", "claude-sonnet-4.5")
         return self._model_cache
 
     def _run_async(self, coroutine):
@@ -335,7 +335,7 @@ class OpenAIProvider(AIProvider):
         
         try:
             response = self._client.chat.completions.create(
-                model=model or "gpt-4",
+                model=model or "claude-sonnet-4.5",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

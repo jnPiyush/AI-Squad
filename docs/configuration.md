@@ -22,19 +22,19 @@ project:
 agents:
   pm:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   architect:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   engineer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   ux:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   reviewer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
 
 output:
   prd_dir: docs/prd
@@ -126,11 +126,11 @@ Configure each agent individually.
 agents:
   pm:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   
   architect:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   
   engineer:
     enabled: true
@@ -138,11 +138,11 @@ agents:
   
   ux:
     enabled: false  # Disable if no UI work
-    model: gpt-4
+    model: claude-sonnet-4.5
   
   reviewer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
 ```
 
 ### Output Directories
@@ -290,13 +290,13 @@ project:
 
 agents:
   pm:
-    model: gpt-4
+    model: claude-sonnet-4.5
   architect:
-    model: gpt-4
+    model: claude-sonnet-4.5
   engineer:
-    model: gpt-4  # Best quality
+    model: claude-sonnet-4.5  # Best quality
   reviewer:
-    model: gpt-4
+    model: claude-sonnet-4.5
 
 skills:
   - all  # All production skills
@@ -405,19 +405,19 @@ project:
 agents:
   pm:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   architect:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   engineer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   ux:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   reviewer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
 
 output:
   prd_dir: docs/requirements/prd
@@ -450,16 +450,16 @@ project:
 agents:
   pm:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   architect:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   engineer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   reviewer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
   ux:
     enabled: false  # No UI
 

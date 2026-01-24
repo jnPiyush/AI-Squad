@@ -23,7 +23,7 @@ class TestProductManagerAgent:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"pm": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"pm": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {"prd_dir": "docs/prd"},
             "skills": ["all"]
         })
@@ -134,7 +134,7 @@ class TestArchitectAgent:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"architect": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"architect": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {"adr_dir": "docs/adr", "specs_dir": "docs/specs"},
             "skills": ["all"]
         })
@@ -168,7 +168,7 @@ class TestEngineerAgent:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"engineer": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"engineer": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {},
             "skills": ["testing", "security"]
         })
@@ -251,7 +251,7 @@ class TestUXDesignerAgent:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"ux": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"ux": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {"ux_dir": "docs/ux"},
             "skills": ["all"]
         })
@@ -328,7 +328,7 @@ class TestReviewerAgent:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"reviewer": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"reviewer": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {"reviews_dir": "docs/reviews"},
             "skills": ["code-review-and-audit", "security"]
         })

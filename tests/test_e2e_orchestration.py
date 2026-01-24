@@ -39,9 +39,9 @@ class TestE2EBattlePlanExecution:
             "project": {"name": "Test", "github_repo": "test-repo", "github_owner": "test-owner"},
             "storage": {"base_dir": str(temp_dir / ".squad")},
             "agents": {
-                "pm": {"enabled": True, "model": "gpt-4"},
-                "architect": {"enabled": True, "model": "gpt-4"},
-                "engineer": {"enabled": True, "model": "gpt-4"}
+                "pm": {"enabled": True, "model": "claude-sonnet-4.5"},
+                "architect": {"enabled": True, "model": "claude-sonnet-4.5"},
+                "engineer": {"enabled": True, "model": "claude-sonnet-4.5"}
             }
         }
         config = Config(cfg_data)

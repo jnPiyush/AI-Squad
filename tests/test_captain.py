@@ -39,7 +39,7 @@ class TestCaptainInitialization:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"captain": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"captain": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {},
             "skills": ["all"]
         })
@@ -131,7 +131,7 @@ class TestCaptainExecution:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"captain": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"captain": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {},
             "skills": ["all"]
         })
@@ -258,7 +258,7 @@ class TestCaptainOrchestration:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"captain": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"captain": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {},
             "skills": ["all"]
         })
@@ -314,7 +314,7 @@ class TestCaptainWithMockedMethods:
         """Create test config"""
         return Config({
             "project": {"name": "Test"},
-            "agents": {"captain": {"enabled": True, "model": "gpt-4"}},
+            "agents": {"captain": {"enabled": True, "model": "claude-sonnet-4.5"}},
             "output": {},
             "skills": ["all"]
         })

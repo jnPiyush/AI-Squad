@@ -33,11 +33,11 @@ def mock_config():
             "github_owner": "test-user"
         },
         "agents": {
-            "pm": {"enabled": True, "model": "gpt-4"},
-            "architect": {"enabled": True, "model": "gpt-4"},
-            "engineer": {"enabled": True, "model": "gpt-4"},
-            "ux": {"enabled": True, "model": "gpt-4"},
-            "reviewer": {"enabled": True, "model": "gpt-4"}
+            "pm": {"enabled": True, "model": "claude-sonnet-4.5"},
+            "architect": {"enabled": True, "model": "claude-sonnet-4.5"},
+            "engineer": {"enabled": True, "model": "claude-sonnet-4.5"},
+            "ux": {"enabled": True, "model": "claude-sonnet-4.5"},
+            "reviewer": {"enabled": True, "model": "claude-sonnet-4.5"}
         },
         "output": {
             "prd_dir": "docs/prd",

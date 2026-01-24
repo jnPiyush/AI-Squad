@@ -71,7 +71,7 @@ squad pm 123
 ```yaml
 agents:
   pm:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.7
     skills:
       - core-principles
@@ -139,7 +139,7 @@ squad architect 456
 ```yaml
 agents:
   architect:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.5
     skills:
       - api-design
@@ -224,7 +224,7 @@ squad engineer 789
 ```yaml
 agents:
   engineer:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.3
     skills:
       - testing
@@ -310,7 +310,7 @@ squad ux 101
 ```yaml
 agents:
   ux:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.6
     skills:
       - documentation
@@ -412,7 +412,7 @@ squad review 202
 ```yaml
 agents:
   reviewer:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.4
     skills:
       - code-review-and-audit
@@ -507,30 +507,30 @@ Edit `squad.yaml`:
 ```yaml
 agents:
   # Default model for all agents
-  default_model: "gpt-4"
+  default_model: "claude-sonnet-4.5"
   default_temperature: 0.5
   
   # Per-agent overrides
   pm:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.7
     
   architect:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.5
     
   engineer:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.3
     coverage_threshold: 80
     
   ux:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.6
     accessibility_standard: "WCAG 2.1 AA"
     
   reviewer:
-    model: "gpt-4"
+    model: "claude-sonnet-4.5"
     temperature: 0.4
     coverage_threshold: 80
     strict_mode: true
@@ -543,7 +543,7 @@ agents:
 export GITHUB_TOKEN="ghp_your_token"
 
 # Optional: Custom model
-export AI_SQUAD_MODEL="gpt-4"
+export AI_SQUAD_MODEL="claude-sonnet-4.5"
 
 # Optional: Temperature override
 export AI_SQUAD_TEMPERATURE="0.5"

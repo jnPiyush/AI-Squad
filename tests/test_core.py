@@ -18,7 +18,7 @@ class TestConfig:
         
         assert config.get("project.name") is not None
         assert config.get("agents.pm.enabled") == True
-        assert config.get("agents.pm.model") == "gpt-4"
+        assert config.get("agents.pm.model") == "claude-sonnet-4.5"
     
     def test_custom_config(self, tmp_path):
         """Test custom config loading"""

@@ -211,27 +211,27 @@ Agents are configured in `squad.yaml`:
 agents:
   pm:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
     temperature: 0.7
   
   architect:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
     temperature: 0.5
   
   engineer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
     temperature: 0.3
   
   ux:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
     temperature: 0.6
   
   reviewer:
     enabled: true
-    model: gpt-4
+    model: claude-sonnet-4.5
     temperature: 0.4
 ```
 
