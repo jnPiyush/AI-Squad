@@ -3,106 +3,138 @@
 ## Mission Intent
 Evolve AI-Squad into a multi-agent runtime with persistent coordination, lifecycle oversight, and cross-workspace operations while preserving existing CLI workflows.
 
-## EPIC 1 — Command and Control (C2) Headquarters
-**Purpose:** Establish a command center with command hierarchy, staff roles, and directive control.
+## Operational Flow (Visual)
+```mermaid
+flowchart LR
+  subgraph HQ[Command Center]
+    Captain["Captain - Commander"]
+    Staff["Staff"]
+    Intel["Reconnaissance and Situation Awareness"]
+    Signal["Signal Communications"]
+  end
 
-### Feature 1.1 — Command Center Registry
-- **User Story:** As the Commander, I want a command center registry so I can maintain command and control across multiple sectors.
-- **Acceptance Criteria:**
-  - Registry supports create/list/update/delete of command centers.
-  - Command hierarchy is visible per center.
+  subgraph Orchestration[Orchestration]
+    BattlePlans["Battle Plans"]
+    Convoys["Convoys"]
+    Handoffs["Handoffs"]
+    WorkState["WorkState"]
+    Hooks["Hooks"]
+    Lifecycle["Worker Lifecycle"]
+  end
 
-### Feature 1.2 — Command Hierarchy & Staff Assignments
-- **User Story:** As Staff, I want assignments by role so I can execute directive control with clear responsibility.
-- **Acceptance Criteria:**
-  - Roles map to Commander/Staff/Operator.
-  - Each role has a clear scope of authority.
+  subgraph Theater[Theater of Operations]
+    Sectors["Sectors"]
+    Routing["Routing Table"]
+    Staging["Staging Area"]
+  end
 
-## EPIC 2 — Theater and Staging Area
-**Purpose:** Define theaters, sectors, and staging areas for multi-workspace operations.
+  subgraph Operators[Operators and Agents]
+    PM["Product Manager"]
+    Architect["Architect"]
+    Engineer["Engineer"]
+    UX["UX Designer"]
+    Reviewer["Reviewer"]
+  end
 
-### Feature 2.1 — Theater (Workspace) Definition
-- **User Story:** As the Commander, I want to define a theater so I can coordinate operations across multiple sectors.
-- **Acceptance Criteria:**
-  - Theaters can contain multiple sectors.
-  - Each sector links to a repository/workspace.
+  subgraph Logistics[Logistics and Materiel]
+    LogisticsNode["Logistics"]
+    Profiles["Logistics Profiles"]
+    Materiel["Materiel Tracking"]
+  end
 
-### Feature 2.2 — Staging Area Provisioning
-- **User Story:** As Logistics, I want staging areas for transient operators so I can reduce setup time and improve readiness.
-- **Acceptance Criteria:**
-  - Staging areas are created per sector.
-  - Operators can be spawned from staging areas with minimal setup.
+  Captain --> Staff
+  Staff --> Intel
+  Intel --> BattlePlans
+  Signal --> Handoffs
+  BattlePlans --> Convoys
+  Convoys --> PM
+  Convoys --> Architect
+  Convoys --> Engineer
+  Convoys --> UX
+  Convoys --> Reviewer
+  Handoffs --> PM
+  Handoffs --> Architect
+  Handoffs --> Engineer
+  Handoffs --> UX
+  Handoffs --> Reviewer
+  PM --> WorkState
+  Architect --> WorkState
+  Engineer --> WorkState
+  UX --> WorkState
+  Reviewer --> WorkState
+  WorkState --> Hooks
+  WorkState --> Lifecycle
+  LogisticsNode --> Staging
+  Profiles --> Staging
+  Materiel --> Staging
+  Routing --> Convoys
+  Sectors --> Routing
+  Staging --> PM
+  Staging --> Architect
+  Staging --> Engineer
+  Staging --> UX
+  Staging --> Reviewer
+  Lifecycle --> Reports["After-Operation Report"]
+```
 
-## EPIC 3 — Reconnaissance & Situation Awareness
-**Purpose:** Provide reconnaissance, patrol cycles, and continuous situation awareness.
+## Roles and Responsibilities (Table)
+| Role | Responsibility | Primary Actions | Outputs |
+| --- | --- | --- | --- |
+| Captain (Commander) | Command and control, command hierarchy, directive control | Build battle plans, coordinate convoys, authorize escalation | Coordination plan, command guidance |
+| Staff | Situation awareness and coordination | Reconnaissance index, routing decisions, mission dispatch | Mission plans, routing updates |
+| Signal | Communications and coordination | Signal messaging, acknowledgements, nudges | Delivery logs, comms status |
+| Product Manager | Requirements and PRD | Define requirements, create PRD, handoff | PRD, work items |
+| Architect | System design and ADR | Design architecture, write ADR/spec | ADR/spec, design artifacts |
+| Engineer | Implementation and tests | Implement features, write tests | Code, test results |
+| UX Designer | User experience design | Wireframes, flows, prototypes | UX artifacts |
+| Reviewer | Quality assurance | Review code, validate tests | Review report, approval status |
+| WorkState | Persistent work tracking | Track work items, dependencies, status | Work state records |
+| Hooks | Durable snapshots | Persist work item snapshots | Hook artifacts |
+| Worker Lifecycle | Ephemeral run tracking | Track runs, detect stalls | Lifecycle events |
+| Logistics | Materiel and provisioning | Staging area provisioning, logistics profiles, capacity tracking | Provisioned environments, utilization reports |
 
-### Feature 3.1 — Reconnaissance Index
-- **User Story:** As Staff, I want a reconnaissance index so I can maintain situation awareness about agent status and work progress.
-- **Acceptance Criteria:**
-  - Index summarizes agent health, work items, and routing status.
+## Current Capability vs Build
+| Area | Current | Build (Simple) |
+| --- | --- | --- |
+| Command and control | Captain coordination | Keep Captain, add staff-level routing rules |
+| Battle plans | Battle plans exist | Keep battle plans as-is |
+| Convoys / mission dispatch | Convoys exist | Add routing table input |
+| Signal / communications | Signal exists | Add ack + retry (minimal) |
+| WorkState + hooks | Exists | Keep as-is |
+| Worker lifecycle | Exists | Add patrol checks for stale work |
+| Theater of operations | Not present | Add theater/sector config registry |
+| Staging area | Not present | Add staging area directories per sector |
+| Reconnaissance / situation awareness | Partial status | Add recon index summary |
+| After-operation report | Not present | Add simple report output |
 
-### Feature 3.2 — Patrolling (Lifecycle Oversight)
-- **User Story:** As the Sentinel, I want patrolling cycles so I can detect stalled operators and recover missions.
-- **Acceptance Criteria:**
-  - Patrol detects stalled work beyond thresholds.
-  - Patrol can escalate to Commander.
+## Simplified Backlog (Build Only What’s Missing)
 
-## EPIC 4 — Operations and Mission-Type Tactics
-**Purpose:** Standardize execution of missions and operations with reusable procedures.
+### EPIC A — Theater and Routing (Simple)
+- **Feature A1:** Theater + Sector registry (config only)
+  - **User Story:** As Staff, I want a theater registry so I can coordinate missions across sectors.
+  - **Acceptance Criteria:**
+    - Theaters contain sectors with repo paths.
+    - Routing table maps prefixes to sectors.
+- **Feature A2:** Staging area directories
+  - **User Story:** As Logistics, I want a staging area per sector so operators can deploy quickly.
+  - **Acceptance Criteria:**
+    - Staging areas created on init.
 
-### Feature 4.1 — Operation Orders
-- **User Story:** As the Commander, I want operation orders so I can standardize mission-type tactics across agents.
-- **Acceptance Criteria:**
-  - Operation orders are versioned and reusable.
-  - Orders can be assigned to sectors.
+### EPIC B — Reconnaissance and Patrol (Simple)
+- **Feature B1:** Reconnaissance index summary
+  - **User Story:** As Staff, I want a recon summary so I can maintain situation awareness.
+  - **Acceptance Criteria:**
+    - Summary includes active work items, convoys, and signals.
+- **Feature B2:** Patrolling for stale work
+  - **User Story:** As the Sentinel, I want patrols that flag stalled work.
+  - **Acceptance Criteria:**
+    - Patrol detects stale items and logs escalation events.
 
-### Feature 4.2 — Mission Dispatch
-- **User Story:** As Staff, I want mission dispatch so I can assign tasks to operators using directive control.
-- **Acceptance Criteria:**
-  - Dispatch records mission state and assignment.
-  - Dispatch works across multiple sectors.
-
-## EPIC 5 — Logistics & Supply Chain
-**Purpose:** Ensure reliable provisioning for multi-agent runtime.
-
-### Feature 5.1 — Logistics Profiles
-- **User Story:** As Logistics, I want profiles for runtime dependencies so I can standardize provisioning across sectors.
-- **Acceptance Criteria:**
-  - Profiles define toolchains, credentials, and environment variables.
-  - Profiles are scoped to a theater or sector.
-
-### Feature 5.2 — Materiel Tracking
-- **User Story:** As Staff, I want materiel tracking so I can audit runtime resources and capacity.
-- **Acceptance Criteria:**
-  - Track active agents, compute usage, and quotas.
-
-## EPIC 6 — Operational Level of War (Cross-Sector Coordination)
-**Purpose:** Coordinate operations across sectors with cross-domain routing.
-
-### Feature 6.1 — Cross-Sector Routing Table
-- **User Story:** As the Commander, I want routing tables so I can coordinate missions at the operational level of war.
-- **Acceptance Criteria:**
-  - Prefix-based routing to sectors.
-  - Routing supports failover and manual override.
-
-### Feature 6.2 — Escalation Ladder
-- **User Story:** As the Commander, I want a defined escalation ladder so I can resolve blocked missions across sectors.
-- **Acceptance Criteria:**
-  - Escalations flow Operator → Staff → Commander.
-  - Escalations are logged and searchable.
-
-## EPIC 7 — Command and Control Reporting
-**Purpose:** Provide reporting for command center decision-making.
-
-### Feature 7.1 — Situation Awareness Dashboard
-- **User Story:** As Staff, I want a situation awareness dashboard so I can track mission progress in real time.
-- **Acceptance Criteria:**
-  - Dashboard shows active missions, patrol results, and routing status.
-
-### Feature 7.2 — After-Operation Report
-- **User Story:** As the Commander, I want an after-operation report so I can review outcomes and refine doctrine.
-- **Acceptance Criteria:**
-  - Reports include success/failure rates and operator utilization.
+### EPIC C — Reporting (Simple)
+- **Feature C1:** After-operation report
+  - **User Story:** As the Commander, I want an after-operation report to review outcomes.
+  - **Acceptance Criteria:**
+    - Report includes completed/failed counts and top errors.
 
 ---
 
