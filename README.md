@@ -1,21 +1,21 @@
 # AI-Squad
 
-```
-   ___   ____      _____                      __
-  / _ | /  _/____ / __/ /_ ___  ___  ___  ___/ /
- / __ |_/ /_/___/_\ \/ / // / / _ \/ _ \/ _  / 
-/_/ |_/___/     /___/_/\_, /_/\_,_/\_,_/\_,_/  
-                      /___/                     
-```
+<p align="center">
+  <img src="assets/banner.svg" alt="AI-Squad Banner" width="100%"/>
+</p>
 
-[![PyPI version](https://badge.fury.io/py/ai-squad.svg)](https://badge.fury.io/py/ai-squad)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Test Coverage](https://img.shields.io/badge/coverage-60%25-green.svg)](tests/)
-[![Downloads](https://pepy.tech/badge/ai-squad)](https://pepy.tech/project/ai-squad)
+<p align="center">
+  <a href="https://badge.fury.io/py/ai-squad"><img src="https://badge.fury.io/py/ai-squad.svg" alt="PyPI version"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/coverage-60%25-green.svg" alt="Test Coverage"></a>
+  <a href="https://pepy.tech/project/ai-squad"><img src="https://pepy.tech/badge/ai-squad" alt="Downloads"></a>
+</p>
 
-> **Your AI Development Squad, One Command Away**  
-> Five expert AI agents. Zero hosting costs. Beta - Core features stable, orchestration in preview.
+<p align="center">
+  <strong>🎖️ Five expert AI agents orchestrated by a Captain</strong><br/>
+  <em>Zero hosting costs • Production-ready skills • Full audit trails</em>
+</p>
 
 ---
 
