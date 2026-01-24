@@ -68,7 +68,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 
 ---
 
-## � Engineer (@engineer)
+## 🔧 Engineer (@engineer)
 
 **When to activate**: User mentions "engineer", "implement", "code", "debugging", "refactor", or "testing"
 

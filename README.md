@@ -27,7 +27,7 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 |-------|------|--------------|
 | 🎨 **Product Manager** | Requirements | Creates PRDs, breaks down epics into stories |
 | 🧩 **Architect** | Design | Designs solutions, writes ADRs and technical specs |
-| � **Engineer** | Implementation | Implements features with comprehensive tests |
+| 🔧 **Engineer** | Implementation | Implements features with comprehensive tests |
 | 🎭 **UX Designer** | User Experience | Creates wireframes, HTML prototypes, accessibility guidelines |
 | ✅ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
 
@@ -57,7 +57,7 @@ graph TB
     subgraph "🤖 FIELD AGENTS"
         PM["🎨 PM"]
         Arch["🧩 Architect"]
-        Eng["� Engineer"]
+        Eng["🔧 Engineer"]
         UX["🎭 UX"]
         Rev["✅ Reviewer"]
     end
@@ -120,7 +120,7 @@ flowchart LR
         direction LR
         P1["Phase 1<br/>🎨 PM<br/>Create PRD"]
         P2["Phase 2<br/>🧩 Architect<br/>Design Solution"]
-        P3["Phase 3<br/>� Engineer<br/>Implement"]
+        P3["Phase 3<br/>🔧 Engineer<br/>Implement"]
         P4["Phase 4<br/>✅ Reviewer<br/>Review Code"]
         
         P1 -->|handoff| P2
@@ -264,7 +264,7 @@ graph LR
 |-------|---------|--------|
 | **🎨 Product Manager** | `squad pm <issue>` | PRD + User Stories + Backlog |
 | **🧩 Architect** | `squad architect <issue>` | ADR + Technical Spec + Diagrams |
-| **� Engineer** | `squad engineer <issue>` | Code + Tests + Documentation |
+| **🔧 Engineer** | `squad engineer <issue>` | Code + Tests + Documentation |
 | **🎭 UX Designer** | `squad ux <issue>` | Wireframes + User Flows + Prototype |
 | **✅ Reviewer** | `squad review <pr>` | Code Review + Security Analysis |
 
@@ -432,7 +432,7 @@ squad update                  # Update AI-Squad
 ```bash
 squad pm <issue>              # 🎨 Product Manager: Create PRD
 squad architect <issue>       # 🧩 Architect: Create ADR/Spec
-squad engineer <issue>        # � Engineer: Implement feature
+squad engineer <issue>        # 🔧 Engineer: Implement feature
 squad ux <issue>              # 🎭 UX Designer: Create design
 squad review <pr>             # ✅ Reviewer: Review PR
 ```
