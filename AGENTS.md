@@ -10,7 +10,7 @@ AI-Squad includes five expert agents that work together to deliver complete feat
 |-------|------|----------------|-------------|
 | 🎨 **Product Manager** | Requirements & Planning | PRD Documents | New features, epics, requirements gathering |
 | 🧩 **Architect** | Technical Design | ADRs & Specifications | Architecture decisions, technical design |
-| 💻 **Engineer** | Implementation | Code & Tests | Feature implementation, bug fixes |
+| � **Engineer** | Implementation | Code & Tests | Feature implementation, bug fixes |
 | 🎭 **UX Designer** | User Experience | Wireframes & Flows | HTML prototypes, wireframes, user flows | UI features, user-facing designs |
 | ✅ **Reviewer** | Quality Assurance | Review Reports | Code review, quality checks |
 
@@ -152,7 +152,7 @@ agents:
 
 ---
 
-## 💻 Engineer Agent
+## � Engineer Agent
 
 ### Role
 

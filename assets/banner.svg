@@ -118,7 +118,7 @@
   <g filter="url(#glow)" transform="translate(65, 215)">
     <circle cx="0" cy="0" r="28" fill="url(#engGrad)"/>
     <circle cx="0" cy="0" r="32" fill="none" stroke="#10b981" stroke-width="2" opacity="0.3"/>
-    <text x="0" y="8" text-anchor="middle" font-size="22">💻</text>
+    <text x="0" y="8" text-anchor="middle" font-size="22">�</text>
   </g>
   
   <!-- Captain (center, larger) -->

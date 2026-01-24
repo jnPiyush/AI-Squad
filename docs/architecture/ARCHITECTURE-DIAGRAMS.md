@@ -32,7 +32,7 @@ graph TB
     subgraph "Agent Layer"
         PM[🎨 Product Manager]
         Arch[🧩 Architect]
-        Eng[💻 Engineer]
+        Eng[� Engineer]
         UX[🎭 UX Designer]
         Rev[✅ Reviewer]
     end
