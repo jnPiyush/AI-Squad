@@ -38,7 +38,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 
 ---
 
-## 🏗️ Architect (@architect)
+## 📐 Architect (@architect)
 
 **When to activate**: User mentions "architect", "architecture", "ADR", "technical design", "system design", or "API design"
 

@@ -478,7 +478,7 @@ def test_network_failure_during_BattlePlan():
 
 **README.md Line 27**:
 ```markdown
-- 🏗️ **Architect** - Designs solutions, writes ADRs and technical specs
+- 📐 **Architect** - Designs solutions, writes ADRs and technical specs
 ```
 
 ✅ **TRUE**: This works (has tests)
