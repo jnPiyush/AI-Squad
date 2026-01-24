@@ -94,6 +94,13 @@ class Config:
             "use_git_worktree": False,
             "hooks_dir": ".squad/hooks",
         },
+        "theater": {
+            "default": "default",
+        },
+        "patrol": {
+            "stale_minutes": 120,
+            "statuses": ["in_progress", "hooked", "blocked"],
+        },
     }
     
     def __init__(self, data: Dict[str, Any]):

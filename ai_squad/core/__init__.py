@@ -52,6 +52,10 @@ from ai_squad.core.discovery import DiscoveryIndex
 from ai_squad.core.identity import IdentityDossier, IdentityManager
 from ai_squad.core.scout_worker import ScoutWorker
 from ai_squad.core.operational_graph import OperationalGraph, NodeType, EdgeType
+from ai_squad.core.theater import TheaterRegistry, Theater, Sector
+from ai_squad.core.recon import ReconManager, ReconSummary
+from ai_squad.core.patrol import PatrolManager, PatrolEvent
+from ai_squad.core.reporting import ReportManager, AfterOperationReport
 
 __all__ = [
     # Original exports
@@ -105,4 +109,13 @@ __all__ = [
     "OperationalGraph",
     "NodeType",
     "EdgeType",
+    "TheaterRegistry",
+    "Theater",
+    "Sector",
+    "ReconManager",
+    "ReconSummary",
+    "PatrolManager",
+    "PatrolEvent",
+    "ReportManager",
+    "AfterOperationReport",
 ]

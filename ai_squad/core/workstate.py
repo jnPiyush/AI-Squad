@@ -377,6 +377,19 @@ class WorkStateManager:
             mark_dirty()
         if self.hooks_enabled:
             self.hook_manager.write_metadata(item)
+
+    def set_updated_at(self, item_id: str, updated_at: str) -> bool:
+        """Set a work item's updated_at timestamp without modifying other fields."""
+        with self.transaction() as mark_dirty:
+            item = self.get_work_item(item_id)
+            if not item:
+                return False
+            item.updated_at = updated_at
+            self._work_items[item.id] = item
+            mark_dirty()
+        if self.hooks_enabled and item:
+            self.hook_manager.write_metadata(item)
+        return True
     
     def delete_work_item(self, item_id: str) -> bool:
         """Delete a work item"""

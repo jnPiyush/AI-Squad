@@ -163,7 +163,8 @@ class ConvoyManager:
     def __init__(
         self,
         work_state_manager: Any,
-        agent_executor: Optional[AgentExecutorFunc] = None
+        agent_executor: Optional[AgentExecutorFunc] = None,
+        report_manager: Optional[Any] = None
     ):
         """
         Initialize convoy manager.
@@ -180,6 +181,7 @@ class ConvoyManager:
             from pathlib import Path
             self.work_state_manager = WorkStateManager(Path(work_state_manager))
         self.agent_executor = agent_executor
+        self.report_manager = report_manager
         self._convoys: Dict[str, Convoy] = {}
     
     def create_convoy(
@@ -299,13 +301,19 @@ class ConvoyManager:
 
             completed = len(results)
             failed = len(errors)
-            return {
+            result_payload = {
                 "convoy_id": convoy_id,
                 "completed": completed,
                 "failed": failed,
                 "errors": errors,
                 "results": results,
             }
+            if self.report_manager:
+                try:
+                    self.report_manager.write_direct_report(convoy_id, result_payload)
+                except (OSError, ValueError, TypeError) as exc:
+                    logger.warning("Failed to write direct report: %s", exc)
+            return result_payload
 
         # Legacy convoy execution path
         convoy = self.get_convoy(convoy_id)
@@ -428,6 +436,12 @@ class ConvoyManager:
             "Convoy %s finished with status %s",
             convoy_id, convoy.status.value
         )
+
+        if self.report_manager:
+            try:
+                self.report_manager.write_convoy_report(convoy)
+            except (OSError, ValueError, TypeError) as exc:
+                logger.warning("Failed to write convoy report: %s", exc)
         
         return convoy
     

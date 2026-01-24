@@ -37,6 +37,7 @@ from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.delegation import DelegationManager
 from ai_squad.core.router import OrgRouter, PolicyRule, HealthConfig
+from ai_squad.core.reporting import ReportManager
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,7 @@ class AgentExecutor:
         self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root)
         self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root)
         self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr)
+        self.report_mgr = ReportManager(workspace_root=workspace_root)
         self.handoff_mgr = handoff_manager or HandoffManager(
             work_state_manager=self.workstate_mgr,
             signal_manager=self.signal_mgr,
@@ -154,7 +156,8 @@ class AgentExecutor:
         
         self.convoy_mgr = convoy_manager or ConvoyManager(
             work_state_manager=self.workstate_mgr,
-            agent_executor=_async_agent_executor
+            agent_executor=_async_agent_executor,
+            report_manager=self.report_mgr
         )
         
         # Create orchestration context to inject into agents (DI pattern)

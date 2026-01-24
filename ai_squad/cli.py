@@ -1300,6 +1300,168 @@ def dashboard(host, port, debug):
         sys.exit(1)
 
 
+@main.group()
+def theater():
+    """Manage theaters, sectors, and routing"""
+    pass
+
+
+@theater.command("list")
+def theater_list():
+    """List theaters and sectors"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.theater import TheaterRegistry
+
+    try:
+        config = Config.load()
+        registry = TheaterRegistry(config=config.data)
+        theaters = registry.list_theaters()
+        if not theaters:
+            console.print("[yellow]No theaters configured[/yellow]")
+            return
+        for t in theaters:
+            console.print(f"[bold cyan]{t.name}[/bold cyan]")
+            for sector in t.sectors.values():
+                console.print(f"  • {sector.name} -> {sector.repo_path}")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@theater.command("add-sector")
+@click.argument("theater_name")
+@click.argument("sector_name")
+@click.argument("repo_path")
+@click.option("--staging-path", default=None, help="Optional staging area path")
+def theater_add_sector(theater_name, sector_name, repo_path, staging_path):
+    """Add a sector to a theater"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.theater import TheaterRegistry
+
+    try:
+        config = Config.load()
+        registry = TheaterRegistry(config=config.data)
+        sector = registry.add_sector(theater_name, sector_name, repo_path, staging_path)
+        console.print(f"[bold green]✅ Added sector {sector.name}[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@theater.command("route")
+@click.argument("theater_name")
+@click.argument("prefix")
+@click.argument("sector_name")
+def theater_route(theater_name, prefix, sector_name):
+    """Set routing prefix to sector"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.theater import TheaterRegistry
+
+    try:
+        config = Config.load()
+        registry = TheaterRegistry(config=config.data)
+        registry.set_route(theater_name, prefix, sector_name)
+        console.print(f"[bold green]✅ Routed {prefix} -> {sector_name}[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@theater.command("staging")
+@click.argument("theater_name")
+def theater_staging(theater_name):
+    """Ensure staging areas exist"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.theater import TheaterRegistry
+
+    try:
+        config = Config.load()
+        registry = TheaterRegistry(config=config.data)
+        paths = registry.ensure_staging_areas(theater_name)
+        console.print(f"[bold green]✅ Staging areas ready ({len(paths)})[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.command()
+def recon():
+    """Generate reconnaissance summary"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.recon import ReconManager
+
+    try:
+        config = Config.load()
+        recon_manager = ReconManager(routing_config=config.get("routing", {}))
+        summary = recon_manager.build_summary()
+        path = recon_manager.save_summary(summary)
+        console.print(f"[bold green]✅ Recon summary saved to {path}[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.command()
+def patrol():
+    """Run patrol to detect stale work"""
+    from ai_squad.core.config import Config
+    from ai_squad.core.patrol import PatrolManager
+
+    try:
+        config = Config.load()
+        patrol_cfg = config.get("patrol", {}) or {}
+        manager = PatrolManager(
+            stale_minutes=patrol_cfg.get("stale_minutes", 120),
+            statuses=patrol_cfg.get("statuses", None),
+        )
+        events = manager.run()
+        console.print(f"[bold green]✅ Patrol complete ({len(events)} stale items)[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.group()
+def report():
+    """View after-operation reports"""
+    pass
+
+
+@report.command("list")
+def report_list():
+    """List after-operation reports"""
+    from ai_squad.core.reporting import ReportManager
+
+    try:
+        mgr = ReportManager()
+        if not mgr.reports_dir.exists():
+            console.print("[yellow]No reports found[/yellow]")
+            return
+        for path in sorted(mgr.reports_dir.glob("after-operation-*.md")):
+            console.print(f"• {path.name}")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@report.command("show")
+@click.argument("report_name")
+def report_show(report_name):
+    """Show an after-operation report"""
+    from ai_squad.core.reporting import ReportManager
+
+    try:
+        mgr = ReportManager()
+        path = mgr.reports_dir / report_name
+        if not path.exists():
+            console.print(f"[bold red]❌ Report not found: {report_name}[/bold red]")
+            return
+        console.print(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()
 
