@@ -184,11 +184,10 @@ class HandoffManager:
             signal_manager: Optional signal manager for notifications
             workspace_root: Workspace root directory
         """
-        from pathlib import Path as _Path
         if isinstance(work_state_manager, WorkStateManager):
             self.work_state_manager = work_state_manager
         else:
-            self.work_state_manager = WorkStateManager(_Path(work_state_manager))
+            self.work_state_manager = WorkStateManager(Path(work_state_manager))
         self.signal_manager = signal_manager
         self.delegation_manager = delegation_manager
         self.workspace_root = workspace_root or Path.cwd()
@@ -264,7 +263,7 @@ class HandoffManager:
             work_item = work_item_id
             work_item_id = work_item.id
         # Verify work item exists
-        self.work_state_manager._load_state()
+        self.work_state_manager.reload_state()
         work_item = work_item or self.work_state_manager.get_work_item(work_item_id)
         if not work_item:
             logger.error("Work item not found: %s", work_item_id)
@@ -353,7 +352,7 @@ class HandoffManager:
             if context:
                 context_summary = f"\n\n**Summary**: {context.summary}\n**Current State**: {context.current_state}"
                 if context.next_steps:
-                    context_summary += f"\n**Next Steps**:\n" + "\n".join(
+                    context_summary += "\n**Next Steps**:\n" + "\n".join(
                         f"- {step}" for step in context.next_steps
                     )
 
@@ -431,7 +430,7 @@ class HandoffManager:
         )
         
         # Update work item assignment
-        self.work_state_manager._load_state()
+        self.work_state_manager.reload_state()
         assignment_ok = self.work_state_manager.assign_to_agent(
             handoff.work_item_id,
             accepting_agent
@@ -745,11 +744,10 @@ class HandoffManager:
         
         avg_acceptance_time = None
         if accepted_handoffs:
-            from datetime import datetime as dt
             times = []
             for h in accepted_handoffs:
-                initiated = dt.fromisoformat(h.initiated_at)
-                accepted = dt.fromisoformat(h.accepted_at)
+                initiated = datetime.fromisoformat(h.initiated_at)
+                accepted = datetime.fromisoformat(h.accepted_at)
                 times.append((accepted - initiated).total_seconds())
             avg_acceptance_time = sum(times) / len(times)
         

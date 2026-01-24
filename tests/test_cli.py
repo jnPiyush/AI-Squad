@@ -140,44 +140,44 @@ class TestAgentCommands:
             runner.invoke(main, ["init"])
             yield
     
-    def test_pm_command(self, runner, setup_project):
+    def test_pm_command(self, runner, _setup_project):
         """Test squad pm command"""
         result = runner.invoke(main, ["pm", "123"])
         # Command should execute (may fail due to missing GitHub token)
         assert "Product Manager" in result.output or "Error" in result.output
     
-    def test_architect_command(self, runner, setup_project):
+    def test_architect_command(self, runner, _setup_project):
         """Test squad architect command"""
         result = runner.invoke(main, ["architect", "123"])
         assert "Architect" in result.output or "Error" in result.output
     
-    def test_engineer_command(self, runner, setup_project):
+    def test_engineer_command(self, runner, _setup_project):
         """Test squad engineer command"""
         result = runner.invoke(main, ["engineer", "123"])
         assert "Engineer" in result.output or "Error" in result.output
     
-    def test_ux_command(self, runner, setup_project):
+    def test_ux_command(self, runner, _setup_project):
         """Test squad ux command"""
         result = runner.invoke(main, ["ux", "123"])
         assert "UX Designer" in result.output or "Error" in result.output
     
-    def test_review_command(self, runner, setup_project):
+    def test_review_command(self, runner, _setup_project):
         """Test squad review command"""
         result = runner.invoke(main, ["review", "456"])
         assert "Reviewer" in result.output or "Error" in result.output
     
-    def test_collab_command(self, runner, setup_project):
+    def test_collab_command(self, runner, _setup_project):
         """Test squad collab command"""
         result = runner.invoke(main, ["collab", "123", "pm", "architect"])
         assert "collaboration" in result.output.lower() or "Error" in result.output
     
-    def test_captain_command(self, runner, setup_project):
+    def test_captain_command(self, runner, _setup_project):
         """Test squad captain command"""
         result = runner.invoke(main, ["captain", "123"])
         # Should show Captain coordinating message or error
         assert "Captain" in result.output or "Error" in result.output or "captain" in result.output.lower()
     
-    def test_captain_command_invalid_issue(self, runner, setup_project):
+    def test_captain_command_invalid_issue(self, runner, _setup_project):
         """Test squad captain with invalid issue number type"""
         result = runner.invoke(main, ["captain", "not-a-number"])
         # Should fail with usage error

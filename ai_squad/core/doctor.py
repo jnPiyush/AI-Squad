@@ -15,7 +15,8 @@ def _check_gh_auth() -> bool:
             ["gh", "auth", "status"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False
         )
         return result.returncode == 0
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -40,7 +41,8 @@ def _check_copilot_cli() -> Tuple[bool, str]:
             ["gh", "auth", "status"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False
         )
         if auth.returncode == 0:
             return True, "Authenticated (via gh auth login)"
@@ -55,14 +57,16 @@ def _run_copilot_cli(copilot_path: str, args: List[str]) -> subprocess.Completed
             ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", copilot_path, *args],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=10,
+            check=False
         )
 
     return subprocess.run(
         [copilot_path, *args],
         capture_output=True,
         text=True,
-        timeout=10
+        timeout=10,
+        check=False
     )
 
 
@@ -122,7 +126,7 @@ def run_doctor_checks() -> Dict[str, Any]:
     
     # Check 5: AI Provider (Copilot -> OpenAI -> Azure -> Template)
     try:
-        from ai_squad.core.ai_provider import get_ai_provider, AIProviderType
+        from ai_squad.core.ai_provider import get_ai_provider
         provider = get_ai_provider()
         available = provider.get_available_providers()
         
@@ -144,7 +148,7 @@ def run_doctor_checks() -> Dict[str, Any]:
                 "passed": False,
                 "message": "No AI provider. Ensure Copilot CLI auth or set OPENAI_API_KEY/AZURE_OPENAI_*"
             })
-    except Exception as e:
+    except (RuntimeError, ValueError, OSError) as e:
         checks.append({
             "name": "AI Provider",
             "passed": False,

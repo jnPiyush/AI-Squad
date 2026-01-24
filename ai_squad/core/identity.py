@@ -71,6 +71,6 @@ class IdentityManager:
         try:
             data = json.loads(self.identity_file.read_text(encoding="utf-8"))
             return IdentityDossier(**data)
-        except Exception as exc:  # noqa: BLE001
+        except (json.JSONDecodeError, OSError, TypeError, ValueError) as exc:
             logger.warning("Failed to load identity dossier: %s", exc)
             return None

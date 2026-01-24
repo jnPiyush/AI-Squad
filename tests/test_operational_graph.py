@@ -1,6 +1,4 @@
 """Tests for operational graph."""
-import pytest
-from pathlib import Path
 
 from ai_squad.core.operational_graph import (
     OperationalGraph,
@@ -15,7 +13,7 @@ def test_add_nodes_and_edges(tmp_path):
     # Add nodes
     wi = graph.add_node("issue-123", NodeType.WORK_ITEM, {"title": "Add login"})
     agent = graph.add_node("pm", NodeType.AGENT, {"role": "product_manager"})
-    skill = graph.add_node("requirements", NodeType.SKILL, {"version": "1.0"})
+    _skill = graph.add_node("requirements", NodeType.SKILL, {"version": "1.0"})
     
     assert wi.id == "issue-123"
     assert agent.type == NodeType.AGENT

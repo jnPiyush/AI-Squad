@@ -27,7 +27,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated documentation to reflect automatic orchestration
 
 ### Documentation
-- Added `docs/AUTOMATION-DESIGN.md` - Complete automation design
 - Updated CLI help text for watch command
 - Added usage examples in documentation
 

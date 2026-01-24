@@ -66,27 +66,41 @@ class ScoutWorker:
         *,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> ScoutRun:
-        run = ScoutRun(run_id=f"scout-{uuid.uuid4().hex[:8]}", metadata=metadata or {})
+        run = ScoutRun(
+            run_id=f"scout-{uuid.uuid4().hex[:8]}",
+            metadata=metadata or {},
+        )
 
         for name, func in tasks.items():
-            task = ScoutTask(name=name, status="running", started_at=datetime.now().isoformat())
-            try:
-                result = func()
-                task.result = result
-                task.status = "completed"
-            except Exception as exc:  # noqa: BLE001
-                task.error = str(exc)
-                task.status = "failed"
-                logger.error("scout_task_failed", extra={"task": name, "error": str(exc)})
-            finally:
-                task.completed_at = datetime.now().isoformat()
-                run.tasks.append(task)
-                self._checkpoint(run)
+            task = self._run_task(name, func)
+            run.tasks.append(task)
+            self._checkpoint(run)
 
         run.completed_at = datetime.now().isoformat()
         self._checkpoint(run)
         logger.info("scout_run_completed", extra={"run_id": run.run_id})
         return run
+
+    def _run_task(self, name: str, func: Callable[[], Any]) -> ScoutTask:
+        task = ScoutTask(
+            name=name,
+            status="running",
+            started_at=datetime.now().isoformat(),
+        )
+        try:
+            result = func()
+            task.result = result
+            task.status = "completed"
+        except (RuntimeError, ValueError, TypeError) as exc:
+            task.error = str(exc)
+            task.status = "failed"
+            logger.error(
+                "scout_task_failed",
+                extra={"task": name, "error": str(exc)},
+            )
+
+        task.completed_at = datetime.now().isoformat()
+        return task
 
     def _checkpoint(self, run: ScoutRun) -> None:
         checkpoint_file = self.scout_dir / f"{run.run_id}.json"

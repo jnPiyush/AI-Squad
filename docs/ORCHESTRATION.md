@@ -1,6 +1,6 @@
 # AI-Squad Orchestration Guide
 
-Complete guide to orchestrating multi-agent workflows in AI-Squad using BattlePlans, Captain coordination, convoys, and handoffs.
+Complete guide to orchestrating multi-agent workflows in AI-Squad using Battle Plans, Captain coordination, convoys, and handoffs.
 
 ---
 
@@ -8,11 +8,11 @@ Complete guide to orchestrating multi-agent workflows in AI-Squad using BattlePl
 
 - [Overview](#overview)
 - [Core Concepts](#core-concepts)
-- [BattlePlan Workflows](#BattlePlan-workflows)
+- [Battle Plan Workflows](#battle-plan-workflows)
 - [Captain Coordination](#captain-coordination)
 - [Convoy Parallel Execution](#convoy-parallel-execution)
 - [Work Handoffs](#work-handoffs)
-- [Signal Messaging](#Signal-messaging)
+- [Signal Messaging](#signal-messaging)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -22,12 +22,14 @@ Complete guide to orchestrating multi-agent workflows in AI-Squad using BattlePl
 
 AI-Squad provides powerful orchestration capabilities to coordinate multiple agents working together on complex tasks:
 
-- **BattlePlans**: YAML-based workflow definitions for sequential and conditional execution
+- **Battle Plans**: YAML-based workflow definitions for sequential and conditional execution
 - **Captain**: Meta-agent that analyzes tasks and coordinates agent teams
 - **Convoys**: Parallel execution of multiple tasks by the same or different agents
 - **Handoffs**: Structured work transfer protocol between agents
 - **Signal**: Asynchronous message passing for agent communication
 - **WorkState**: Persistent tracking of work items, dependencies, and status
+- **Hooks**: Persistent work item snapshots in `.squad/hooks`
+- **Worker Lifecycle**: Ephemeral agent run tracking
 
 ---
 
@@ -41,50 +43,52 @@ Work items represent units of work tracked through the system:
 from ai_squad.core.workstate import WorkStateManager, WorkStatus
 
 # Create work item
-work_mgr = WorkStateManager(config)
+work_mgr = WorkStateManager()
 item = work_mgr.create_work_item(
     title="Implement user authentication",
     description="Add JWT-based auth",
     agent="engineer",
     labels=["feature", "security"],
-    priority="high",
+  priority=2,
     metadata={"issue_number": 123}
 )
 
 # Update status
-work_mgr.update_work_item(item, status=WorkStatus.IN_PROGRESS)
+work_mgr.transition_status(item.id, WorkStatus.IN_PROGRESS)
 
 # Query work items
-pending = work_mgr.list_work_items(status=WorkStatus.PENDING, agent="engineer")
+pending = work_mgr.list_work_items(status=WorkStatus.READY, agent="engineer")
 ```
 
 ### Execution Tracking
 
 All orchestration operations track execution state persistently in `.squad/`:
 
-- **Executions**: BattlePlan and convoy execution history
+- **Executions**: Battle Plan and convoy execution history
 - **Work Items**: Current and historical work state
+- **Hooks**: Persistent work item snapshots
+- **Workers**: Ephemeral agent run history
 - **Messages**: Signal message queue
 - **Handoffs**: Work transfer records
 
 ---
 
-## BattlePlan Workflows
+## Battle Plan Workflows
 
-### What are BattlePlans?
+### What are Battle Plans?
 
-BattlePlans are YAML-based workflow definitions that specify:
+Battle Plans are YAML-based workflow definitions that specify:
 - Sequential execution order
 - Agent responsibilities
 - Dependencies between steps
 - Conditional execution
 - Error handling behavior
 
-### Built-in BattlePlans
+### Built-in Battle Plans
 
-AI-Squad includes 5 built-in BattlePlans:
+AI-Squad includes 5 built-in Battle Plans:
 
-#### 1. Feature BattlePlan
+#### 1. Feature Battle Plan
 
 Complete feature development workflow:
 
@@ -114,10 +118,10 @@ steps:
 
 **Usage:**
 ```bash
-squad BattlePlan run feature 123
+squad run-plan feature 123
 ```
 
-#### 2. Bug Fix BattlePlan
+#### 2. Bug Fix Battle Plan
 
 Streamlined bug fixing workflow:
 
@@ -142,10 +146,10 @@ steps:
 
 **Usage:**
 ```bash
-squad BattlePlan run bugfix 456
+squad run-plan bugfix 456
 ```
 
-#### 3. Tech Debt BattlePlan
+#### 3. Tech Debt Battle Plan
 
 Technical debt reduction:
 
@@ -170,10 +174,10 @@ steps:
 
 **Usage:**
 ```bash
-squad BattlePlan run tech-debt 789
+squad run-plan tech-debt 789
 ```
 
-#### 4. Design Review BattlePlan
+#### 4. Design Review Battle Plan
 
 UX-focused workflow:
 
@@ -203,10 +207,10 @@ steps:
 
 **Usage:**
 ```bash
-squad BattlePlan run design-review 101
+squad run-plan design-review 101
 ```
 
-#### 5. Quick Fix BattlePlan
+#### 5. Quick Fix Battle Plan
 
 Fast turnaround for simple changes:
 
@@ -222,22 +226,22 @@ steps:
 
 **Usage:**
 ```bash
-squad BattlePlan run quick-fix 202
+squad run-plan quick-fix 202
 ```
 
-### Creating Custom BattlePlans
+### Creating Custom Battle Plans
 
-Create custom BattlePlans using CLI:
+Create custom Battle Plans in `.squad/strategies/`:
 
 ```bash
-# Interactive BattlePlan creation
-squad BattlePlan create
+# List available plans
+squad plans
 
 # From YAML file
-squad BattlePlan create --file my-workflow.yaml
+cp my-workflow.yaml .squad/strategies/
 ```
 
-**Custom BattlePlan Example:**
+**Custom Battle Plan Example:**
 
 ```yaml
 name: api-feature
@@ -245,26 +249,23 @@ description: API feature development with security review
 variables:
   api_version: v2
   security_level: high
-  
+
 steps:
   - name: requirements
     agent: pm
     description: Define API requirements and contracts
-    output: ["docs/prd/api-spec.md"]
-    
+    outputs: ["docs/prd/api-spec.md"]
   - name: api_design
     agent: architect
     depends_on: [requirements]
     description: Design API endpoints and data models
-    output: ["docs/specs/api-design.md"]
+    outputs: ["docs/specs/api-design.md"]
     condition: always
-    
   - name: security_review
     agent: reviewer
     depends_on: [api_design]
     description: Security audit of API design
     condition: on_success
-    
   - name: implement_api
     agent: engineer
     depends_on: [security_review]
@@ -285,33 +286,35 @@ steps:
     condition: always
 ```
 
-### Executing BattlePlans
+Run with variables:
 
-Execute BattlePlans programmatically:
+```bash
+squad run-plan api-feature 123 --var api_version=v2 --var security_level=high
+```
 
+### Executing Battle Plans
+
+Execute Battle Plans programmatically:
 ```python
-from ai_squad.core.BattlePlan import BattlePlanManager, BattlePlanExecutor
-from ai_squad.core.agent_executor import AgentExecutor
+from ai_squad.core.battle_plan import BattlePlanManager, BattlePlanExecutor
+from ai_squad.core.workstate import WorkStateManager
 
-# Load BattlePlan
-BattlePlan_mgr = BattlePlanManager(config)
-BattlePlan = BattlePlan_mgr.get_BattlePlan("api-feature")
+# Load Battle Plan
+plan_manager = BattlePlanManager()
+work_manager = WorkStateManager()
+executor = BattlePlanExecutor(plan_manager, work_manager)
 
-# Create executor
-agent_exec = AgentExecutor(config, workstate, BattlePlan_mgr, convoy, Signal, handoff)
-BattlePlan_exec = BattlePlanExecutor(BattlePlan_mgr, agent_executor=agent_exec.execute)
-
-# Execute workflow
-execution_id = await BattlePlan_exec.execute_BattlePlan(
-    BattlePlan_name="api-feature",
-    issue_number=123,
-    variables={"api_version": "v2", "security_level": "high"}
+# Start execution
+execution = executor.start_execution(
+  strategy_name="api-feature",
+  issue_number=123,
+  variables={"api_version": "v2", "security_level": "high"}
 )
 
 # Track progress
-execution = BattlePlan_mgr.get_execution(execution_id)
-print(f"Status: {execution.status}")
-print(f"Completed: {len(execution.completed_steps)}/{len(BattlePlan.steps)}")
+if execution:
+  print(f"Status: {execution.status}")
+  print(f"Work items: {len(execution.work_items)}")
 ```
 
 ### Step Conditions
@@ -344,11 +347,11 @@ Configure error behavior per step:
 steps:
   - name: risky_operation
     agent: engineer
-    continue_on_error: true  # Don't stop BattlePlan on failure
+    continue_on_error: true  # Don't stop Battle Plan on failure
     
   - name: critical_operation
     agent: engineer
-    continue_on_error: false  # Stop BattlePlan if this fails
+    continue_on_error: false  # Stop Battle Plan if this fails
 ```
 
 ---
@@ -375,43 +378,6 @@ squad captain analyze 123
 squad captain coordinate item-1 item-2 item-3
 ```
 
-#### Programmatic Usage
-
-```python
-from ai_squad.core.captain import Captain
-
-captain = Captain(config, workstate, BattlePlan_mgr, convoy, Signal, handoff)
-
-# Analyze task
-breakdown = await captain.analyze_task(
-    task_description="Add payment processing with Stripe",
-    issue_number=123,
-    context={"labels": ["feature", "payment"], "priority": "high"}
-)
-
-print(f"Complexity: {breakdown.complexity}")
-print(f"Suggested BattlePlan: {breakdown.suggested_BattlePlan}")
-print(f"Work items: {len(breakdown.work_items)}")
-
-# Create coordination plan
-plan = captain.coordinate(
-    work_items=[item.id for item in breakdown.work_items]
-)
-
-print(f"Parallel batches: {len(plan['parallel_batches'])}")
-print(f"Sequential steps: {len(plan['sequential_steps'])}")
-
-# Execute plan
-results = await captain.execute_plan(
-    plan=plan,
-    agent_executor=agent_exec,
-    execute=True
-)
-
-print(f"Completed: {results['completed']}")
-print(f"Failed: {results['failed']}")
-```
-
 ### Captain Strategies
 
 Captain uses intelligent strategies to optimize execution:
@@ -436,14 +402,11 @@ Convoys enable parallel execution of multiple tasks:
 ### Creating Convoys
 
 ```bash
-# Execute convoy from CLI
-squad convoy run "bug-fixes" engineer 101 102 103
+# List convoys
+squad convoys
 
-# List active convoys
-squad convoy list
-
-# Get convoy status
-squad convoy status convoy-123
+# Show convoy details
+squad convoys --convoy-id convoy-123
 ```
 
 ### Programmatic Convoy Usage
@@ -631,7 +594,7 @@ for msg in messages:
 
 ## Best Practices
 
-### BattlePlan Design
+### Battle Plan Design
 
 1. **Keep steps focused**: Each step should have single responsibility
 2. **Use dependencies**: Declare dependencies explicitly for clarity
@@ -671,17 +634,17 @@ for msg in messages:
 
 ## Troubleshooting
 
-### BattlePlan Execution Issues
+### Battle Plan Execution Issues
 
-**Problem**: BattlePlan execution hangs or times out
+**Problem**: Battle Plan execution hangs or times out
 
 **Solutions**:
 - Check agent_executor is configured correctly
-- Verify all agents in BattlePlan are enabled
+- Verify all agents in the Battle Plan are enabled
 - Add timeout_minutes to steps
-- Check logs: `.squad/logs/BattlePlan-execution.log`
+- Check logs: `.squad/logs/battle-plan-execution.log`
 
-**Problem**: Step fails but BattlePlan doesn't stop
+**Problem**: Step fails but Battle Plan doesn't stop
 
 **Solutions**:
 - Set `continue_on_error: false` for critical steps
@@ -695,7 +658,7 @@ for msg in messages:
 **Solutions**:
 - Provide better context (labels, descriptions)
 - Use explicit agent assignments in work items
-- Consider creating custom BattlePlan instead
+- Consider creating a custom Battle Plan instead
 
 **Problem**: execute_plan() doesn't run agents
 
@@ -748,8 +711,8 @@ logging.basicConfig(level=logging.DEBUG)
 ```bash
 # View persisted state
 ls -la .squad/
-cat .squad/workstate/work-items.json
-cat .squad/executions/latest.json
+cat .squad/workstate.json
+ls -la .squad/hooks
 ```
 
 **Verify configuration**:
@@ -760,93 +723,19 @@ squad config show
 
 ---
 
-## Advanced Topics
-
-### Custom BattlePlan Templates
-
-Create reusable BattlePlan templates:
-
-```python
-from ai_squad.core.BattlePlan import BattlePlanManager, BattlePlanStep
-
-def create_microservice_BattlePlan(service_name: str):
-    """Generate BattlePlan for new microservice development"""
-    return {
-        "name": f"microservice-{service_name}",
-        "description": f"Development workflow for {service_name} microservice",
-        "variables": {
-            "service_name": service_name,
-            "tech_stack": "python-fastapi"
-        },
-        "steps": [
-            BattlePlanStep(name="requirements", agent="pm"),
-            BattlePlanStep(name="api_design", agent="architect", depends_on=["requirements"]),
-            BattlePlanStep(name="implement", agent="engineer", depends_on=["api_design"]),
-            BattlePlanStep(name="containerize", agent="engineer", depends_on=["implement"]),
-            BattlePlanStep(name="review", agent="reviewer", depends_on=["containerize"])
-        ]
-    }
-```
-
-### Dynamic Workflow Adjustment
-
-Modify workflows at runtime:
-
-```python
-# Start BattlePlan execution
-execution_id = await BattlePlan_exec.execute_BattlePlan("feature", 123)
-
-# Monitor progress
-while execution.status == "running":
-    execution = BattlePlan_mgr.get_execution(execution_id)
-    
-    # Check for issues
-    if len(execution.failed_steps) > 0:
-        # Decide: retry, skip, or abort
-        if should_retry:
-            BattlePlan_exec.retry_step(execution_id, failed_step_name)
-        elif should_continue:
-            BattlePlan_exec.skip_step(execution_id, failed_step_name)
-        else:
-            BattlePlan_exec.abort_execution(execution_id)
-            break
-    
-    await asyncio.sleep(5)
-```
-
-### Metrics and Observability
-
-Track orchestration metrics:
-
-```python
-from ai_squad.core.metrics import OrchestrationMetrics
-
-metrics = OrchestrationMetrics(config)
-
-# Track execution
-with metrics.track_BattlePlan_execution("feature"):
-    await BattlePlan_exec.execute_BattlePlan("feature", 123)
-
-# View metrics
-print(f"Total executions: {metrics.total_executions}")
-print(f"Success rate: {metrics.success_rate}")
-print(f"Avg duration: {metrics.avg_duration_seconds}s")
-```
-
 ---
 
 ## Next Steps
 
 - **[Commands Reference](commands.md)** - Complete CLI command documentation
 - **[Configuration Guide](configuration.md)** - Configure orchestration settings
-- **[Agent Development](AGENTS.md)** - Create custom agents
-- **[API Reference](api-reference.md)** - Programmatic API documentation
+- **[Agent Development](../AGENTS.md)** - Create custom agents
 
 ---
 
 **Need Help?**
 
 - 📖 [Documentation](README.md)
-- 🐛 [Report Issues](https://github.com/your-org/ai-squad/issues)
-- 💬 [Discussions](https://github.com/your-org/ai-squad/discussions)
+- 🐛 [Report Issues](https://github.com/jnPiyush/AI-Squad/issues)
+- 💬 [Discussions](https://github.com/jnPiyush/AI-Squad/discussions)
 

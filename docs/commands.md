@@ -234,27 +234,67 @@ squad collab <design#> ux architect
 
 ---
 
-### `squad chat <agent>`
+### `squad plans`
 
-Interactive chat with an agent (coming soon).
+List available Battle Plans (workflow templates).
 
 **Usage:**
 ```bash
-squad chat <agent-type>
+squad plans [--label <label>]
 ```
-
-**Arguments:**
-- `agent-type` - Agent to chat with (`pm`, `architect`, `engineer`, `ux`, `reviewer`)
 
 **Example:**
 ```bash
-squad chat engineer
-> How should I implement authentication?
-...
-> exit
+squad plans
+squad plans --label bugfix
 ```
 
-**Status:** Coming in v0.2.0
+---
+
+### `squad run-plan <plan> <issue#>`
+
+Run a Battle Plan for an issue.
+
+**Usage:**
+```bash
+squad run-plan <plan-name> <issue-number> [--var key=value]
+```
+
+**Example:**
+```bash
+squad run-plan feature 123
+squad run-plan api-feature 123 --var api_version=v2
+```
+
+---
+
+### `squad convoys`
+
+List convoys or show a specific convoy.
+
+**Usage:**
+```bash
+squad convoys [--convoy-id <id>] [--issue <issue#>]
+```
+
+**Example:**
+```bash
+squad convoys
+squad convoys --convoy-id convoy-abc123
+```
+
+---
+
+### `squad dashboard`
+
+Start the web dashboard.
+
+**Usage:**
+```bash
+squad dashboard [--host 127.0.0.1] [--port 5050] [--debug]
+```
+
+---
 
 ---
 
@@ -268,10 +308,10 @@ squad doctor
 ```
 
 **Checks:**
-- ✅ GitHub Token present
+- ✅ GitHub Auth configured
+- ✅ Copilot CLI authenticated
 - ✅ Configuration file exists
 - ✅ Output directories exist
-- ✅ Copilot SDK installed
 - ✅ Git repository present
 
 **Example:**
@@ -283,10 +323,10 @@ squad doctor
 ```
 Running diagnostic checks...
 
-✅ GitHub Token: Found
+✅ GitHub Auth: OAuth (gh auth login)
+✅ Copilot CLI: Authenticated
 ✅ Configuration: Found squad.yaml
 ✅ Output Directories: All directories exist
-✅ Copilot SDK: Installed (v0.1.16)
 ✅ Git Repository: Found .git/
 
 All checks passed! AI-Squad is ready to use.
@@ -333,13 +373,23 @@ squad pm 789 && squad architect 789 && squad engineer 789
 
 ### `GITHUB_TOKEN`
 
-**Required:** Yes  
-**Description:** GitHub Personal Access Token with `repo` and `workflow` scopes
+**Required:** No (OAuth via `gh auth login` is supported)  
+**Description:** GitHub Personal Access Token with `repo` and `workflow` scopes (optional)
 
 **Set:**
 ```bash
 export GITHUB_TOKEN=ghp_your_token_here
 ```
+
+### `OPENAI_API_KEY`
+
+**Required:** No  
+**Description:** OpenAI API key (fallback provider)
+
+### `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_ENDPOINT`
+
+**Required:** No  
+**Description:** Azure OpenAI credentials (fallback provider)
 
 ### `SQUAD_CONFIG`
 
@@ -432,9 +482,8 @@ squad architect 300
 ## Next Steps
 
 - [Configuration Guide](configuration.md) - Customize agents
-- [Agents Guide](agents.md) - Learn about each agent
-- [Workflows](workflows.md) - Multi-agent patterns
-- [GitHub Actions](github-actions.md) - Automate with CI/CD
+- [Agents Guide](../AGENTS.md) - Learn about each agent
+- [Orchestration Guide](ORCHESTRATION.md) - Battle Plans, Convoys, Handoffs
 
 ---
 

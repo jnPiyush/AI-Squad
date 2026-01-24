@@ -54,6 +54,18 @@ github:
 
 skills:
   - all
+
+runtime:
+  provider: copilot
+  provider_order: [copilot, openai, azure_openai]
+  command: null
+  args: []
+  prompt_mode: none
+
+hooks:
+  enabled: true
+  use_git_worktree: false
+  hooks_dir: .squad/hooks
 ```
 
 ## Configuration Options
@@ -228,6 +240,30 @@ skills:
 16. `remote-git-operations` - PRs, CI/CD
 17. `ai-agent-development` - Agent patterns
 18. `code-review-and-audit` - Review checklists
+
+### Runtime Configuration
+
+Control the AI provider order and runtime settings.
+
+```yaml
+runtime:
+  provider: copilot
+  provider_order: [copilot, openai, azure_openai]
+  command: null
+  args: []
+  prompt_mode: none
+```
+
+### Hook Persistence
+
+Enable hook persistence for Work Items.
+
+```yaml
+hooks:
+  enabled: true
+  use_git_worktree: false
+  hooks_dir: .squad/hooks
+```
 
 ## Environment-Specific Configuration
 

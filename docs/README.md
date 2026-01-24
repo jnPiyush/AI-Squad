@@ -1,6 +1,6 @@
 # AI-Squad Documentation
 
-Welcome to AI-Squad! Your AI Development Squad, One Command Away.
+Welcome to AI-Squad! 🎖️ Five expert AI agents orchestrated by a Captain.
 
 ## Quick Links
 
@@ -27,13 +27,15 @@ AI-Squad is a CLI tool that brings five expert AI agents to your project:
 - **96%+ faster** than manual development process
 - **Zero hosting costs** - runs locally or in GitHub Actions
 - **Production-ready** - follows 18 production skills
+- **Hook persistence** - work items survive restarts
+- **Worker lifecycle** - track ephemeral agent runs
 - **Template-driven** - consistent documentation
 - **Multi-agent collaboration** - coordinated teamwork
 
 ## Architecture
 
 ```
-User Command → AI-Squad CLI → Copilot SDK → Agent Execution → Output
+User Command → AI-Squad CLI → Provider Chain → Agent Execution → Output
 ```
 
 **Local Mode:** Runs on your machine  
@@ -57,7 +59,7 @@ squad init
 ### Configure
 
 ```bash
-export GITHUB_TOKEN=ghp_your_token_here
+gh auth login
 ```
 
 ### Run

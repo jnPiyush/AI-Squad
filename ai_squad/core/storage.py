@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime, timedelta
 from contextlib import contextmanager
+from functools import lru_cache
 
 from ai_squad.core.agent_comm import AgentMessage, MessageType
 from ai_squad.core.status import StatusTransition, IssueStatus
@@ -36,7 +37,7 @@ class PersistentStorage:
         try:
             yield conn
             conn.commit()
-        except Exception:
+        except Exception:  # noqa: BLE001 - rollback should run on any failure
             conn.rollback()
             raise
         finally:
@@ -144,7 +145,7 @@ class PersistentStorage:
                     message.issue_number
                 ))
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"Error saving message: {e}")
             return False
     
@@ -237,7 +238,7 @@ class PersistentStorage:
                     transition.reason
                 ))
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"Error saving transition: {e}")
             return False
     
@@ -343,7 +344,7 @@ class PersistentStorage:
                     execution_id
                 ))
             return True
-        except Exception as e:
+        except sqlite3.Error as e:
             print(f"Error completing execution: {e}")
             return False
     
@@ -456,13 +457,7 @@ class PersistentStorage:
         return deleted
 
 
-# Global instance
-_storage = None
-
-
+@lru_cache(maxsize=None)
 def get_storage(db_path: str = ".ai_squad/history.db") -> PersistentStorage:
     """Get or create storage instance"""
-    global _storage
-    if _storage is None:
-        _storage = PersistentStorage(db_path)
-    return _storage
+    return PersistentStorage(db_path)

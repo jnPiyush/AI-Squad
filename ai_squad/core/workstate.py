@@ -251,6 +251,10 @@ class WorkStateManager:
         
         with self._acquire_lock():
             self._load_state_locked()
+
+    def reload_state(self) -> None:
+        """Public reload of work state from disk."""
+        self._load_state()
     
     def _save_state(self) -> None:
         """Persist work state to disk"""

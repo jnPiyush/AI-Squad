@@ -5,7 +5,6 @@ Searches and analyzes codebase for relevant context.
 """
 from pathlib import Path
 from typing import Dict, Any, List
-import os
 
 
 class CodebaseSearch:
@@ -127,7 +126,7 @@ class CodebaseSearch:
         
         return patterns
     
-    def _find_similar_features(self, issue: Dict[str, Any]) -> List[str]:
+    def _find_similar_features(self, _issue: Dict[str, Any]) -> List[str]:
         """Find similar features"""
         # Would use semantic search in production
         return ["Similar feature 1", "Similar feature 2"]
@@ -145,3 +144,7 @@ class CodebaseSearch:
         words = [w for w in text.split() if w not in common_words and len(w) > 3]
         
         return words[:5]
+
+    def extract_keywords(self, issue: Dict[str, Any]) -> List[str]:
+        """Public wrapper for keyword extraction."""
+        return self._extract_keywords(issue)

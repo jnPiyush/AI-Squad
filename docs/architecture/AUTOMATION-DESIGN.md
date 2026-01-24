@@ -1,8 +1,8 @@
-# AI-Squad Automatic Orchestration Design
+# AI-Squad Automatic Orchestration Design (Deprecated)
 
-> **Purpose**: Add automatic agent orchestration to AI-Squad while preserving manual CLI benefits  
-> **Status**: ✅ IMPLEMENTED (Watch Mode)  
-> **Version**: 0.2.0
+> **Status**: Deprecated  
+> This document described legacy watch-mode automation and is no longer maintained.  
+> See [docs/ORCHESTRATION.md](../ORCHESTRATION.md) for current orchestration and Battle Plan guidance.
 
 ---
 

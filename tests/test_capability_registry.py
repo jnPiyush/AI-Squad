@@ -24,7 +24,7 @@ capability_tags:
 """.format(name=name, version=version), encoding="utf-8")
     if checksum:
         registry = CapabilityRegistry(tmp_path)
-        manifest["checksum_sha256"] = registry._compute_dir_checksum(pkg_dir)
+        manifest["checksum_sha256"] = registry.compute_dir_checksum(pkg_dir)
         manifest_path.write_text(
             manifest_path.read_text(encoding="utf-8") + f"checksum_sha256: {manifest['checksum_sha256']}\n",
             encoding="utf-8",

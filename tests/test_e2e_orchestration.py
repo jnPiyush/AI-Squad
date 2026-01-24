@@ -5,7 +5,7 @@ Tests complete orchestration workflows including BattlePlan, Captain, Convoy, an
 These tests verify that the orchestration system works end-to-end.
 """
 import pytest
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import Mock, AsyncMock
 from pathlib import Path
 import tempfile
 import shutil
@@ -13,14 +13,13 @@ import asyncio
 from datetime import datetime
 
 from ai_squad.core.config import Config
-from ai_squad.core.workstate import WorkStateManager, WorkItem, WorkStatus
+from ai_squad.core.workstate import WorkStateManager, WorkStatus
 from ai_squad.core.battle_plan import BattlePlanManager, BattlePlanExecutor, BattlePlanPhase
 from ai_squad.core.convoy import ConvoyManager
 from ai_squad.core.captain import Captain
 from ai_squad.core.signal import SignalManager
 from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.agent_executor import AgentExecutor
-from ai_squad.agents.base import BaseAgent
 
 
 class TestE2EBattlePlanExecution:
@@ -50,7 +49,7 @@ class TestE2EBattlePlanExecution:
         return config
     
     @pytest.fixture
-    def managers(self, config, temp_dir):
+    def managers(self, temp_dir):
         """Create orchestration managers"""
         workstate = WorkStateManager(temp_dir)
         BattlePlan = BattlePlanManager(temp_dir)
@@ -84,7 +83,7 @@ class TestE2EBattlePlanExecution:
         return executor
     
     @pytest.mark.asyncio
-    async def test_BattlePlan_executes_full_workflow(self, config, managers, mock_agent_executor):
+    async def test_BattlePlan_executes_full_workflow(self, managers, mock_agent_executor):
         """Test: BattlePlan executor runs complete workflow PM -> Architect -> Engineer"""
         BattlePlan_mgr = managers["BattlePlan"]
         
@@ -115,7 +114,6 @@ class TestE2EBattlePlanExecution:
         
         # Verify execution
         assert execution is not None
-        execution_id = execution.id
         # Verify work items were created
         assert len(execution.work_items) == 3  # PM, Architect, Engineer
         
@@ -125,7 +123,7 @@ class TestE2EBattlePlanExecution:
         assert len(strategy.phases) == 3
     
     @pytest.mark.asyncio
-    async def test_BattlePlan_handles_step_failure_with_continue(self, config, managers):
+    async def test_BattlePlan_handles_step_failure_with_continue(self, managers):
         """Test: BattlePlan continues on error when continue_on_error=True"""
         BattlePlan_mgr = managers["BattlePlan"]
         
@@ -142,7 +140,7 @@ class TestE2EBattlePlanExecution:
         
         # Mock executor that fails on architect
         mock_executor = Mock()
-        def failing_execute(agent, issue_number):
+        def failing_execute(agent, _issue_number):
             if agent == "architect":
                 return {"success": False, "error": "Design failed"}
             return {"success": True, "artifacts": [f"{agent}-output.md"]}
@@ -165,7 +163,7 @@ class TestE2EBattlePlanExecution:
         assert len(execution.work_items) == 3
     
     @pytest.mark.asyncio
-    async def test_BattlePlan_stops_on_critical_failure(self, config, managers):
+    async def test_BattlePlan_stops_on_critical_failure(self, managers):
         """Test: BattlePlan stops on error when continue_on_error=False"""
         BattlePlan_mgr = managers["BattlePlan"]
         
@@ -182,7 +180,7 @@ class TestE2EBattlePlanExecution:
         
         # Mock executor that fails on architect
         mock_executor = Mock()
-        def failing_execute(agent, issue_number):
+        def failing_execute(agent, _issue_number):
             if agent == "architect":
                 raise RuntimeError("Critical design failure")
             return {"success": True, "artifacts": [f"{agent}-output.md"]}
@@ -250,7 +248,7 @@ class TestE2ECaptainCoordination:
         )
     
     @pytest.mark.asyncio
-    async def test_captain_coordinates_and_executes_work(self, captain, config):
+    async def test_captain_coordinates_and_executes_work(self, captain, _config):
         """Test: Captain creates plan and executes it"""
         # Create work items
         item1 = captain.work_state_manager.create_work_item(
@@ -341,7 +339,7 @@ class TestE2EConvoyExecution:
         return config
     
     @pytest.fixture
-    def convoy_manager(self, config, temp_dir):
+    def convoy_manager(self, temp_dir):
         """Create convoy manager"""
         return ConvoyManager(temp_dir)
     
@@ -433,12 +431,12 @@ class TestE2EHandoffWorkflow:
         return config
     
     @pytest.fixture
-    def handoff_manager(self, config, temp_dir):
+    def handoff_manager(self, temp_dir):
         """Create handoff manager"""
         return HandoffManager(temp_dir)
     
     @pytest.fixture
-    def workstate_manager(self, config, temp_dir):
+    def workstate_manager(self, temp_dir):
         """Create workstate manager"""
         return WorkStateManager(temp_dir)
     
@@ -546,7 +544,7 @@ class TestE2EMultiAgentCollaboration:
     @pytest.mark.asyncio
     async def test_complete_feature_workflow_with_all_components(self, full_system):
         """Test: Complete feature workflow using all orchestration components"""
-        captain = full_system["captain"]
+        _captain = full_system["captain"]
         BattlePlan_mgr = full_system["BattlePlan"]
         workstate = full_system["workstate"]
         
@@ -563,7 +561,7 @@ class TestE2EMultiAgentCollaboration:
         )
         
         # Create work item
-        work_item = workstate.create_work_item(
+        _work_item = workstate.create_work_item(
             title="Add payment feature",
             description="Implement payment processing",
             agent="captain",
@@ -572,6 +570,8 @@ class TestE2EMultiAgentCollaboration:
         
         # Mock successful execution - signature must match what BattlePlanExecutor inspects
         async def mock_successful_agent_execution(agent_type, issue_number, action=None, step=None):
+            _ = action
+            _ = step
             await asyncio.sleep(0.01)  # Simulate work
             return {
                 "success": True,

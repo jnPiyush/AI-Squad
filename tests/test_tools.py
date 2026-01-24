@@ -2,8 +2,6 @@
 Tests for tools
 """
 import pytest
-from unittest.mock import Mock, patch
-from pathlib import Path
 
 from ai_squad.tools.github import GitHubTool
 from ai_squad.tools.templates import TemplateEngine
@@ -21,8 +19,7 @@ class TestGitHubTool:
         
         tool = GitHubTool(mock_config)
         tool.token = None  # Ensure no token
-        tool._gh_auth_checked = True  # Mark as checked
-        tool._gh_authenticated = False  # But not authenticated
+        tool.set_auth_cache(checked=True, authenticated=False)
         return tool
     
     def test_get_issue_mock(self, github_tool):
@@ -131,7 +128,7 @@ class TestCodebaseSearch:
     
     def test_extract_keywords(self, search, mock_issue):
         """Test keyword extraction"""
-        keywords = search._extract_keywords(mock_issue)
+        keywords = search.extract_keywords(mock_issue)
         
         assert isinstance(keywords, list)
         assert len(keywords) > 0

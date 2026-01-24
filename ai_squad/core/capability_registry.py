@@ -178,6 +178,10 @@ class CapabilityRegistry:
                 digest.update(path.read_bytes())
         return digest.hexdigest()
 
+    def compute_dir_checksum(self, root: Path) -> str:
+        """Public wrapper for checksum computation."""
+        return self._compute_dir_checksum(root)
+
     @staticmethod
     def _manifest_bytes_without_checksum(path: Path) -> bytes:
         if path.suffix in {".yaml", ".yml"}:

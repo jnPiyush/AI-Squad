@@ -6,8 +6,8 @@ Get AI-Squad running in 30 seconds!
 
 - **Python 3.11+**
 - **Git** (repository)
-- **GitHub account** with Copilot subscription
-- **GitHub Personal Access Token** with `repo` and `workflow` scopes
+- **GitHub Copilot CLI** installed
+- **GitHub CLI** authenticated (`gh auth login`)
 
 ## Installation
 
@@ -39,7 +39,13 @@ This creates:
 - `docs/` - Output directories (prd, adr, specs, ux, reviews)
 - `.github/` - Templates, skills, agents
 
-### 2. Configure GitHub Token
+### 2. Authenticate GitHub & Copilot CLI
+
+```bash
+gh auth login
+```
+
+If you prefer a token instead of OAuth:
 
 **Linux/Mac:**
 ```bash
@@ -49,11 +55,6 @@ export GITHUB_TOKEN=ghp_your_token_here
 **Windows PowerShell:**
 ```powershell
 $env:GITHUB_TOKEN="ghp_your_token_here"
-```
-
-**Permanent (add to `.bashrc` or PowerShell profile):**
-```bash
-echo 'export GITHUB_TOKEN=ghp_your_token_here' >> ~/.bashrc
 ```
 
 ### 3. Update Configuration
@@ -76,6 +77,15 @@ output:
   prd_dir: docs/prd
   adr_dir: docs/adr
   # ... other dirs
+
+runtime:
+  provider: copilot
+  provider_order: [copilot, openai, azure_openai]
+
+hooks:
+  enabled: true
+  use_git_worktree: false
+  hooks_dir: .squad/hooks
 ```
 
 ## Your First Command
@@ -155,10 +165,10 @@ squad doctor
 
 **Output:**
 ```
-✅ GitHub Token: Found
+✅ GitHub Auth: OAuth (gh auth login)
 ✅ Configuration: Found squad.yaml
 ✅ Output Directories: All directories exist
-✅ Copilot SDK: Installed (v0.1.16)
+✅ Copilot CLI: Authenticated
 ✅ Git Repository: Found .git/
 ```
 
@@ -231,8 +241,7 @@ cp .github/workflows/squad-*.yml.template .github/workflows/
 
 - **[Commands Reference](commands.md)** - All available commands
 - **[Configuration Guide](configuration.md)** - Customize AI-Squad
-- **[Agents Guide](agents.md)** - Learn about each agent
-- **[Workflows](workflows.md)** - Multi-agent patterns
+- **[Agents Guide](../AGENTS.md)** - Learn about each agent
 - **[Examples](../examples/)** - Sample projects
 
 ## Troubleshooting

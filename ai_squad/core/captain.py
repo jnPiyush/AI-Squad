@@ -14,20 +14,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..agents.base import BaseAgent, SDK_AVAILABLE
 from ..core.config import Config
 from .convoy import ConvoyManager
-from .battle_plan import (
-    BattlePlan,
-    BattlePlanExecutor,
-    BattlePlanManager,
-    BattlePlanPhase,
-)
+from .battle_plan import BattlePlanManager
 from .workstate import WorkItem, WorkStateManager, WorkStatus
 from .router import Candidate
-
-if SDK_AVAILABLE:
-    try:
-        from copilot import CopilotClient
-    except ImportError:
-        pass
 
 logger = logging.getLogger(__name__)
 
@@ -262,7 +251,7 @@ Always provide clear, structured coordination plans.
                         return parsed.get("complexity", "medium"), parsed.get("strategy")
                     except json.JSONDecodeError:
                         logger.warning("SDK returned non-JSON complexity assessment")
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError, json.JSONDecodeError) as e:
                 logger.warning("SDK assessment failed: %s", e)
         
         # Fallback: keyword-based assessment
@@ -307,13 +296,17 @@ Always provide clear, structured coordination plans.
         # Use SDK for intelligent breakdown
         if SDK_AVAILABLE:
             try:
-                result = await self._call_sdk(
-                    "breakdown_task",
-                    task=task_description,
-                    context=context
+                system_prompt = "You are a task breakdown assistant. Respond in JSON only."
+                user_prompt = (
+                    "Break down the task into 3-6 work items. "
+                    "Return JSON with key items: list of {title, description, labels}.\n\n"
+                    f"Task: {task_description}\n\n"
+                    f"Context: {context or {}}"
                 )
-                if result and "items" in result:
-                    for item_data in result["items"]:
+                raw = self._call_sdk(system_prompt, user_prompt)
+                if raw:
+                    parsed = json.loads(raw)
+                    for item_data in parsed.get("items", []):
                         item = self.work_state_manager.create_work_item(
                             title=item_data.get("title", "Untitled"),
                             description=item_data.get("description", ""),
@@ -321,8 +314,9 @@ Always provide clear, structured coordination plans.
                             labels=item_data.get("labels", [])
                         )
                         work_items.append(item)
-                    return work_items
-            except Exception as e:
+                    if work_items:
+                        return work_items
+            except (RuntimeError, ValueError, TypeError, json.JSONDecodeError) as e:
                 logger.warning("SDK breakdown failed: %s", e)
         
         # Fallback: basic breakdown
@@ -565,18 +559,22 @@ Always provide clear, structured coordination plans.
         # Use SDK for suggestions if available
         if SDK_AVAILABLE:
             try:
-                result = await self._call_sdk(
-                    "resolve_blocker",
-                    work_item=item.to_dict(),
-                    blocker=blocker_description
+                system_prompt = "You are a blocker resolution assistant. Respond in JSON only."
+                user_prompt = (
+                    "Suggest how to resolve the blocker. "
+                    "Return JSON with keys: suggestions (list of strings), escalate (bool).\n\n"
+                    f"Work item: {item.to_dict()}\n\n"
+                    f"Blocker: {blocker_description}"
                 )
-                if result:
+                raw = self._call_sdk(system_prompt, user_prompt)
+                if raw:
+                    parsed = json.loads(raw)
                     return {
                         "status": "suggestions_available",
-                        "suggestions": result.get("suggestions", []),
-                        "escalate": result.get("escalate", False)
+                        "suggestions": parsed.get("suggestions", []),
+                        "escalate": parsed.get("escalate", False)
                     }
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError, json.JSONDecodeError) as e:
                 logger.warning("SDK blocker resolution failed: %s", e)
         
         # Fallback: basic suggestions
@@ -688,11 +686,11 @@ Always provide clear, structured coordination plans.
         for item in breakdown.work_items:
             summary += f"- [{item.status.value}] {item.title} ({item.id})\n"
         
-        summary += f"\n### Convoy Plans\n"
+        summary += "\n### Convoy Plans\n"
         for plan in convoys:
             summary += f"- **{plan.id}**: {len(plan.work_items)} items, agents: {', '.join(plan.agents)}\n"
         
-        summary += f"\n### Recommended Next Actions\n"
+        summary += "\n### Recommended Next Actions\n"
         for rec in recommendations[:3]:
             summary += f"- {rec['action']}: {rec.get('work_item_title', rec.get('work_item_id'))}\n"
         
@@ -722,7 +720,8 @@ Always provide clear, structured coordination plans.
         """
         # Use provided managers or fall back to self managers
         ws_mgr = workstate_manager or self.work_state_manager
-        cv_mgr = convoy_manager or self.convoy_manager
+        _ = strategy_manager or self.strategy_manager
+        _ = convoy_manager or self.convoy_manager
         
         logger.info("Captain coordinating %d work items", len(work_items))
         
@@ -875,7 +874,7 @@ Always provide clear, structured coordination plans.
             agent = batch["agent"]
             items = batch["items"]
             
-            logger.info(f"Executing convoy {convoy_id} with {len(items)} items")
+            logger.info("Executing convoy %s with %d items", convoy_id, len(items))
             
             try:
                 if self.convoy_manager:
@@ -905,27 +904,27 @@ Always provide clear, structured coordination plans.
                                     "item_id": item_id,
                                     "error": result.get("error")
                                 })
-                        except Exception as e:
+                        except (RuntimeError, ValueError, TypeError) as e:
                             results["failed"] += 1
                             results["errors"].append({
                                 "item_id": item_id,
                                 "error": str(e)
                             })
-                            logger.exception(f"Failed to execute {agent} for {item_id}")
-            except Exception as e:
+                            logger.exception("Failed to execute %s for %s", agent, item_id)
+            except (RuntimeError, ValueError, TypeError) as e:
                 results["failed"] += len(items)
                 results["errors"].append({
                     "convoy_id": convoy_id,
                     "error": str(e)
                 })
-                logger.exception(f"Convoy {convoy_id} failed")
+                logger.exception("Convoy %s failed", convoy_id)
         
         # Execute sequential steps
         for phase in plan.get("sequential_steps", []):
             agent = phase["agent"]
             item_id = phase["item_id"]
             
-            logger.info(f"Executing {agent} for {item_id}")
+            logger.info("Executing %s for %s", agent, item_id)
             
             try:
                 result = await agent_executor.execute(agent, item_id)
@@ -944,7 +943,7 @@ Always provide clear, structured coordination plans.
                         "item_id": item_id,
                         "error": result.get("error")
                     })
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError) as e:
                 results["failed"] += 1
                 results["sequential_results"].append({
                     "agent": agent,
@@ -956,7 +955,7 @@ Always provide clear, structured coordination plans.
                     "item_id": item_id,
                     "error": str(e)
                 })
-                logger.exception(f"Failed to execute {agent} for {item_id}")
+                logger.exception("Failed to execute %s for %s", agent, item_id)
         
         # Final status
         total = results["completed"] + results["failed"]
@@ -967,7 +966,7 @@ Always provide clear, structured coordination plans.
         else:
             results["status"] = "partial"
         
-        logger.info(f"Coordination complete: {results['completed']}/{total} succeeded")
+        logger.info("Coordination complete: %d/%d succeeded", results["completed"], total)
         
         return results
     
@@ -1010,8 +1009,8 @@ Always provide clear, structured coordination plans.
                 "output": result,
                 "issue_number": issue_number
             }
-        except Exception as e:
-            logger.error(f"Captain execution failed for issue #{issue_number}: {e}")
+        except (RuntimeError, ValueError, TypeError) as e:
+            logger.error("Captain execution failed for issue #%d: %s", issue_number, e)
             return {
                 "success": False,
                 "error": str(e),

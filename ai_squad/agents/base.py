@@ -22,7 +22,7 @@ from ai_squad.tools.templates import TemplateEngine
 from ai_squad.tools.codebase import CodebaseSearch
 from ai_squad.core.signal import MessagePriority
 from ai_squad.core.handoff import HandoffReason
-from ai_squad.core.ai_provider import get_ai_provider, AIProviderType
+from ai_squad.core.ai_provider import get_ai_provider
 
 
 class InvalidIssueNumberError(ValueError):
@@ -85,7 +85,7 @@ class BaseAgent(ABC):
             )
         else:
             provider_name = self.ai_provider.provider_type.value
-            logger.info(f"{self.__class__.__name__}: Using {provider_name} for AI generation")
+            logger.info("%s: Using %s for AI generation", self.__class__.__name__, provider_name)
         
         
         # Execution mode: "manual" (CLI) or "automated" (watch mode)
@@ -180,7 +180,7 @@ class BaseAgent(ABC):
         )
         
         if response:
-            logger.info(f"AI generation successful via {response.provider.value}")
+            logger.info("AI generation successful via %s", response.provider.value)
             return response.content
         
         return None

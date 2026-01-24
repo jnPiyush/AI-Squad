@@ -14,7 +14,6 @@ from unittest.mock import Mock
 from ai_squad.core.config import Config
 from ai_squad.agents.product_manager import ProductManagerAgent
 from ai_squad.agents.architect import ArchitectAgent
-from ai_squad.agents.engineer import EngineerAgent
 from ai_squad.tools.github import GitHubTool
 from ai_squad.core.status import StatusManager, IssueStatus
 from ai_squad.core.agent_comm import AgentCommunicator
@@ -43,7 +42,7 @@ class Benchmark:
         print(f"Running {self.name}... ", end="", flush=True)
         
         times = []
-        for i in range(self.iterations):
+        for _ in range(self.iterations):
             start = time.perf_counter()
             self.func()
             end = time.perf_counter()
@@ -138,7 +137,7 @@ def setup_test_environment():
     github.update_issue_status.return_value = True
     github.add_labels.return_value = True
     github.add_comment.return_value = True
-    github._is_configured.return_value = False  # Use mock mode
+    # Use mock mode; no auth required for benchmarks
     
     return config, github, temp_dir
 
@@ -159,10 +158,10 @@ def benchmark_agent_initialization():
     
     suite = BenchmarkSuite()
     suite.add("Agent Initialization", test, iterations=100)
-    results = suite.run_all()
+    bench_results = suite.run_all()
     
     cleanup_test_environment(temp_dir)
-    return results
+    return bench_results
 
 
 def benchmark_status_transitions():
@@ -177,10 +176,10 @@ def benchmark_status_transitions():
     
     suite = BenchmarkSuite()
     suite.add("Status Transitions (3)", test, iterations=50)
-    results = suite.run_all()
+    bench_results = suite.run_all()
     
     cleanup_test_environment(temp_dir)
-    return results
+    return bench_results
 
 
 def benchmark_agent_communication():
@@ -188,7 +187,7 @@ def benchmark_agent_communication():
     _, github, temp_dir = setup_test_environment()
     
     def test():
-        comm = AgentCommunicator(execution_mode="automated", github=github)
+        comm = AgentCommunicator(execution_mode="automated", github_tool=github)
         q1 = comm.ask("architect", "pm", "Question 1", {}, 123)
         comm.respond(q1, "Answer 1", "pm")
         q2 = comm.ask("engineer", "architect", "Question 2", {}, 123)
@@ -196,10 +195,10 @@ def benchmark_agent_communication():
     
     suite = BenchmarkSuite()
     suite.add("Agent Communication (2 Q&A)", test, iterations=50)
-    results = suite.run_all()
+    bench_results = suite.run_all()
     
     cleanup_test_environment(temp_dir)
-    return results
+    return bench_results
 
 
 def benchmark_persistent_storage():
@@ -240,13 +239,13 @@ def benchmark_persistent_storage():
     
     suite = BenchmarkSuite()
     suite.add("Persistent Storage (2 saves + 2 queries)", test, iterations=50)
-    results = suite.run_all()
+    bench_results = suite.run_all()
     
     # Cleanup
     if db_path.exists():
         db_path.unlink()
     
-    return results
+    return bench_results
 
 
 def benchmark_full_workflow():
@@ -275,10 +274,10 @@ def benchmark_full_workflow():
     
     suite = BenchmarkSuite()
     suite.add("Full Workflow (PM + Architect + Status)", test, iterations=10)
-    results = suite.run_all()
+    bench_results = suite.run_all()
     
     cleanup_test_environment(temp_dir)
-    return results
+    return bench_results
 
 
 def run_all_benchmarks():
@@ -328,17 +327,17 @@ def run_all_benchmarks():
     return all_results
 
 
-def save_benchmark_results(results: List[Dict[str, Any]], output_file: str = "benchmark_results.json"):
+def save_benchmark_results(bench_results: List[Dict[str, Any]], output_file: str = "benchmark_results.json"):
     """Save benchmark results to file"""
     import json
     from datetime import datetime
     
     output = {
         "timestamp": datetime.now().isoformat(),
-        "results": results
+        "results": bench_results
     }
     
-    with open(output_file, "w") as f:
+    with open(output_file, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
     
     print(f"\n✓ Results saved to {output_file}")

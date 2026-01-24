@@ -3,10 +3,9 @@ Project initialization
 
 Creates squad.yaml and necessary directories.
 """
-import os
 import shutil
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 import yaml
 
 
@@ -74,7 +73,7 @@ def initialize_project(force: bool = False) -> Dict[str, Any]:
             "created": created
         }
         
-    except Exception as e:
+    except (OSError, RuntimeError, ValueError, yaml.YAMLError) as e:
         return {
             "success": False,
             "error": str(e)
@@ -94,7 +93,8 @@ def _create_config(path: Path) -> None:
             ["git", "config", "--get", "remote.origin.url"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
+            check=False
         )
         if result.returncode == 0:
             url = result.stdout.strip()
@@ -104,7 +104,7 @@ def _create_config(path: Path) -> None:
                 if len(parts) >= 2:
                     github_repo = parts[-1]
                     github_owner = parts[-2].split(":")[-1]
-    except:
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError, ValueError):
         pass
     
     config = {
@@ -167,7 +167,7 @@ def _create_config(path: Path) -> None:
         },
     }
     
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
 
@@ -234,5 +234,5 @@ squad collab 456 architect engineer ux
 - [Examples](https://github.com/jnPiyush/AI-Squad/tree/main/examples)
 """
     
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write(content)

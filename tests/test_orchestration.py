@@ -1,7 +1,6 @@
 """
 Tests for Gastown-inspired orchestration modules.
 """
-import pytest
 from pathlib import Path
 import tempfile
 import shutil
@@ -9,6 +8,9 @@ import shutil
 
 class TestWorkState:
     """Tests for WorkState persistence"""
+
+    temp_dir: str
+    workspace: Path
     
     def setup_method(self):
         """Set up test workspace"""
@@ -181,6 +183,9 @@ class TestWorkState:
 
 class TestBattlePlan:
     """Tests for BattlePlan system"""
+
+    temp_dir: str
+    workspace: Path
     
     def setup_method(self):
         """Set up test workspace"""
@@ -270,13 +275,15 @@ labels:
         strategies = manager.list_strategies()
         
         # Should have built-in strategies
-        names = [f.name for f in strategies]
         # Built-in strategies should exist if templates exist
         assert isinstance(strategies, list)
 
 
 class TestSignal:
     """Tests for Agent Signal system"""
+
+    temp_dir: str
+    workspace: Path
     
     def setup_method(self):
         """Set up test workspace"""
@@ -371,9 +378,9 @@ class TestSignal:
         manager = SignalManager(self.workspace)
         
         # Create some Signals first
-        manager._get_or_create_Signal("pm")
-        manager._get_or_create_Signal("engineer")
-        manager._get_or_create_Signal("reviewer")
+        manager.get_or_create_signal("pm")
+        manager.get_or_create_signal("engineer")
+        manager.get_or_create_signal("reviewer")
         
         msg = manager.send_message(
             sender="system",
@@ -381,6 +388,8 @@ class TestSignal:
             subject="Announcement",
             body="System announcement"
         )
+
+        assert msg is not None
         
         # All should receive (except sender)
         pm_inbox = manager.get_inbox("pm")
@@ -392,6 +401,9 @@ class TestSignal:
 
 class TestHandoff:
     """Tests for Handoff protocol"""
+
+    temp_dir: str
+    workspace: Path
     
     def setup_method(self):
         """Set up test workspace"""
@@ -483,6 +495,9 @@ class TestHandoff:
 
 class TestConvoy:
     """Tests for Convoy system"""
+
+    temp_dir: str
+    workspace: Path
     
     def setup_method(self):
         """Set up test workspace"""
@@ -614,7 +629,7 @@ class TestConvoy:
     
     def test_convoy_to_dict(self):
         """Test convoy serialization to dict"""
-        from ai_squad.core.convoy import Convoy, ConvoyStatus
+        from ai_squad.core.convoy import Convoy
         
         convoy = Convoy(
             id="convoy-test7",

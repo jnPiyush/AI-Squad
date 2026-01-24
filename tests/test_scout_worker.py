@@ -1,4 +1,4 @@
-from ai_squad.core.scout_worker import ScoutWorker
+from ai_squad.core.scout_worker import ScoutWorker  # type: ignore[reportGeneralTypeIssues]
 
 
 def test_scout_worker_runs_tasks(tmp_path):

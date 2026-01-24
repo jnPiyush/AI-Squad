@@ -152,7 +152,7 @@ class TestStatusManager:
         
         assert "Invalid transition" in str(exc_info.value)
     
-    def test_transition_force_override(self, status_manager, mock_github):
+    def test_transition_force_override(self, status_manager):
         """Test force parameter overrides validation"""
         # This would normally be invalid
         success = status_manager.transition(
@@ -327,7 +327,7 @@ class TestWorkflowValidator:
         assert checks["issue_exists"] is True
         assert checks["issue_open"] is True
     
-    def test_validate_prerequisites_architect(self, validator, config, tmp_path):
+    def test_validate_prerequisites_architect(self, validator, tmp_path):
         """Test Architect prerequisites (needs PRD)"""
         # Without PRD
         checks = validator.validate_prerequisites(123, "architect")

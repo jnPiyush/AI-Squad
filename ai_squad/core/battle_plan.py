@@ -171,7 +171,7 @@ class BattlePlanManager:
                     strategy = BattlePlan.from_file(path)
                     self._strategies[strategy.name] = strategy
                     logger.debug("Loaded built-in battle plan: %s", strategy.name)
-                except Exception as exc:
+                except (OSError, ValueError, yaml.YAMLError) as exc:
                     logger.warning("Failed to load built-in battle plan %s: %s", path, exc)
 
         if self.strategies_dir.exists():
@@ -180,7 +180,7 @@ class BattlePlanManager:
                     strategy = BattlePlan.from_file(path)
                     self._strategies[strategy.name] = strategy
                     logger.debug("Loaded workspace battle plan: %s", strategy.name)
-                except Exception as exc:
+                except (OSError, ValueError, yaml.YAMLError) as exc:
                     logger.warning("Failed to load battle plan %s: %s", path, exc)
 
         logger.info("Loaded %d battle plans", len(self._strategies))
@@ -417,7 +417,7 @@ class BattlePlanExecutor:
                     result = await self._run_step(step, issue_number)
                     artifacts = result.get("artifacts") if isinstance(result, dict) else None
                     self.complete_step(execution.id, step.name, artifacts)
-                except Exception as exc:
+                except (RuntimeError, ValueError, TypeError) as exc:
                     self.fail_step(execution.id, step.name, str(exc))
                     if not step.continue_on_error:
                         raise

@@ -245,6 +245,10 @@ class SignalManager:
         if owner not in self._Signales:
             self._Signales[owner] = Signal(owner=owner)
         return self._Signales[owner]
+
+    def get_or_create_signal(self, owner: str) -> Signal:
+        """Public wrapper for creating or retrieving a Signal."""
+        return self._get_or_create_Signal(owner)
     
     # Message Operations
     
@@ -314,18 +318,17 @@ class SignalManager:
         
         # Store message
         self._messages[message_id] = message
-        
-        # Add to sender's outbox
-        sender_Signal = self._get_or_create_Signal(sender)
-        sender_Signal.outbox.append(message_id)
+
+        sender_signal = self._get_or_create_Signal(sender)
+        sender_signal.outbox.append(message_id)
         
         # Route message
         if recipient == "broadcast":
             # Broadcast to all agents
             for owner in self._Signales:
                 if owner != sender:
-                    Signal = self._Signales[owner]
-                    Signal.inbox.append(message_id)
+                    signal = self._Signales[owner]
+                    signal.inbox.append(message_id)
             message.mark_delivered()
         else:
             # Direct message
@@ -366,10 +369,10 @@ class SignalManager:
         Returns:
             List of messages
         """
-        Signal = self._get_or_create_Signal(owner)
+        signal = self._get_or_create_Signal(owner)
         messages = []
         
-        for msg_id in Signal.inbox:
+        for msg_id in signal.inbox:
             msg = self._messages.get(msg_id)
             if not msg:
                 continue
@@ -406,10 +409,10 @@ class SignalManager:
     
     def get_outbox(self, owner: str) -> List[Message]:
         """Get messages sent by an agent"""
-        Signal = self._get_or_create_Signal(owner)
+        signal = self._get_or_create_Signal(owner)
         return [
             self._messages[msg_id]
-            for msg_id in Signal.outbox
+            for msg_id in signal.outbox
             if msg_id in self._messages
         ]
     
@@ -428,8 +431,8 @@ class SignalManager:
             return False
         
         # Verify reader has access
-        Signal = self._get_or_create_Signal(reader)
-        if message_id not in Signal.inbox:
+        signal = self._get_or_create_Signal(reader)
+        if message_id not in signal.inbox:
             return False
         
         message.mark_read()
@@ -443,8 +446,8 @@ class SignalManager:
             return False
         
         # Verify acknowledger has access
-        Signal = self._get_or_create_Signal(acknowledger)
-        if message_id not in Signal.inbox:
+        signal = self._get_or_create_Signal(acknowledger)
+        if message_id not in signal.inbox:
             return False
         
         message.mark_acknowledged()
@@ -492,11 +495,11 @@ class SignalManager:
     
     def archive(self, owner: str, message_id: str) -> bool:
         """Archive a message"""
-        Signal = self._get_or_create_Signal(owner)
+        signal = self._get_or_create_Signal(owner)
         
-        if message_id in Signal.inbox:
-            Signal.inbox.remove(message_id)
-            Signal.archived.append(message_id)
+        if message_id in signal.inbox:
+            signal.inbox.remove(message_id)
+            signal.archived.append(message_id)
             self._save_state()
             return True
         
@@ -508,13 +511,13 @@ class SignalManager:
             return False
         
         # Remove from all Signales
-        for Signal in self._Signales.values():
-            if message_id in Signal.inbox:
-                Signal.inbox.remove(message_id)
-            if message_id in Signal.outbox:
-                Signal.outbox.remove(message_id)
-            if message_id in Signal.archived:
-                Signal.archived.remove(message_id)
+        for signal in self._Signales.values():
+            if message_id in signal.inbox:
+                signal.inbox.remove(message_id)
+            if message_id in signal.outbox:
+                signal.outbox.remove(message_id)
+            if message_id in signal.archived:
+                signal.archived.remove(message_id)
         
         del self._messages[message_id]
         self._save_state()
@@ -559,7 +562,7 @@ class SignalManager:
         for handler in handlers:
             try:
                 handler(message)
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError) as e:
                 logger.error(
                     "Handler error for %s: %s",
                     recipient, e
@@ -571,7 +574,7 @@ class SignalManager:
             for handler in broadcast_handlers:
                 try:
                     handler(message)
-                except Exception as e:
+                except (RuntimeError, ValueError, TypeError) as e:
                     logger.error("Broadcast handler error: %s", e)
     
     # Utility Methods
@@ -591,7 +594,7 @@ class SignalManager:
         """Clean up expired messages"""
         expired_count = 0
         
-        for msg_id, msg in list(self._messages.items()):
+        for msg in list(self._messages.values()):
             if msg.is_expired():
                 msg.status = MessageStatus.EXPIRED
                 expired_count += 1
@@ -614,11 +617,11 @@ class SignalManager:
             ])
         
         Signal_stats = {}
-        for owner, Signal in self._Signales.items():
+        for owner, signal in self._Signales.items():
             Signal_stats[owner] = {
-                "inbox": len(Signal.inbox),
-                "outbox": len(Signal.outbox),
-                "archived": len(Signal.archived),
+                "inbox": len(signal.inbox),
+                "outbox": len(signal.outbox),
+                "archived": len(signal.archived),
                 "unread": self.get_unread_count(owner)
             }
         

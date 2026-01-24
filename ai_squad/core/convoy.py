@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional
 
-from .workstate import WorkItem, WorkStateManager, WorkStatus
+from .workstate import WorkStateManager, WorkStatus
 
 logger = logging.getLogger(__name__)
 
@@ -292,7 +292,7 @@ class ConvoyManager:
                         except TypeError:
                             res = await self.agent_executor(agent, issue)
                         results.append({"agent": agent, "issue": issue, "result": res})
-                    except Exception as exc:
+                    except (RuntimeError, ValueError, TypeError) as exc:
                         errors.append(f"{agent}-{issue}: {exc}")
 
             await asyncio.gather(*[_run_task(agent, issue) for agent, issue in tasks])
@@ -358,7 +358,7 @@ class ConvoyManager:
                         member.work_item_id, member.agent_type
                     )
                     
-                except Exception as e:
+                except (RuntimeError, ValueError, TypeError) as e:
                     member.status = "failed"
                     member.error = str(e)
                     member.completed_at = datetime.now().isoformat()
@@ -403,7 +403,7 @@ class ConvoyManager:
             )
             convoy.status = ConvoyStatus.FAILED
             
-        except Exception as e:
+        except (RuntimeError, ValueError, TypeError) as e:
             convoy.errors.append(f"Convoy execution error: {e}")
             convoy.status = ConvoyStatus.FAILED
         

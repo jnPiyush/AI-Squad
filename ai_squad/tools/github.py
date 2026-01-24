@@ -437,12 +437,18 @@ class GitHubTool:
                 ["gh", "auth", "status"],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=10,
+                check=False
             )
             # gh auth status returns 0 if authenticated
             return result.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             return False
+
+    def set_auth_cache(self, checked: bool, authenticated: bool) -> None:
+        """Set cached GitHub CLI auth state (for tests)."""
+        self._gh_auth_checked = checked
+        self._gh_authenticated = authenticated
     
     def get_auth_method(self) -> str:
         """
