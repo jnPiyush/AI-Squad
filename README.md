@@ -37,7 +37,7 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 
 ---
 
-## 🎖️ Squad Terminology
+## ⚔️ Squad Terminology
 
 AI-Squad uses military-inspired terminology to describe its orchestration system:
 
