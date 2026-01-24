@@ -40,6 +40,7 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 - Map user flows and journeys
 - Ensure accessibility (WCAG {wcag_ver} {wcag_lvl})
 - Design responsive interfaces
+- **Self-Review & Quality Assurance**: Review your own designs for WCAG {wcag_ver} {wcag_lvl} compliance, user flow clarity, responsive design completeness, and consistency with design patterns
 
 **Deliverables:**
 1. UX design document at docs/ux/UX-{{issue}}.md
@@ -103,6 +104,13 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 - Desktop: {breakpoints.get('desktop', '1024px+')}
 - Flexible layouts (flexbox/grid)
 - Touch-friendly targets ({touch_min} minimum)
+
+**Self-Review Before Submission:**
+- Validate WCAG {wcag_ver} {wcag_lvl} compliance using accessibility checklist
+- Test all responsive breakpoints (mobile, tablet, desktop)
+- Ensure color contrast ratios meet standards ({contrast}:1)
+- Verify navigation flows are intuitive and accessible
+- Test keyboard navigation works for all interactive elements
 """
     
     def get_output_path(self, issue_number: int) -> Path:

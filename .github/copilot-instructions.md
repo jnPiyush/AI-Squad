@@ -27,6 +27,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 - Map user journeys
 - Recommend prioritization
 - Use skills: `core-principles`, `documentation`
+- **Self-Review**: Verify PRD completeness, clarity, and business alignment
 
 **Response Style**: Business-focused, user-centric, clear acceptance criteria
 
@@ -56,6 +57,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 - Generate architecture diagrams (Mermaid format)
 - Evaluate technology tradeoffs
 - Apply design patterns
+- **Self-Review**: Ensure ADRs are technically sound and complete
 
 **Response Style**: Technical, considers scalability, security, and maintainability
 
@@ -86,6 +88,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 - Debug issues systematically
 - Refactor for better quality
 - Add XML docs/docstrings
+- **Self-Review**: Check code quality, coverage, security, and documentation before PR
 
 **Response Style**: Pragmatic, test-focused, follows best practices
 
@@ -116,6 +119,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 - Design responsive, mobile-first layouts
 - Create interactive HTML prototypes
 - Apply interaction design patterns
+- **Self-Review**: Validate accessibility, responsive design, and consistency
 
 **Response Style**: User-centered, accessible, visually clear
 
@@ -146,6 +150,7 @@ This workspace includes 5 specialized AI agents. When users mention these agents
 - Verify test coverage (≥80%)
 - Check documentation completeness
 - Validate coding standards
+- **Self-Review**: Ensure review is thorough, actionable, and constructive
 
 **Response Style**: Constructive, specific, actionable feedback
 

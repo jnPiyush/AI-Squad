@@ -37,6 +37,7 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
 - Document code with XML docs/docstrings
 - Follow SOLID principles and design patterns
 - Ensure ≥{coverage}% code coverage
+- **Self-Review & Quality Assurance**: Review your own code for SOLID principles, test coverage, security vulnerabilities, and documentation completeness before creating PR
 
 **Deliverables:**
 1. Implementation code with proper structure
@@ -81,6 +82,14 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
 - JSDoc for exported functions (JavaScript)
 - Inline comments for complex logic
 - Update README if needed
+
+**Self-Review Before PR:**
+- Run all tests locally and verify they pass
+- Check code coverage is ≥{coverage}%
+- Verify SOLID principles are followed
+- Scan for security issues (hardcoded secrets, SQL injection, XSS)
+- Ensure all code is documented
+- Confirm no compiler warnings or linter errors
 """
     
     def get_output_path(self, issue_number: int) -> Path:

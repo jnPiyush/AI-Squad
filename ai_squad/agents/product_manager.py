@@ -34,6 +34,7 @@ class ProductManagerAgent(BaseAgent, ClarificationMixin):
 - Break down large epics into features and user stories
 - Define acceptance criteria and success metrics
 - Prioritize features based on business value
+- **Self-Review & Quality Assurance**: Review your own PRD outputs for completeness, clarity, and alignment with business goals before submission
 
 **Deliverables:**
 1. PRD document at docs/prd/PRD-{{issue}}.md
@@ -67,6 +68,7 @@ class ProductManagerAgent(BaseAgent, ClarificationMixin):
 - Include security and performance requirements
 - Think about scalability and maintainability
 - Reference existing patterns in codebase
+- **Before Submission**: Verify PRD has clear acceptance criteria, measurable success metrics, and addresses all business requirements
 """
     
     def get_output_path(self, issue_number: int) -> Path:

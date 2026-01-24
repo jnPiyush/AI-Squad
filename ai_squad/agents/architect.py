@@ -34,6 +34,7 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
 - Write detailed technical specifications
 - Evaluate technology choices
 - Plan system architecture and integrations
+- **Self-Review & Quality Assurance**: Review your own ADRs and specifications for technical soundness, scalability considerations, and completeness
 
 **Deliverables:**
 1. ADR document at docs/adr/ADR-{{issue}}.md
@@ -78,6 +79,7 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
 - Plan for monitoring and observability
 - Use existing patterns where applicable
 - Consider maintainability and technical debt
+- **Before Submission**: Ensure ADR includes all alternatives considered, consequences are documented, and technical decisions align with existing architecture patterns
 """
     
     def get_output_path(self, issue_number: int) -> Path:
