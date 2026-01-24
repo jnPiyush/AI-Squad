@@ -42,11 +42,11 @@ def run_doctor_checks() -> Dict[str, Any]:
     
     # Check 4: GitHub Copilot SDK
     try:
-        import github_copilot_sdk
+        import copilot
         checks.append({
             "name": "Copilot SDK",
             "passed": True,
-            "message": f"Installed (v{getattr(github_copilot_sdk, '__version__', 'unknown')})"
+            "message": f"Installed (github-copilot-sdk)"
         })
     except ImportError:
         checks.append({

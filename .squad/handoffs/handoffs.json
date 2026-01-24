@@ -449,5 +449,87 @@
         "details": null
       }
     ]
+  },
+  "handoff-f6b4cdc2": {
+    "id": "handoff-f6b4cdc2",
+    "work_item_id": "sq-7b6c7",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-24T09:00:08.058073",
+    "accepted_at": "2026-01-24T09:00:08.234440",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-24T09:00:08.058073",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-24T09:00:08.234440",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-a90b2f96": {
+    "id": "handoff-a90b2f96",
+    "work_item_id": "sq-7dab2",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-24T09:00:39.131621",
+    "accepted_at": "2026-01-24T09:00:39.274630",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-24T09:00:39.131621",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-24T09:00:39.274630",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
   }
 }

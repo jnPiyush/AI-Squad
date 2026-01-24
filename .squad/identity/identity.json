@@ -1,13 +1,13 @@
 {
-  "workspace_id": "99b00017-76c2-4a6a-859c-41ded6c9cc15",
+  "workspace_id": "8e2d129e-ac12-4a4b-a96b-cd87ecbd6653",
   "workspace_name": "Test Project",
   "workspace_root": "C:\\Piyush - Personal\\GenAI\\AI-Squad",
   "agents": [
     "reviewer"
   ],
-  "generated_at": "2026-01-23T21:20:13.856946",
+  "generated_at": "2026-01-24T09:00:46.402025",
   "author": "testuser",
-  "commit_sha": "3bde9b45ce7399b30d7f6f217ba76ca2ddf03e1d",
+  "commit_sha": "76b0b51f73130ef102fcbfda185826cf1572cfc1",
   "extra": {
     "issue_number": "456",
     "issue_title": "Add user authentication"

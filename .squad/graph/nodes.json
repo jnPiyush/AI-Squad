@@ -6,7 +6,7 @@
       "agent": "pm"
     },
     "created_at": "2026-01-23T21:14:56.294029",
-    "updated_at": "2026-01-23T21:20:09.855442"
+    "updated_at": "2026-01-24T09:00:39.206358"
   },
   "architect": {
     "id": "architect",
@@ -15,7 +15,7 @@
       "agent": "architect"
     },
     "created_at": "2026-01-23T21:14:56.296073",
-    "updated_at": "2026-01-23T21:20:13.338921"
+    "updated_at": "2026-01-24T09:00:45.814369"
   },
   "sq-0e5ab": {
     "id": "sq-0e5ab",
@@ -79,7 +79,7 @@
       "issue_number": 123
     },
     "created_at": "2026-01-23T21:20:12.263244",
-    "updated_at": "2026-01-23T21:20:13.332125"
+    "updated_at": "2026-01-24T09:00:45.775809"
   },
   "productmanager": {
     "id": "productmanager",
@@ -88,7 +88,7 @@
       "agent": "productmanager"
     },
     "created_at": "2026-01-23T21:20:12.263244",
-    "updated_at": "2026-01-23T21:20:12.263244"
+    "updated_at": "2026-01-24T09:00:43.729344"
   },
   "issue-456": {
     "id": "issue-456",
@@ -98,7 +98,7 @@
       "issue_number": 456
     },
     "created_at": "2026-01-23T21:20:14.566582",
-    "updated_at": "2026-01-23T21:20:14.566582"
+    "updated_at": "2026-01-24T09:00:47.676252"
   },
   "reviewer": {
     "id": "reviewer",
@@ -107,6 +107,24 @@
       "agent": "reviewer"
     },
     "created_at": "2026-01-23T21:20:14.577873",
-    "updated_at": "2026-01-23T21:20:14.577873"
+    "updated_at": "2026-01-24T09:00:47.683210"
+  },
+  "sq-7b6c7": {
+    "id": "sq-7b6c7",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-24T09:00:08.208487",
+    "updated_at": "2026-01-24T09:00:08.208487"
+  },
+  "sq-7dab2": {
+    "id": "sq-7dab2",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-24T09:00:39.235843",
+    "updated_at": "2026-01-24T09:00:39.235843"
   }
 }
