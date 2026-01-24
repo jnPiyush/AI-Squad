@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}AI-Squad Dashboard - Delegations{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Delegations</h1>
+    <p class="text-gray-600 mt-2">Track delegation links between agents</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="stat-card">
+        <div class="stat-value" id="total-delegations">-</div>
+        <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-yellow-500 to-yellow-600">
+        <div class="stat-value" id="initiated-delegations">-</div>
+        <div class="stat-label">Initiated</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600">
+        <div class="stat-value" id="inprogress-delegations">-</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600">
+        <div class="stat-value" id="completed-delegations">-</div>
+        <div class="stat-label">Completed</div>
+    </div>
+</div>
+
+<!-- Delegations Table -->
+<div class="card">
+    <h2 class="text-xl font-semibold mb-4">All Delegations</h2>
+    <div id="delegations-table">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Delegation Flow Diagram -->
+<div class="card mt-6">
+    <h2 class="text-xl font-semibold mb-4">Delegation Flow</h2>
+    <div id="delegation-diagram" class="mermaid">
+        graph LR
+            Loading...
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDelegations() {
+    try {
+        const res = await fetch('/api/delegations');
+        const data = await res.json();
+        
+        if (!data.success) {
+            console.error('Failed to load delegations:', data.error);
+            return;
+        }
+        
+        const delegations = data.data;
+        
+        // Stats
+        document.getElementById('total-delegations').textContent = delegations.length;
+        document.getElementById('initiated-delegations').textContent = 
+            delegations.filter(d => d.status === 'initiated').length;
+        document.getElementById('inprogress-delegations').textContent = 
+            delegations.filter(d => d.status === 'in_progress').length;
+        document.getElementById('completed-delegations').textContent = 
+            delegations.filter(d => d.status === 'completed').length;
+        
+        // Table
+        if (delegations.length > 0) {
+            document.getElementById('delegations-table').innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 pr-4">ID</th>
+                                <th class="pb-2 pr-4">From</th>
+                                <th class="pb-2 pr-4">To</th>
+                                <th class="pb-2 pr-4">Work Item</th>
+                                <th class="pb-2 pr-4">Scope</th>
+                                <th class="pb-2 pr-4">Status</th>
+                                <th class="pb-2 pr-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${delegations.map(d => `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 pr-4 font-mono text-sm">${d.id.slice(0, 16)}...</td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                                            ${d.from_agent}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                                            ${d.to_agent}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 pr-4">${d.work_item_id}</td>
+                                    <td class="py-3 pr-4">${d.scope}</td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 rounded text-xs ${
+                                            d.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                            d.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                            d.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                            'bg-yellow-100 text-yellow-800'
+                                        }">${d.status}</span>
+                                    </td>
+                                    <td class="py-3 pr-4 text-sm text-gray-500">
+                                        ${formatTime(d.created_at)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Generate Mermaid diagram
+            const flows = delegations.map(d => 
+                `    ${d.from_agent}[${d.from_agent}] -->|${d.status}| ${d.to_agent}[${d.to_agent}]`
+            ).join('\n');
+            
+            document.getElementById('delegation-diagram').innerHTML = `
+                graph LR
+${flows}
+            `;
+            mermaid.init(undefined, '#delegation-diagram');
+            
+        } else {
+            document.getElementById('delegations-table').innerHTML = 
+                '<p class="text-gray-500">No delegations found</p>';
+            document.getElementById('delegation-diagram').innerHTML = 
+                '<p class="text-gray-500">No delegations to visualize</p>';
+        }
+        
+    } catch (e) {
+        console.error('Error loading delegations:', e);
+    }
+}
+
+setupAutoRefresh(loadDelegations);
+</script>
+{% endblock %}

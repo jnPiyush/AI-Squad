@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}AI-Squad Dashboard - Health{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Routing Health</h1>
+    <p class="text-gray-600 mt-2">Monitor routing health, circuit breakers, and event statistics</p>
+</div>
+
+<!-- Overall Health -->
+<div class="card mb-6">
+    <h2 class="text-xl font-semibold mb-4">Overall Status</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="overall-health">
+        <div class="animate-pulse">
+            <div class="h-20 bg-gray-200 rounded"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Health Chart -->
+<div class="card mb-6">
+    <h2 class="text-xl font-semibold mb-4">Routing Events Distribution</h2>
+    <div class="h-64">
+        <canvas id="health-chart"></canvas>
+    </div>
+</div>
+
+<!-- Destination Health -->
+<div class="card mb-6">
+    <h2 class="text-xl font-semibold mb-4">Health by Destination</h2>
+    <div id="destination-health">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Priority Distribution -->
+<div class="card">
+    <h2 class="text-xl font-semibold mb-4">Health by Priority</h2>
+    <div id="priority-health">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let healthChart = null;
+
+async function loadHealth() {
+    try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        
+        if (!data.success) {
+            console.error('Failed to load health:', data.error);
+            return;
+        }
+        
+        const health = data.data;
+        const blockRate = (health.block_rate || 0) * 100;
+        const status = health.overall_status || 'unknown';
+        const statusColor = status === 'healthy' ? 'green' : status === 'warn' ? 'yellow' : 'red';
+        
+        // Overall health
+        document.getElementById('overall-health').innerHTML = `
+            <div class="bg-${statusColor}-100 rounded-lg p-4 text-center">
+                <div class="text-3xl font-bold text-${statusColor}-600">${status.toUpperCase()}</div>
+                <div class="text-${statusColor}-800">Overall Status</div>
+            </div>
+            <div class="bg-blue-100 rounded-lg p-4 text-center">
+                <div class="text-3xl font-bold text-blue-600">${health.total}</div>
+                <div class="text-blue-800">Total Events</div>
+            </div>
+            <div class="bg-green-100 rounded-lg p-4 text-center">
+                <div class="text-3xl font-bold text-green-600">${health.routed}</div>
+                <div class="text-green-800">Routed</div>
+            </div>
+            <div class="bg-red-100 rounded-lg p-4 text-center">
+                <div class="text-3xl font-bold text-red-600">${health.blocked}</div>
+                <div class="text-red-800">Blocked (${blockRate.toFixed(1)}%)</div>
+            </div>
+        `;
+        
+        // Chart
+        const ctx = document.getElementById('health-chart').getContext('2d');
+        if (healthChart) healthChart.destroy();
+        
+        healthChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Routed', 'Blocked', 'Not Implemented'],
+                datasets: [{
+                    data: [health.routed, health.blocked, health.not_implemented || 0],
+                    backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Destination health table
+        const destinations = health.by_destination || {};
+        if (Object.keys(destinations).length > 0) {
+            document.getElementById('destination-health').innerHTML = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-gray-500 border-b">
+                            <th class="pb-2">Destination</th>
+                            <th class="pb-2">Total</th>
+                            <th class="pb-2">Routed</th>
+                            <th class="pb-2">Blocked</th>
+                            <th class="pb-2">Block Rate</th>
+                            <th class="pb-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(destinations).map(([dest, stats]) => {
+                            const rate = stats.total ? (stats.blocked / stats.total * 100).toFixed(1) : 0;
+                            const destStatus = rate >= 50 ? 'critical' : rate >= 25 ? 'warn' : 'healthy';
+                            return `
+                                <tr class="border-b">
+                                    <td class="py-3 font-medium">${dest}</td>
+                                    <td class="py-3">${stats.total}</td>
+                                    <td class="py-3 text-green-600">${stats.routed}</td>
+                                    <td class="py-3 text-red-600">${stats.blocked}</td>
+                                    <td class="py-3">${rate}%</td>
+                                    <td class="py-3">
+                                        <span class="px-2 py-1 rounded text-xs ${
+                                            destStatus === 'healthy' ? 'bg-green-100 text-green-800' :
+                                            destStatus === 'warn' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-red-100 text-red-800'
+                                        }">${destStatus}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        } else {
+            document.getElementById('destination-health').innerHTML = '<p class="text-gray-500">No destination data</p>';
+        }
+        
+        // Priority health
+        const priorities = health.by_priority || {};
+        if (Object.keys(priorities).length > 0) {
+            document.getElementById('priority-health').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${Object.entries(priorities).map(([priority, stats]) => `
+                        <div class="border rounded-lg p-4">
+                            <div class="font-semibold text-lg capitalize">${priority}</div>
+                            <div class="text-sm text-gray-500">
+                                ${stats.routed}/${stats.total} routed
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            document.getElementById('priority-health').innerHTML = '<p class="text-gray-500">No priority data</p>';
+        }
+        
+    } catch (e) {
+        console.error('Error loading health:', e);
+    }
+}
+
+setupAutoRefresh(loadHealth);
+</script>
+{% endblock %}

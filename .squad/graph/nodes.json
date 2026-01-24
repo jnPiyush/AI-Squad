@@ -1,0 +1,112 @@
+{
+  "pm": {
+    "id": "pm",
+    "type": "agent",
+    "metadata": {
+      "agent": "pm"
+    },
+    "created_at": "2026-01-23T21:14:56.294029",
+    "updated_at": "2026-01-23T21:20:09.855442"
+  },
+  "architect": {
+    "id": "architect",
+    "type": "agent",
+    "metadata": {
+      "agent": "architect"
+    },
+    "created_at": "2026-01-23T21:14:56.296073",
+    "updated_at": "2026-01-23T21:20:13.338921"
+  },
+  "sq-0e5ab": {
+    "id": "sq-0e5ab",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:14:56.301111",
+    "updated_at": "2026-01-23T21:14:56.301111"
+  },
+  "sq-ea809": {
+    "id": "sq-ea809",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:16:21.237273",
+    "updated_at": "2026-01-23T21:16:21.237273"
+  },
+  "sq-837e4": {
+    "id": "sq-837e4",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:18:40.726074",
+    "updated_at": "2026-01-23T21:18:40.726074"
+  },
+  "sq-e601b": {
+    "id": "sq-e601b",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:19:16.273089",
+    "updated_at": "2026-01-23T21:19:16.273089"
+  },
+  "sq-25bfb": {
+    "id": "sq-25bfb",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:19:47.855927",
+    "updated_at": "2026-01-23T21:19:47.855927"
+  },
+  "sq-e6406": {
+    "id": "sq-e6406",
+    "type": "work_item",
+    "metadata": {
+      "title": "Design payment system"
+    },
+    "created_at": "2026-01-23T21:20:09.864256",
+    "updated_at": "2026-01-23T21:20:09.864256"
+  },
+  "issue-123": {
+    "id": "issue-123",
+    "type": "work_item",
+    "metadata": {
+      "title": "Add user authentication",
+      "issue_number": 123
+    },
+    "created_at": "2026-01-23T21:20:12.263244",
+    "updated_at": "2026-01-23T21:20:13.332125"
+  },
+  "productmanager": {
+    "id": "productmanager",
+    "type": "agent",
+    "metadata": {
+      "agent": "productmanager"
+    },
+    "created_at": "2026-01-23T21:20:12.263244",
+    "updated_at": "2026-01-23T21:20:12.263244"
+  },
+  "issue-456": {
+    "id": "issue-456",
+    "type": "work_item",
+    "metadata": {
+      "title": "Add user authentication",
+      "issue_number": 456
+    },
+    "created_at": "2026-01-23T21:20:14.566582",
+    "updated_at": "2026-01-23T21:20:14.566582"
+  },
+  "reviewer": {
+    "id": "reviewer",
+    "type": "agent",
+    "metadata": {
+      "agent": "reviewer"
+    },
+    "created_at": "2026-01-23T21:20:14.577873",
+    "updated_at": "2026-01-23T21:20:14.577873"
+  }
+}

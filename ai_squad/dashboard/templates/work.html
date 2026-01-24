@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}AI-Squad Dashboard - Work Items{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Work Items</h1>
+    <p class="text-gray-600 mt-2">Track and manage work items across agents</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <div class="stat-card">
+        <div class="stat-value" id="total-items">-</div>
+        <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600">
+        <div class="stat-value" id="ready-items">-</div>
+        <div class="stat-label">Ready</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-blue-500 to-blue-600">
+        <div class="stat-value" id="inprogress-items">-</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-red-500 to-red-600">
+        <div class="stat-value" id="blocked-items">-</div>
+        <div class="stat-label">Blocked</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-gray-500 to-gray-600">
+        <div class="stat-value" id="done-items">-</div>
+        <div class="stat-label">Completed</div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-6">
+    <div class="flex gap-4 flex-wrap">
+        <select id="status-filter" onchange="loadWork()" 
+                class="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Statuses</option>
+            <option value="ready">Ready</option>
+            <option value="in_progress">In Progress</option>
+            <option value="blocked">Blocked</option>
+            <option value="done">Done</option>
+        </select>
+        <select id="agent-filter" onchange="loadWork()"
+                class="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">All Agents</option>
+            <option value="pm">Product Manager</option>
+            <option value="architect">Architect</option>
+            <option value="engineer">Engineer</option>
+            <option value="ux">UX Designer</option>
+            <option value="reviewer">Reviewer</option>
+        </select>
+    </div>
+</div>
+
+<!-- Work Items Table -->
+<div class="card">
+    <h2 class="text-xl font-semibold mb-4">Work Items</h2>
+    <div id="work-table">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadWork() {
+    const status = document.getElementById('status-filter').value;
+    const agent = document.getElementById('agent-filter').value;
+    
+    let url = '/api/work?';
+    if (status) url += `status=${status}&`;
+    if (agent) url += `agent=${agent}&`;
+    
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (!data.success) {
+            console.error('Failed to load work:', data.error);
+            return;
+        }
+        
+        const { items, stats } = data.data;
+        
+        // Stats
+        document.getElementById('total-items').textContent = stats.total;
+        document.getElementById('ready-items').textContent = stats.ready || 0;
+        document.getElementById('inprogress-items').textContent = stats.in_progress;
+        document.getElementById('blocked-items').textContent = stats.blocked;
+        document.getElementById('done-items').textContent = stats.completed;
+        
+        // Table
+        if (items.length > 0) {
+            document.getElementById('work-table').innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 pr-4">ID</th>
+                                <th class="pb-2 pr-4">Title</th>
+                                <th class="pb-2 pr-4">Status</th>
+                                <th class="pb-2 pr-4">Agent</th>
+                                <th class="pb-2 pr-4">Issue</th>
+                                <th class="pb-2 pr-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map(item => `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 pr-4 font-mono text-sm">${item.id}</td>
+                                    <td class="py-3 pr-4">
+                                        ${item.title.length > 40 ? item.title.slice(0, 40) + '...' : item.title}
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 rounded text-xs ${
+                                            item.status === 'done' ? 'bg-green-100 text-green-800' :
+                                            item.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                                            item.status === 'blocked' ? 'bg-red-100 text-red-800' :
+                                            item.status === 'ready' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }">${item.status}</span>
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        ${item.agent_assignee ? `
+                                            <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">
+                                                ${item.agent_assignee}
+                                            </span>
+                                        ` : '-'}
+                                    </td>
+                                    <td class="py-3 pr-4">
+                                        ${item.issue_number ? `#${item.issue_number}` : '-'}
+                                    </td>
+                                    <td class="py-3 pr-4 text-sm text-gray-500">
+                                        ${formatTime(item.created_at)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            document.getElementById('work-table').innerHTML = 
+                '<p class="text-gray-500">No work items found</p>';
+        }
+        
+    } catch (e) {
+        console.error('Error loading work:', e);
+    }
+}
+
+setupAutoRefresh(loadWork);
+</script>
+{% endblock %}

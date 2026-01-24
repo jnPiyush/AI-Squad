@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI-Squad Dashboard{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        .sidebar-link.active {
+            background-color: rgb(59 130 246);
+            color: white;
+        }
+        .card {
+            @apply bg-white rounded-lg shadow-md p-6;
+        }
+        .stat-card {
+            @apply bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4;
+        }
+        .stat-value {
+            @apply text-3xl font-bold;
+        }
+        .stat-label {
+            @apply text-sm opacity-80;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 min-h-screen fixed">
+            <div class="p-4">
+                <h1 class="text-white text-xl font-bold mb-2">🤖 AI-Squad</h1>
+                <p class="text-gray-400 text-sm">Orchestration Dashboard</p>
+            </div>
+            <nav class="mt-6">
+                <a href="/" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/' %}active{% endif %}">
+                    <span class="mr-3">📊</span> Overview
+                </a>
+                <a href="/health" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/health' %}active{% endif %}">
+                    <span class="mr-3">❤️</span> Health
+                </a>
+                <a href="/work" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/work' %}active{% endif %}">
+                    <span class="mr-3">📋</span> Work Items
+                </a>
+                <a href="/delegations" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/delegations' %}active{% endif %}">
+                    <span class="mr-3">🤝</span> Delegations
+                </a>
+                <a href="/convoys" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/convoys' %}active{% endif %}">
+                    <span class="mr-3">🚛</span> Convoys
+                </a>
+                <a href="/graph" class="sidebar-link flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 {% if request.path == '/graph' %}active{% endif %}">
+                    <span class="mr-3">🕸️</span> Graph
+                </a>
+            </nav>
+            <div class="absolute bottom-0 w-full p-4 border-t border-gray-800">
+                <p class="text-gray-500 text-xs">AI-Squad Dashboard v1.0</p>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        
+        // Auto-refresh data every 30 seconds
+        function setupAutoRefresh(callback, interval = 30000) {
+            callback();
+            setInterval(callback, interval);
+        }
+        
+        // Format timestamp
+        function formatTime(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+        
+        // Get status color class
+        function getStatusColor(status) {
+            const colors = {
+                'healthy': 'text-green-500',
+                'warn': 'text-yellow-500',
+                'critical': 'text-red-500',
+                'completed': 'text-green-500',
+                'in_progress': 'text-blue-500',
+                'blocked': 'text-red-500',
+                'pending': 'text-yellow-500',
+                'ready': 'text-green-500',
+                'done': 'text-green-500',
+                'failed': 'text-red-500',
+            };
+            return colors[status] || 'text-gray-500';
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

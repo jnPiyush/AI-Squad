@@ -17,6 +17,7 @@
         "prd_path": "docs/prd/PRD-123.md"
       }
     },
+    "metadata": {},
     "priority": "normal",
     "requires_ack": true,
     "initiated_at": "2026-01-23T16:18:08.641100",
@@ -57,6 +58,7 @@
         "prd_path": "docs/prd/PRD-123.md"
       }
     },
+    "metadata": {},
     "priority": "normal",
     "requires_ack": true,
     "initiated_at": "2026-01-23T16:20:10.398635",
@@ -97,6 +99,7 @@
         "prd_path": "docs/prd/PRD-123.md"
       }
     },
+    "metadata": {},
     "priority": "normal",
     "requires_ack": true,
     "initiated_at": "2026-01-23T17:47:49.834731",
@@ -137,6 +140,7 @@
         "prd_path": "docs/prd/PRD-123.md"
       }
     },
+    "metadata": {},
     "priority": "normal",
     "requires_ack": true,
     "initiated_at": "2026-01-23T17:49:27.144844",
@@ -177,6 +181,7 @@
         "prd_path": "docs/prd/PRD-123.md"
       }
     },
+    "metadata": {},
     "priority": "normal",
     "requires_ack": true,
     "initiated_at": "2026-01-23T17:55:09.106805",
@@ -193,6 +198,252 @@
       },
       {
         "timestamp": "2026-01-23T17:55:09.109818",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-16b3b9b2": {
+    "id": "handoff-16b3b9b2",
+    "work_item_id": "sq-0e5ab",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:14:56.287095",
+    "accepted_at": "2026-01-23T21:14:56.311738",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:14:56.287095",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:14:56.311738",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-3f2336df": {
+    "id": "handoff-3f2336df",
+    "work_item_id": "sq-ea809",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:16:21.125564",
+    "accepted_at": "2026-01-23T21:16:21.255727",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:16:21.125564",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:16:21.255727",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-8068fec7": {
+    "id": "handoff-8068fec7",
+    "work_item_id": "sq-837e4",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:18:40.592954",
+    "accepted_at": "2026-01-23T21:18:40.741400",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:18:40.592954",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:18:40.741400",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-3f3ca286": {
+    "id": "handoff-3f3ca286",
+    "work_item_id": "sq-e601b",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:19:16.152378",
+    "accepted_at": "2026-01-23T21:19:16.273089",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:19:16.152378",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:19:16.273089",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-025c051e": {
+    "id": "handoff-025c051e",
+    "work_item_id": "sq-25bfb",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:19:47.723824",
+    "accepted_at": "2026-01-23T21:19:47.890473",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:19:47.723824",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:19:47.890473",
+        "action": "accepted",
+        "agent": "architect",
+        "details": null
+      }
+    ]
+  },
+  "handoff-712a7982": {
+    "id": "handoff-712a7982",
+    "work_item_id": "sq-e6406",
+    "from_agent": "pm",
+    "to_agent": "architect",
+    "reason": "PRD complete, need architecture",
+    "status": "accepted",
+    "context": {
+      "summary": "{'prd_path': 'docs/prd/PRD-123.md'}",
+      "current_state": "",
+      "next_steps": [],
+      "blockers": [],
+      "artifacts": [],
+      "notes": "",
+      "data": {
+        "prd_path": "docs/prd/PRD-123.md"
+      }
+    },
+    "metadata": {},
+    "priority": "normal",
+    "requires_ack": true,
+    "initiated_at": "2026-01-23T21:20:09.805996",
+    "accepted_at": "2026-01-23T21:20:09.877103",
+    "completed_at": null,
+    "acceptance_message": null,
+    "rejection_reason": null,
+    "audit_log": [
+      {
+        "timestamp": "2026-01-23T21:20:09.805996",
+        "action": "initiated",
+        "agent": "pm",
+        "details": "Handoff initiated: PRD complete, need architecture"
+      },
+      {
+        "timestamp": "2026-01-23T21:20:09.877103",
         "action": "accepted",
         "agent": "architect",
         "details": null

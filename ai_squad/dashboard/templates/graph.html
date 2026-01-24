@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}AI-Squad Dashboard - Graph{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Operational Graph</h1>
+    <p class="text-gray-600 mt-2">Visualize work items, agents, and their relationships</p>
+</div>
+
+<!-- Graph Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="stat-card">
+        <div class="stat-value" id="node-count">-</div>
+        <div class="stat-label">Nodes</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600">
+        <div class="stat-value" id="edge-count">-</div>
+        <div class="stat-label">Edges</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600">
+        <div class="stat-value" id="agent-count">-</div>
+        <div class="stat-label">Agents</div>
+    </div>
+</div>
+
+<!-- Graph Visualization -->
+<div class="card mb-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Graph Visualization</h2>
+        <button onclick="copyMermaid()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Copy Mermaid
+        </button>
+    </div>
+    <div id="graph-diagram" class="mermaid overflow-x-auto">
+        graph TD
+            Loading...
+    </div>
+</div>
+
+<!-- Impact Analysis -->
+<div class="card mb-6">
+    <h2 class="text-xl font-semibold mb-4">Impact Analysis</h2>
+    <div class="flex gap-4 mb-4">
+        <input type="text" id="impact-node" placeholder="Enter node ID" 
+               class="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <button onclick="analyzeImpact()" 
+                class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Analyze Impact
+        </button>
+    </div>
+    <div id="impact-result">
+        <p class="text-gray-500">Enter a node ID to analyze its impact</p>
+    </div>
+</div>
+
+<!-- Nodes Table -->
+<div class="card mb-6">
+    <h2 class="text-xl font-semibold mb-4">Nodes</h2>
+    <div id="nodes-table">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Edges Table -->
+<div class="card">
+    <h2 class="text-xl font-semibold mb-4">Edges</h2>
+    <div id="edges-table">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentMermaid = '';
+
+async function loadGraph() {
+    try {
+        const res = await fetch('/api/graph');
+        const data = await res.json();
+        
+        if (!data.success) {
+            console.error('Failed to load graph:', data.error);
+            return;
+        }
+        
+        const { nodes, edges, mermaid: mermaidCode } = data.data;
+        currentMermaid = mermaidCode;
+        
+        // Stats
+        document.getElementById('node-count').textContent = nodes.length;
+        document.getElementById('edge-count').textContent = edges.length;
+        document.getElementById('agent-count').textContent = 
+            nodes.filter(n => n.type === 'agent').length;
+        
+        // Mermaid diagram
+        if (mermaidCode && mermaidCode.trim() !== 'graph TD') {
+            document.getElementById('graph-diagram').innerHTML = mermaidCode;
+            mermaid.init(undefined, '#graph-diagram');
+        } else {
+            document.getElementById('graph-diagram').innerHTML = 
+                '<p class="text-gray-500 text-center py-8">No graph data available. Run some agent commands to populate the graph.</p>';
+        }
+        
+        // Nodes table
+        if (nodes.length > 0) {
+            document.getElementById('nodes-table').innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 pr-4">ID</th>
+                                <th class="pb-2 pr-4">Type</th>
+                                <th class="pb-2 pr-4">Metadata</th>
+                                <th class="pb-2 pr-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${nodes.map(n => `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 pr-4 font-mono text-sm">${n.id}</td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 rounded text-xs ${
+                                            n.type === 'agent' ? 'bg-blue-100 text-blue-800' :
+                                            n.type === 'work_item' ? 'bg-green-100 text-green-800' :
+                                            n.type === 'skill' ? 'bg-purple-100 text-purple-800' :
+                                            'bg-gray-100 text-gray-800'
+                                        }">${n.type}</span>
+                                    </td>
+                                    <td class="py-3 pr-4 text-sm text-gray-600">
+                                        ${JSON.stringify(n.metadata).slice(0, 50)}...
+                                    </td>
+                                    <td class="py-3 pr-4 text-sm text-gray-500">
+                                        ${formatTime(n.created_at)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            document.getElementById('nodes-table').innerHTML = 
+                '<p class="text-gray-500">No nodes in graph</p>';
+        }
+        
+        // Edges table
+        if (edges.length > 0) {
+            document.getElementById('edges-table').innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="text-left text-gray-500 border-b">
+                                <th class="pb-2 pr-4">From</th>
+                                <th class="pb-2 pr-4">To</th>
+                                <th class="pb-2 pr-4">Type</th>
+                                <th class="pb-2 pr-4">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${edges.map(e => `
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="py-3 pr-4 font-mono text-sm">${e.from_node}</td>
+                                    <td class="py-3 pr-4 font-mono text-sm">${e.to_node}</td>
+                                    <td class="py-3 pr-4">
+                                        <span class="px-2 py-1 bg-gray-100 rounded text-xs">${e.type}</span>
+                                    </td>
+                                    <td class="py-3 pr-4 text-sm text-gray-500">
+                                        ${formatTime(e.created_at)}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            document.getElementById('edges-table').innerHTML = 
+                '<p class="text-gray-500">No edges in graph</p>';
+        }
+        
+    } catch (e) {
+        console.error('Error loading graph:', e);
+    }
+}
+
+async function analyzeImpact() {
+    const nodeId = document.getElementById('impact-node').value.trim();
+    if (!nodeId) {
+        alert('Please enter a node ID');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/graph/impact/${encodeURIComponent(nodeId)}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+            document.getElementById('impact-result').innerHTML = 
+                `<p class="text-red-500">${data.error}</p>`;
+            return;
+        }
+        
+        const impact = data.data;
+        
+        document.getElementById('impact-result').innerHTML = `
+            <div class="bg-blue-50 rounded-lg p-4">
+                <h3 class="font-semibold text-lg mb-2">Impact Analysis: ${impact.node}</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-gray-600">Direct Dependents:</span>
+                        <span class="font-semibold ml-2">${impact.direct_dependents.length}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">Total Affected:</span>
+                        <span class="font-semibold ml-2">${impact.total_affected}</span>
+                    </div>
+                </div>
+                ${impact.owners.length > 0 ? `
+                    <div class="mt-4">
+                        <span class="text-gray-600">Owners:</span>
+                        <span class="ml-2">${impact.owners.join(', ')}</span>
+                    </div>
+                ` : ''}
+                ${impact.affected_nodes.length > 0 ? `
+                    <div class="mt-4">
+                        <span class="text-gray-600">Affected Nodes:</span>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            ${impact.affected_nodes.slice(0, 10).map(n => `
+                                <span class="px-2 py-1 bg-white rounded text-sm">${n}</span>
+                            `).join('')}
+                            ${impact.affected_nodes.length > 10 ? `
+                                <span class="px-2 py-1 bg-gray-200 rounded text-sm">
+                                    +${impact.affected_nodes.length - 10} more
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+    } catch (e) {
+        console.error('Error analyzing impact:', e);
+        document.getElementById('impact-result').innerHTML = 
+            '<p class="text-red-500">Error analyzing impact</p>';
+    }
+}
+
+function copyMermaid() {
+    navigator.clipboard.writeText(currentMermaid).then(() => {
+        alert('Mermaid diagram copied to clipboard!');
+    });
+}
+
+setupAutoRefresh(loadGraph);
+</script>
+{% endblock %}

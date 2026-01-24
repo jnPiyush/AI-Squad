@@ -1247,6 +1247,45 @@ def graph_impact(node_id):
         sys.exit(1)
 
 
+@main.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to")
+@click.option("--port", default=5050, type=int, help="Port to bind to")
+@click.option("--debug", is_flag=True, help="Enable debug mode")
+def dashboard(host, port, debug):
+    """
+    Launch the AI-Squad web dashboard
+    
+    Provides a web UI for monitoring:
+    - Routing health and circuit breakers
+    - Delegation links and audit trails
+    - Operational graph visualization
+    - Work items and convoy status
+    
+    Example:
+        squad dashboard
+        squad dashboard --port 8080
+        squad dashboard --host 0.0.0.0 --debug
+    """
+    print_banner()
+    console.print("[bold cyan]🚀 Starting AI-Squad Dashboard...[/bold cyan]\n")
+    
+    try:
+        from ai_squad.dashboard import run_dashboard
+        
+        console.print(f"[green]Dashboard will be available at: http://{host}:{port}[/green]\n")
+        console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+        
+        run_dashboard(host=host, port=port, debug=debug)
+        
+    except ImportError as e:
+        console.print("[bold red]❌ Flask is not installed[/bold red]")
+        console.print("[yellow]Install with: pip install flask[/yellow]")
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()
 

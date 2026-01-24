@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}AI-Squad Dashboard - Overview{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-800">Dashboard Overview</h1>
+    <p class="text-gray-600 mt-2">Monitor your AI-Squad orchestration at a glance</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="stat-card">
+        <div class="stat-value" id="work-total">-</div>
+        <div class="stat-label">Work Items</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-green-500 to-green-600">
+        <div class="stat-value" id="health-status">-</div>
+        <div class="stat-label">Health Status</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600">
+        <div class="stat-value" id="delegations-count">-</div>
+        <div class="stat-label">Active Delegations</div>
+    </div>
+    <div class="stat-card bg-gradient-to-br from-orange-500 to-orange-600">
+        <div class="stat-value" id="convoys-count">-</div>
+        <div class="stat-label">Active Convoys</div>
+    </div>
+</div>
+
+<!-- Quick Info Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Work Items Summary -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">📋 Work Items Summary</h2>
+        <div id="work-summary">
+            <div class="animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Routing Health -->
+    <div class="card">
+        <h2 class="text-xl font-semibold mb-4">❤️ Routing Health</h2>
+        <div id="health-summary">
+            <div class="animate-pulse">
+                <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="card">
+    <h2 class="text-xl font-semibold mb-4">🕐 Recent Delegations</h2>
+    <div id="recent-delegations">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Identity Card -->
+<div class="card mt-6">
+    <h2 class="text-xl font-semibold mb-4">🪪 Current Identity</h2>
+    <div id="identity-info">
+        <div class="animate-pulse">
+            <div class="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+            <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadDashboard() {
+    // Load work stats
+    try {
+        const workRes = await fetch('/api/work');
+        const workData = await workRes.json();
+        if (workData.success) {
+            const stats = workData.data.stats;
+            document.getElementById('work-total').textContent = stats.total;
+            document.getElementById('work-summary').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-blue-500 font-semibold">${stats.in_progress}</span> In Progress
+                    </div>
+                    <div>
+                        <span class="text-red-500 font-semibold">${stats.blocked}</span> Blocked
+                    </div>
+                    <div>
+                        <span class="text-green-500 font-semibold">${stats.completed}</span> Completed
+                    </div>
+                    <div>
+                        <span class="text-gray-500 font-semibold">${stats.total - stats.in_progress - stats.blocked - stats.completed}</span> Pending
+                    </div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error('Failed to load work data:', e);
+    }
+    
+    // Load health
+    try {
+        const healthRes = await fetch('/api/health');
+        const healthData = await healthRes.json();
+        if (healthData.success) {
+            const status = healthData.data.overall_status || 'unknown';
+            const statusColor = status === 'healthy' ? 'text-green-500' : 
+                               status === 'warn' ? 'text-yellow-500' : 'text-red-500';
+            document.getElementById('health-status').className = `stat-value ${statusColor}`;
+            document.getElementById('health-status').textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            
+            const blockRate = (healthData.data.block_rate || 0) * 100;
+            document.getElementById('health-summary').innerHTML = `
+                <div class="space-y-2">
+                    <div>Total Events: <span class="font-semibold">${healthData.data.total}</span></div>
+                    <div>Routed: <span class="text-green-500 font-semibold">${healthData.data.routed}</span></div>
+                    <div>Blocked: <span class="text-red-500 font-semibold">${healthData.data.blocked}</span></div>
+                    <div>Block Rate: <span class="font-semibold">${blockRate.toFixed(1)}%</span></div>
+                </div>
+            `;
+        }
+    } catch (e) {
+        console.error('Failed to load health data:', e);
+    }
+    
+    // Load delegations
+    try {
+        const delRes = await fetch('/api/delegations');
+        const delData = await delRes.json();
+        if (delData.success) {
+            const active = delData.data.filter(d => d.status !== 'completed').length;
+            document.getElementById('delegations-count').textContent = active;
+            
+            const recent = delData.data.slice(0, 5);
+            if (recent.length > 0) {
+                document.getElementById('recent-delegations').innerHTML = `
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-gray-500">
+                                <th class="pb-2">From</th>
+                                <th class="pb-2">To</th>
+                                <th class="pb-2">Work Item</th>
+                                <th class="pb-2">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recent.map(d => `
+                                <tr class="border-t">
+                                    <td class="py-2">${d.from_agent}</td>
+                                    <td class="py-2">${d.to_agent}</td>
+                                    <td class="py-2">${d.work_item_id}</td>
+                                    <td class="py-2">
+                                        <span class="${getStatusColor(d.status)}">${d.status}</span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                document.getElementById('recent-delegations').innerHTML = '<p class="text-gray-500">No delegations yet</p>';
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load delegations:', e);
+    }
+    
+    // Load convoys
+    try {
+        const convoyRes = await fetch('/api/convoys');
+        const convoyData = await convoyRes.json();
+        if (convoyData.success) {
+            const running = convoyData.data.filter(c => c.status === 'running').length;
+            document.getElementById('convoys-count').textContent = running;
+        }
+    } catch (e) {
+        console.error('Failed to load convoys:', e);
+    }
+    
+    // Load identity
+    try {
+        const idRes = await fetch('/api/identity');
+        const idData = await idRes.json();
+        if (idData.success && idData.data) {
+            const id = idData.data;
+            document.getElementById('identity-info').innerHTML = `
+                <div class="space-y-2">
+                    <div><span class="font-semibold">Workspace:</span> ${id.workspace_name}</div>
+                    <div><span class="font-semibold">Agents:</span> ${id.agents.join(', ')}</div>
+                    <div><span class="font-semibold">Author:</span> ${id.author || '-'}</div>
+                    <div class="text-gray-500 text-sm">Generated: ${formatTime(id.generated_at)}</div>
+                </div>
+            `;
+        } else {
+            document.getElementById('identity-info').innerHTML = '<p class="text-gray-500">No identity dossier found</p>';
+        }
+    } catch (e) {
+        console.error('Failed to load identity:', e);
+    }
+}
+
+setupAutoRefresh(loadDashboard, 30000);
+</script>
+{% endblock %}

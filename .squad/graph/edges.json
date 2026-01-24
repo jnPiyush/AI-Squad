@@ -1,0 +1,92 @@
+[
+  {
+    "from_node": "pm",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-712a7982"
+    },
+    "created_at": "2026-01-23T21:14:56.304689"
+  },
+  {
+    "from_node": "sq-0e5ab",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-16b3b9b2"
+    },
+    "created_at": "2026-01-23T21:14:56.308706"
+  },
+  {
+    "from_node": "sq-ea809",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-3f2336df"
+    },
+    "created_at": "2026-01-23T21:16:21.251047"
+  },
+  {
+    "from_node": "sq-837e4",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-8068fec7"
+    },
+    "created_at": "2026-01-23T21:18:40.735930"
+  },
+  {
+    "from_node": "sq-e601b",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-3f3ca286"
+    },
+    "created_at": "2026-01-23T21:19:16.273089"
+  },
+  {
+    "from_node": "sq-25bfb",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-025c051e"
+    },
+    "created_at": "2026-01-23T21:19:47.882917"
+  },
+  {
+    "from_node": "sq-e6406",
+    "to_node": "architect",
+    "type": "delegates_to",
+    "metadata": {
+      "handoff_id": "handoff-712a7982"
+    },
+    "created_at": "2026-01-23T21:20:09.873076"
+  },
+  {
+    "from_node": "issue-123",
+    "to_node": "productmanager",
+    "type": "owns",
+    "metadata": {
+      "source": "agent_execute"
+    },
+    "created_at": "2026-01-23T21:20:12.274180"
+  },
+  {
+    "from_node": "issue-123",
+    "to_node": "architect",
+    "type": "owns",
+    "metadata": {
+      "source": "agent_execute"
+    },
+    "created_at": "2026-01-23T21:20:13.345047"
+  },
+  {
+    "from_node": "issue-456",
+    "to_node": "reviewer",
+    "type": "owns",
+    "metadata": {
+      "source": "agent_execute"
+    },
+    "created_at": "2026-01-23T21:20:14.585267"
+  }
+]
