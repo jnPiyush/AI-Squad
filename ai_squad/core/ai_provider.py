@@ -127,35 +127,48 @@ class CopilotProvider(AIProvider):
             return None
 
     def _is_copilot_cli_available(self) -> bool:
-        if shutil.which("copilot") is None:
+        copilot_path = shutil.which("copilot")
+        if not copilot_path:
             return False
 
         try:
-            version = subprocess.run(
-                ["copilot", "--version"],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            version = self._run_copilot_cli(copilot_path, ["--version"])
             if version.returncode != 0:
                 return False
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             return False
 
-        return self._is_copilot_cli_authenticated()
+        return self._is_copilot_cli_authenticated(copilot_path)
 
     @staticmethod
-    def _is_copilot_cli_authenticated() -> bool:
+    def _is_copilot_cli_authenticated(copilot_path: str) -> bool:
         try:
             auth = subprocess.run(
-                ["copilot", "auth", "status"],
+                ["gh", "auth", "status"],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=10
             )
             return auth.returncode == 0
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
             return False
+
+    @staticmethod
+    def _run_copilot_cli(copilot_path: str, args: List[str]) -> subprocess.CompletedProcess:
+        if copilot_path.lower().endswith(".ps1"):
+            return subprocess.run(
+                ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", copilot_path, *args],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+
+        return subprocess.run(
+            [copilot_path, *args],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
 
     def _select_model(self, requested_model: Optional[str]) -> str:
         if requested_model:

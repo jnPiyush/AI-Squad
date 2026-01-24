@@ -24,16 +24,12 @@ def _check_gh_auth() -> bool:
 
 def _check_copilot_cli() -> Tuple[bool, str]:
     """Check if Copilot CLI is installed and authenticated"""
-    if shutil.which("copilot") is None:
+    copilot_path = shutil.which("copilot")
+    if not copilot_path:
         return False, "Copilot CLI not found. Install and run 'copilot --version'"
 
     try:
-        version = subprocess.run(
-            ["copilot", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        version = _run_copilot_cli(copilot_path, ["--version"])
         if version.returncode != 0:
             return False, "Copilot CLI not responding. Reinstall or check PATH"
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -41,16 +37,33 @@ def _check_copilot_cli() -> Tuple[bool, str]:
 
     try:
         auth = subprocess.run(
-            ["copilot", "auth", "status"],
+            ["gh", "auth", "status"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=10
         )
         if auth.returncode == 0:
-            return True, "Authenticated"
-        return False, "Not authenticated. Run 'copilot auth login'"
+            return True, "Authenticated (via gh auth login)"
+        return False, "Not authenticated. Run 'gh auth login'"
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-        return False, "Unable to verify Copilot auth. Run 'copilot auth login'"
+        return False, "Unable to verify GitHub auth. Run 'gh auth login'"
+
+
+def _run_copilot_cli(copilot_path: str, args: List[str]) -> subprocess.CompletedProcess:
+    if copilot_path.lower().endswith(".ps1"):
+        return subprocess.run(
+            ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", copilot_path, *args],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+    return subprocess.run(
+        [copilot_path, *args],
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
 
 
 def run_doctor_checks() -> Dict[str, Any]:
