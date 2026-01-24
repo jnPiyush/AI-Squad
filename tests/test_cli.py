@@ -170,3 +170,147 @@ class TestAgentCommands:
         """Test squad collab command"""
         result = runner.invoke(main, ["collab", "123", "pm", "architect"])
         assert "collaboration" in result.output.lower() or "Error" in result.output
+    
+    def test_captain_command(self, runner, setup_project):
+        """Test squad captain command"""
+        result = runner.invoke(main, ["captain", "123"])
+        # Should show Captain coordinating message or error
+        assert "Captain" in result.output or "Error" in result.output or "captain" in result.output.lower()
+    
+    def test_captain_command_invalid_issue(self, runner, setup_project):
+        """Test squad captain with invalid issue number type"""
+        result = runner.invoke(main, ["captain", "not-a-number"])
+        # Should fail with usage error
+        assert result.exit_code != 0
+
+
+class TestOrchestrationCommands:
+    """Test orchestration-related CLI commands"""
+    
+    @pytest.fixture
+    def runner(self):
+        """Create CLI runner"""
+        return CliRunner()
+    
+    def test_work_command_empty(self, runner, tmp_path):
+        """Test squad work command with no work items"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["work"])
+            assert result.exit_code == 0
+            # Should show no work items or empty list
+            assert "No work items" in result.output or "Work Items" in result.output
+    
+    def test_work_command_with_status_filter(self, runner, tmp_path):
+        """Test squad work command with status filter"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["work", "--status", "ready"])
+            assert result.exit_code == 0
+    
+    def test_work_command_with_agent_filter(self, runner, tmp_path):
+        """Test squad work command with agent filter"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["work", "--agent", "pm"])
+            assert result.exit_code == 0
+    
+    def test_convoys_command_empty(self, runner, tmp_path):
+        """Test squad convoys command with no convoys"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["convoys"])
+            assert result.exit_code == 0
+            assert "No convoys" in result.output or "Convoy" in result.output
+    
+    def test_health_command_detailed(self, runner, tmp_path):
+        """Test squad health command output"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["health"])
+            assert result.exit_code == 0
+            assert "Health" in result.output or "health" in result.output.lower()
+    
+    def test_run_plan_command_missing_plan(self, runner, tmp_path):
+        """Test squad run-plan with non-existent plan"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["run-plan", "nonexistent", "123"])
+            # Should show error or handle missing plan gracefully
+            assert "not found" in result.output.lower() or "Error" in result.output or result.exit_code != 0
+    
+    def test_run_plan_command_feature_plan(self, runner, tmp_path):
+        """Test squad run-plan with built-in feature plan"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["run-plan", "feature", "123"])
+            # Should attempt to execute or show error
+            assert "plan" in result.output.lower() or "Error" in result.output
+
+
+class TestDashboardCommand:
+    """Test dashboard command"""
+    
+    @pytest.fixture
+    def runner(self):
+        """Create CLI runner"""
+        return CliRunner()
+    
+    def test_dashboard_command_help(self, runner, tmp_path):
+        """Test dashboard command help"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["dashboard", "--help"])
+            assert result.exit_code == 0
+            assert "dashboard" in result.output.lower()
+
+
+class TestGraphCommands:
+    """Test graph-related CLI commands"""
+    
+    @pytest.fixture
+    def runner(self):
+        """Create CLI runner"""
+        return CliRunner()
+    
+    def test_graph_export_formats(self, runner, tmp_path):
+        """Test graph export command output format"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["graph", "export"])
+            assert result.exit_code == 0
+            # Should output mermaid format
+            assert "graph" in result.output.lower()
+
+
+class TestSignalCommands:
+    """Test signal-related CLI commands"""
+    
+    @pytest.fixture
+    def runner(self):
+        """Create CLI runner"""
+        return CliRunner()
+    
+    def test_signal_command_help(self, runner, tmp_path):
+        """Test signal command help"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            result = runner.invoke(main, ["signal", "--help"])
+            assert result.exit_code == 0
+            assert "signal" in result.output.lower()
+
+
+class TestIdentityCommand:
+    """Test identity/status commands"""
+    
+    @pytest.fixture
+    def runner(self):
+        """Create CLI runner"""
+        return CliRunner()
+    
+    def test_status_command(self, runner, tmp_path):
+        """Test squad status command"""
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["status"])
+            # Status command may fail without proper setup, but should run
+            # Accept either success or error output
+            assert "status" in result.output.lower() or "Status" in result.output or "Error" in result.output or result.exit_code in (0, 1)

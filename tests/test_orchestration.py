@@ -564,6 +564,189 @@ class TestConvoy:
         
         assert convoy.id.startswith("convoy-")
         assert len(convoy.members) == 2
+    
+    def test_convoy_get_member(self):
+        """Test getting a member by work item ID"""
+        from ai_squad.core.convoy import Convoy
+        
+        convoy = Convoy(id="convoy-test4", name="Test")
+        convoy.add_member("pm", "sq-1")
+        convoy.add_member("architect", "sq-2")
+        
+        member = convoy.get_member("sq-1")
+        assert member is not None
+        assert member.agent_type == "pm"
+        
+        missing = convoy.get_member("sq-nonexistent")
+        assert missing is None
+    
+    def test_convoy_is_complete(self):
+        """Test convoy completion check"""
+        from ai_squad.core.convoy import Convoy
+        
+        convoy = Convoy(id="convoy-test5", name="Test")
+        convoy.add_member("pm", "sq-1")
+        convoy.add_member("architect", "sq-2")
+        
+        # Not complete initially
+        assert not convoy.is_complete()
+        
+        # Mark members as completed
+        convoy.members[0].status = "completed"
+        assert not convoy.is_complete()  # Still one pending
+        
+        convoy.members[1].status = "completed"
+        assert convoy.is_complete()
+    
+    def test_convoy_is_complete_with_failed(self):
+        """Test convoy completion with failed members"""
+        from ai_squad.core.convoy import Convoy
+        
+        convoy = Convoy(id="convoy-test6", name="Test")
+        convoy.add_member("pm", "sq-1")
+        convoy.add_member("architect", "sq-2")
+        
+        convoy.members[0].status = "completed"
+        convoy.members[1].status = "failed"
+        
+        # Should still be complete (all members have terminal status)
+        assert convoy.is_complete()
+    
+    def test_convoy_to_dict(self):
+        """Test convoy serialization to dict"""
+        from ai_squad.core.convoy import Convoy, ConvoyStatus
+        
+        convoy = Convoy(
+            id="convoy-test7",
+            name="Test Convoy",
+            description="Test description",
+            max_parallel=3,
+            timeout_minutes=30,
+            issue_number=123
+        )
+        convoy.add_member("pm", "sq-1")
+        
+        data = convoy.to_dict()
+        
+        assert data["id"] == "convoy-test7"
+        assert data["name"] == "Test Convoy"
+        assert data["status"] == "pending"
+        assert data["max_parallel"] == 3
+        assert data["issue_number"] == 123
+        assert len(data["members"]) == 1
+    
+    def test_convoy_manager_get_convoy(self):
+        """Test getting a convoy by ID"""
+        from ai_squad.core.workstate import WorkStateManager
+        from ai_squad.core.convoy import ConvoyManager
+        
+        work_manager = WorkStateManager(self.workspace)
+        convoy_manager = ConvoyManager(work_manager)
+        
+        item = work_manager.create_work_item(title="Work 1")
+        convoy = convoy_manager.create_convoy(
+            name="Test",
+            work_items=[{"agent_type": "pm", "work_item_id": item.id}]
+        )
+        
+        # Get existing convoy
+        retrieved = convoy_manager.get_convoy(convoy.id)
+        assert retrieved is not None
+        assert retrieved.id == convoy.id
+        
+        # Get non-existent convoy
+        missing = convoy_manager.get_convoy("convoy-nonexistent")
+        assert missing is None
+    
+    def test_convoy_manager_list_convoys(self):
+        """Test listing all convoys"""
+        from ai_squad.core.workstate import WorkStateManager
+        from ai_squad.core.convoy import ConvoyManager
+        
+        work_manager = WorkStateManager(self.workspace)
+        convoy_manager = ConvoyManager(work_manager)
+        
+        # Create multiple convoys
+        item1 = work_manager.create_work_item(title="Work 1")
+        item2 = work_manager.create_work_item(title="Work 2")
+        
+        convoy_manager.create_convoy(
+            name="Convoy 1",
+            work_items=[{"agent_type": "pm", "work_item_id": item1.id}]
+        )
+        convoy_manager.create_convoy(
+            name="Convoy 2",
+            work_items=[{"agent_type": "architect", "work_item_id": item2.id}]
+        )
+        
+        convoys = convoy_manager.list_convoys()
+        assert len(convoys) == 2
+    
+    def test_convoy_member_to_dict(self):
+        """Test ConvoyMember serialization"""
+        from ai_squad.core.convoy import ConvoyMember
+        
+        member = ConvoyMember(
+            agent_type="engineer",
+            work_item_id="sq-123",
+            status="running",
+            started_at="2026-01-24T10:00:00",
+            result="Some result"
+        )
+        
+        data = member.to_dict()
+        assert data["agent_type"] == "engineer"
+        assert data["work_item_id"] == "sq-123"
+        assert data["status"] == "running"
+        assert data["started_at"] == "2026-01-24T10:00:00"
+    
+    def test_convoy_progress_with_mixed_status(self):
+        """Test convoy progress with various statuses"""
+        from ai_squad.core.convoy import Convoy
+        
+        convoy = Convoy(id="convoy-test8", name="Test")
+        convoy.add_member("pm", "sq-1")
+        convoy.add_member("architect", "sq-2")
+        convoy.add_member("engineer", "sq-3")
+        convoy.add_member("ux", "sq-4")
+        
+        convoy.members[0].status = "completed"
+        convoy.members[1].status = "running"
+        convoy.members[2].status = "failed"
+        convoy.members[3].status = "pending"
+        
+        progress = convoy.get_progress()
+        assert progress["completed"] == 1
+        assert progress["running"] == 1
+        assert progress["failed"] == 1
+        assert progress["pending"] == 1
+        assert progress["progress_percent"] == 50  # 2/4 terminal states
+    
+    def test_convoy_manager_with_workspace_path(self):
+        """Test ConvoyManager accepts workspace path"""
+        from ai_squad.core.convoy import ConvoyManager
+        
+        # Pass workspace path directly instead of manager
+        convoy_manager = ConvoyManager(self.workspace)
+        
+        assert convoy_manager.work_state_manager is not None
+    
+    def test_convoy_stop_on_first_failure_setting(self):
+        """Test convoy stop_on_first_failure setting"""
+        from ai_squad.core.workstate import WorkStateManager
+        from ai_squad.core.convoy import ConvoyManager
+        
+        work_manager = WorkStateManager(self.workspace)
+        convoy_manager = ConvoyManager(work_manager)
+        
+        item = work_manager.create_work_item(title="Work 1")
+        convoy = convoy_manager.create_convoy(
+            name="Test",
+            work_items=[{"agent_type": "pm", "work_item_id": item.id}],
+            stop_on_first_failure=True
+        )
+        
+        assert convoy.stop_on_first_failure is True
 
 
 class TestCLIOrchestration:
