@@ -70,11 +70,11 @@ graph TB
     Signal --> Events
     Del --> Graph
     
-    classDef user fill:#e1f5fe,stroke:#01579b
-    classDef orch fill:#fff3e0,stroke:#e65100
-    classDef agent fill:#e8f5e9,stroke:#2e7d32
-    classDef core fill:#fce4ec,stroke:#c2185b
-    classDef persist fill:#f3e5f5,stroke:#7b1fa2
+    classDef user fill:#0891b2,stroke:#0e7490,color:#fff
+    classDef orch fill:#dc2626,stroke:#991b1b,color:#fff
+    classDef agent fill:#059669,stroke:#047857,color:#fff
+    classDef core fill:#ec4899,stroke:#be185d,color:#fff
+    classDef persist fill:#7c3aed,stroke:#6d28d9,color:#fff
     
     class CLI,Dashboard,GH user
     class Captain,Router,BPE orch
@@ -120,9 +120,9 @@ graph TB
     Agents --> Telemetry
     Scout --> State
     
-    classDef org fill:#bbdefb,stroke:#1565c0
-    classDef project fill:#c8e6c9,stroke:#388e3c
-    classDef field fill:#fff9c4,stroke:#f9a825
+    classDef org fill:#1e40af,stroke:#1e3a8a,color:#fff
+    classDef project fill:#059669,stroke:#047857,color:#fff
+    classDef field fill:#ca8a04,stroke:#a16207,color:#fff
     
     class Policy,Health,Circuit,Telemetry org
     class BP,Cache,Signals,State project
@@ -211,9 +211,9 @@ flowchart TD
     
     Emit --> Done[Complete]
     
-    classDef success fill:#c8e6c9,stroke:#388e3c
-    classDef block fill:#ffcdd2,stroke:#c62828
-    classDef decision fill:#fff9c4,stroke:#f9a825
+    classDef success fill:#059669,stroke:#047857,color:#fff
+    classDef block fill:#dc2626,stroke:#991b1b,color:#fff
+    classDef decision fill:#ca8a04,stroke:#a16207,color:#fff
     
     class Route,Select,Done success
     class Block,CircuitBlock block
@@ -292,9 +292,9 @@ flowchart TD
         Notify --> Done[Done]
     end
     
-    classDef init fill:#e3f2fd,stroke:#1565c0
-    classDef exec fill:#e8f5e9,stroke:#2e7d32
-    classDef complete fill:#fff3e0,stroke:#e65100
+    classDef init fill:#2563eb,stroke:#1d4ed8,color:#fff
+    classDef exec fill:#059669,stroke:#047857,color:#fff
+    classDef complete fill:#f97316,stroke:#ea580c,color:#fff
     
     class Start,Load,Create,Init init
     class NextPhase,GetPhase,CheckDeps,Wait,Execute,Update,Handoff exec
@@ -524,9 +524,9 @@ graph TB
     API --> Dashboard
     Agents --> API
     
-    classDef external fill:#e1f5fe,stroke:#01579b
-    classDef core fill:#e8f5e9,stroke:#2e7d32
-    classDef web fill:#fff3e0,stroke:#e65100
+    classDef external fill:#0891b2,stroke:#0e7490,color:#fff
+    classDef core fill:#059669,stroke:#047857,color:#fff
+    classDef web fill:#f97316,stroke:#ea580c,color:#fff
     
     class GitHub,SDK,LLM external
     class Agents,Tools,Templates core
