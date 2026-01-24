@@ -220,7 +220,7 @@ See `.github/copilot-instructions.md` and `.github/agents/` for agent definition
 
 ## 🚀 Features
 
-### � Orchestration System
+### 🏰 Orchestration System
 
 ```mermaid
 graph LR
@@ -750,6 +750,7 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 
 
 
