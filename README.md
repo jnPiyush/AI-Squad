@@ -51,7 +51,7 @@ graph TB
     subgraph "🎯 MISSION CONTROL"
         BP["📜 Battle Plans<br/><i>Workflows</i>"]
         WI["💼 Work Items<br/><i>Tasks</i>"]
-        Convoy["� Convoys<br/><i>Parallel Batches</i>"]
+        Convoy["🚐 Convoys<br/><i>Parallel Batches</i>"]
     end
     
     subgraph "🤖 FIELD AGENTS"
@@ -750,6 +750,7 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 
 
 
