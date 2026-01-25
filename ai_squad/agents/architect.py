@@ -39,8 +39,9 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
 **Deliverables:**
 1. ADR document at docs/adr/ADR-{{issue}}.md
 2. Technical specification at docs/specs/SPEC-{{issue}}.md
-3. Architecture diagrams (Mermaid format)
-4. API contracts and data models
+3. Architecture document at docs/architecture/ARCH-{{issue}}.md
+4. Architecture diagrams (Mermaid format)
+5. API contracts and data models
 
 **Skills Available:**
 {skills}
@@ -92,6 +93,7 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
         # Get templates
         adr_template = self.templates.get_template("adr")
         spec_template = self.templates.get_template("spec")
+        arch_template = self.templates.get_template("arch")
         
         # Check if PRD exists
         prd_path = self.config.prd_dir / f"PRD-{issue['number']}.md"
@@ -108,25 +110,29 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
             "codebase_context": self._format_context(context),
         }
         
-        # Generate ADR and Spec
+        # Generate ADR, Spec, and Architecture
         if self.sdk:
             adr_content = self._generate_adr_with_sdk(issue, context, prd_content, adr_template)
             spec_content = self._generate_spec_with_sdk(issue, context, prd_content, spec_template)
+            arch_content = self._generate_arch_with_sdk(issue, context, prd_content, arch_template)
         else:
             adr_content = self.templates.render(adr_template, variables)
             spec_content = self.templates.render(spec_template, variables)
+            arch_content = self.templates.render(arch_template, variables)
         
         # Save outputs
         adr_path = self.get_output_path(issue["number"])
         spec_path = self.config.specs_dir / f"SPEC-{issue['number']}.md"
+        arch_path = self.config.architecture_dir / f"ARCH-{issue['number']}.md"
         
         self._save_output(adr_content, adr_path)
         self._save_output(spec_content, spec_path)
+        self._save_output(arch_content, arch_path)
         
         return {
             "success": True,
             "file_path": str(adr_path),
-            "files": [str(adr_path), str(spec_path)]
+            "files": [str(adr_path), str(spec_path), str(arch_path)]
         }
     
     def _generate_adr_with_sdk(self, issue: Dict[str, Any], context: Dict[str, Any], 
@@ -197,6 +203,49 @@ Generate a complete technical specification with architecture diagrams, API cont
         
         # Fallback to template
         logger.warning("SDK call returned no result for spec, falling back to template")
+        return self.templates.render(template, {
+            "issue_number": issue["number"],
+            "title": issue["title"],
+            "description": issue["body"] or "",
+        })
+    
+    def _generate_arch_with_sdk(self, issue: Dict[str, Any], context: Dict[str, Any],
+                                prd_content: str, template: str) -> str:
+        """Generate architecture document using Copilot SDK"""
+        
+        system_prompt = self.get_system_prompt()
+        user_prompt = f"""Create a comprehensive architecture document for this issue:
+
+**Issue #{issue['number']}: {issue['title']}**
+
+{issue['body'] or 'No description provided'}
+
+**PRD (if available):**
+{prd_content[:1000] if prd_content else 'No PRD available'}
+
+**Codebase Context:**
+{self._format_context(context)}
+
+**Template to follow:**
+{template}
+
+Generate a complete architecture document including:
+- System context and component diagrams
+- Technology stack and design patterns
+- Non-functional requirements analysis (scalability, performance, security)
+- Deployment architecture and data flow
+- Sequence diagrams for key scenarios
+- Testing strategy and risk mitigation
+"""
+        
+        # Use base class SDK helper
+        result = self._call_sdk(system_prompt, user_prompt)
+        
+        if result:
+            return result
+        
+        # Fallback to template
+        logger.warning("SDK call returned no result for architecture doc, falling back to template")
         return self.templates.render(template, {
             "issue_number": issue["number"],
             "title": issue["title"],

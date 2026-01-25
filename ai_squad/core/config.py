@@ -26,6 +26,7 @@ class Config:
             "prd_dir": "docs/prd",
             "adr_dir": "docs/adr",
             "specs_dir": "docs/specs",
+            "architecture_dir": "docs/architecture",
             "ux_dir": "docs/ux",
             "reviews_dir": "docs/reviews",
         },
@@ -210,6 +211,11 @@ class Config:
     def specs_dir(self) -> Path:
         """Get specs output directory"""
         return Path(self.get("output.specs_dir", "docs/specs"))
+    
+    @property
+    def architecture_dir(self) -> Path:
+        """Get architecture output directory"""
+        return Path(self.get("output.architecture_dir", "docs/architecture"))
     
     @property
     def ux_dir(self) -> Path:
