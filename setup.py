@@ -1,5 +1,7 @@
 """Setup script for AI-Squad"""
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+from setuptools.command.develop import develop
 from pathlib import Path
 
 # Read version
@@ -9,6 +11,44 @@ with open("ai_squad/__version__.py") as f:
 
 # Read README for long description
 readme = Path("README.md").read_text(encoding="utf-8")
+
+class PostInstallCommand(install):
+    """Post-installation checks for Copilot SDK compatibility."""
+
+    def run(self):
+        super().run()
+        self._post_install()
+
+    @staticmethod
+    def _post_install():
+        try:
+            from ai_squad.core.sdk_compat import ensure_copilot_sdk_compat
+
+            result = ensure_copilot_sdk_compat(auto_fix=True, allow_network=True)
+            if not result.ok:
+                print(f"WARN Copilot SDK compatibility check failed: {result.message}")
+        except Exception as exc:
+            print(f"WARN Copilot SDK compatibility check skipped: {exc}")
+
+
+class PostDevelopCommand(develop):
+    """Post-develop checks for Copilot SDK compatibility."""
+
+    def run(self):
+        super().run()
+        self._post_install()
+
+    @staticmethod
+    def _post_install():
+        try:
+            from ai_squad.core.sdk_compat import ensure_copilot_sdk_compat
+
+            result = ensure_copilot_sdk_compat(auto_fix=True, allow_network=True)
+            if not result.ok:
+                print(f"WARN Copilot SDK compatibility check failed: {result.message}")
+        except Exception as exc:
+            print(f"WARN Copilot SDK compatibility check skipped: {exc}")
+
 
 setup(
     name="ai-squad",
@@ -63,6 +103,10 @@ setup(
             "squad=ai_squad.cli:main",
             "ai-squad=ai_squad.cli:main",  # Alias
         ],
+    },
+    cmdclass={
+        "install": PostInstallCommand,
+        "develop": PostDevelopCommand,
     },
     classifiers=[
         "Development Status :: 4 - Beta",

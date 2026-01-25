@@ -412,23 +412,34 @@ class BaseAgent(ABC):
     def _get_skills(self) -> str:
         """Get relevant skills for this agent"""
         skills_config = self.config.get("skills", ["all"])
+        system_skills_dir = Path(__file__).parent.parent / "skills"
+        project_skills_dir = Path.cwd() / ".github" / "skills"
+
+        def load_skills_from_dir(root: Path, names: Optional[List[str]] = None) -> List[str]:
+            if not root.exists():
+                return []
+            skills = []
+            if names is None:
+                for skill_file in root.glob("**/SKILL.md"):
+                    skills.append(skill_file.read_text(encoding="utf-8"))
+                return skills
+            for skill_name in names:
+                skill_file = root / skill_name / "SKILL.md"
+                if skill_file.exists():
+                    skills.append(skill_file.read_text(encoding="utf-8"))
+            return skills
         
         if "all" in skills_config:
             # Load all skills
-            skills_dir = Path(__file__).parent.parent / "skills"
-            if skills_dir.exists():
-                skills = []
-                for skill_file in skills_dir.glob("**/SKILL.md"):
-                    skills.append(skill_file.read_text(encoding="utf-8"))
-                return "\n\n".join(skills)
+            skills = load_skills_from_dir(system_skills_dir)
+            skills.extend(load_skills_from_dir(project_skills_dir))
+            return "\n\n".join(skills)
         else:
             # Load specific skills
-            skills_dir = Path(__file__).parent.parent / "skills"
             skills = []
             for skill_name in skills_config:
-                skill_file = skills_dir / skill_name / "SKILL.md"
-                if skill_file.exists():
-                    skills.append(skill_file.read_text(encoding="utf-8"))
+                skills.extend(load_skills_from_dir(system_skills_dir, [skill_name]))
+                skills.extend(load_skills_from_dir(project_skills_dir, [skill_name]))
             return "\n\n".join(skills)
         
         return ""
@@ -445,10 +456,19 @@ class BaseAgent(ABC):
         """
         prompts_dir = Path(__file__).parent.parent / "prompts"
         prompt_file = prompts_dir / f"{prompt_name}.md"
-        
+        project_prompt_file = Path.cwd() / ".github" / "agents" / f"{prompt_name}.md"
+
+        base_prompt = ""
         if prompt_file.exists():
-            return prompt_file.read_text(encoding="utf-8")
-        return ""
+            base_prompt = prompt_file.read_text(encoding="utf-8")
+
+        if project_prompt_file.exists():
+            project_prompt = project_prompt_file.read_text(encoding="utf-8")
+            if base_prompt:
+                return f"{base_prompt}\n\n{project_prompt}"
+            return project_prompt
+
+        return base_prompt
     
     def _render_prompt(self, template: str, **kwargs) -> str:
         """

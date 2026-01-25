@@ -418,31 +418,38 @@ class BattlePlanExecutor:
         try:
             from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
             from pathlib import Path
-            
+
+            validation_cfg = {}
+            if hasattr(self.work_state_manager, "config") and isinstance(self.work_state_manager.config, dict):
+                validation_cfg = self.work_state_manager.config.get("validation", {}) or {}
+            enforce_prereqs = validation_cfg.get("enforce_battle_plan_prerequisites", False)
+
             workspace_root = Path.cwd()
             logger.info(f"Validating battle plan prerequisites for {strategy_name}")
-            
+
             # Validate each step's agent has prerequisites
             for phase in strategy.phases:
                 # Skip validation for PM (no prerequisites) and non-standard agents
                 if phase.agent in ["pm", "captain", "deacon", "witness", "refinery"]:
                     continue
-                
-                try:
-                    validate_agent_execution(
-                        agent_type=phase.agent,
-                        issue_number=issue_number,
-                        workspace_root=workspace_root,
-                        strict=True
-                    )
-                except PrerequisiteError as e:
-                    # Phase cannot execute - fail the battle plan
-                    logger.error(f"Battle plan validation failed at phase '{phase.name}': {e}")
+
+                result = validate_agent_execution(
+                    agent_type=phase.agent,
+                    issue_number=issue_number,
+                    workspace_root=workspace_root,
+                    strict=enforce_prereqs,
+                )
+                if enforce_prereqs and not result.valid:
+                    logger.error(f"Battle plan validation failed at phase '{phase.name}': {result.error_message}")
                     execution.status = "failed"
-                    execution.error = f"Prerequisite validation failed: {str(e)}"
-                    raise ValueError(f"Battle plan validation failed: {str(e)}")
-            
+                    execution.error = f"Prerequisite validation failed: {result.error_message}"
+                    raise ValueError(f"Battle plan validation failed: {result.error_message}")
+
             logger.info("Battle plan prerequisites validated successfully")
+        except PrerequisiteError as e:
+            if enforce_prereqs:
+                raise ValueError(f"Battle plan validation failed: {str(e)}")
+            logger.warning(f"Battle plan validation failed (non-blocking): {e}")
         except (ImportError, AttributeError) as e:
             logger.warning(f"Battle plan validation encountered error (non-blocking): {e}")
 

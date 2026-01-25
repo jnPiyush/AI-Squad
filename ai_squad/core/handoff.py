@@ -277,10 +277,30 @@ class HandoffManager:
             logger.error("Work item not found: %s", work_item_id)
             return None
         
+        # Normalize reason (allow raw strings from callers/tests)
+        if not isinstance(reason, HandoffReason):
+            try:
+                reason = HandoffReason(reason)
+            except ValueError:
+                # Preserve arbitrary text reasons while keeping type safety elsewhere
+                pass
+
+        # Normalize context input (tests may pass raw dict)
+        if context and not isinstance(context, HandoffContext):
+            context = HandoffContext(
+                summary=str(context),
+                current_state="",
+                next_steps=[],
+                blockers=[],
+                artifacts=[],
+                notes="",
+                data=context if isinstance(context, dict) else {}
+            )
+
         # PREREQUISITE VALIDATION - Validate handoff target has prerequisites
         # Prevents handing off to Engineer without PRD/ADR, for example
         # Skip validation for non-standard agents and captain (meta-agent)
-        if to_agent not in ["captain", "pm", "deacon", "witness", "refinery"]:
+        if work_item.issue_number and to_agent not in ["captain", "pm", "deacon", "witness", "refinery"]:
             try:
                 from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
                 
@@ -322,26 +342,6 @@ class HandoffManager:
                 return None
             except Exception as e:
                 logger.warning(f"Handoff validation encountered error (non-blocking): {e}")
-
-        # Normalize context input (tests may pass raw dict)
-        if context and not isinstance(context, HandoffContext):
-            context = HandoffContext(
-                summary=str(context),
-                current_state="",
-                next_steps=[],
-                blockers=[],
-                artifacts=[],
-                notes="",
-                data=context if isinstance(context, dict) else {}
-            )
-        
-        # Normalize reason (allow raw strings from callers/tests)
-        if not isinstance(reason, HandoffReason):
-            try:
-                reason = HandoffReason(reason)
-            except ValueError:
-                # Preserve arbitrary text reasons while keeping type safety elsewhere
-                pass
 
         # Create handoff
         handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"

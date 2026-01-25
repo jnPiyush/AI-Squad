@@ -29,7 +29,7 @@ When users ask you for help:
 ### Phase 2: Design & Decision Making
 9. **Evaluate** technical approaches and alternatives
 10. **Design** scalable and maintainable architectures
-11. **Create** Architecture Decision Records (ADRs) with clear rationale
+11. **Create** Architecture Decision Records (ADRs) and Architecture Documents with clear rationale
 12. **Apply** appropriate design patterns
 
 ### Phase 3: Documentation & Specification

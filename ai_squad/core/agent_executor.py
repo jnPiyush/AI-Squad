@@ -80,10 +80,17 @@ class AgentExecutor:
         # Initialize SDK - this is our primary choice for AI generation
         self.sdk = None
         self._sdk_initialized = False
-        
-        if SDK_AVAILABLE:
+
+        try:
+            from github_copilot_sdk import CopilotSDK as CopilotSDKRuntime
+            sdk_available = True
+        except ImportError:
+            CopilotSDKRuntime = None
+            sdk_available = False
+
+        if sdk_available and CopilotSDKRuntime:
             try:
-                self.sdk = CopilotSDK(token=self.github_token)
+                self.sdk = CopilotSDKRuntime(token=self.github_token)
                 self._sdk_initialized = True
             except (ConnectionError, TimeoutError, RuntimeError) as e:
                 warnings.warn(

@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [ -n "$AI_SQUAD_SKIP_SDK_VERSION_CHECK" ]; then
+  exit 0
+fi
+
+python scripts/check_copilot_sdk_version.py
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo "pre-push: Copilot SDK version check failed."
+  exit $status
+fi
+
+exit 0

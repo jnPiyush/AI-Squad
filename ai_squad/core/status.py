@@ -200,7 +200,11 @@ class StatusManager:
             issue = self.github.get_issue(issue_number)
             
             # Check labels first
-            labels = [label.get("name", "") for label in issue.get("labels", [])]
+            raw_labels = issue.get("labels", [])
+            labels = [
+                label.get("name", "") if isinstance(label, dict) else str(label)
+                for label in raw_labels
+            ]
             for label in labels:
                 if label.startswith("status:"):
                     status_str = label.replace("status:", "").replace("-", " ")
