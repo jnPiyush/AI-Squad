@@ -30,13 +30,13 @@ class CollaborationMode(str, Enum):
 def run_collaboration(
     issue_number: int, 
     agents: List[str],
-    mode: CollaborationMode = CollaborationMode.SEQUENTIAL,
+    mode: CollaborationMode = CollaborationMode.ITERATIVE,
     max_iterations: int = 3
 ) -> Dict[str, Any]:
     """
     Run multiple agents in collaboration with optional iterative dialogue.
     
-    Sequential Mode (default):
+    Iterative Mode (default - for 2 agents):
     - Validates agents are executed in correct dependency order
     - Each agent runs once in sequence
     - E.g., cannot run Engineer before Architect, Architect before PM
@@ -49,8 +49,8 @@ def run_collaboration(
     
     Args:
         issue_number: GitHub issue number
-        agents: List of agent types (must be exactly 2 for iterative mode)
-        mode: Collaboration mode (sequential or iterative)
+        agents: List of agent types (exactly 2 for iterative mode, 2+ for sequential)
+        mode: Collaboration mode (default: iterative)
         max_iterations: Maximum iteration rounds for iterative mode (default: 3)
         
     Returns:

@@ -24,25 +24,25 @@ class TestCollaborationModes:
         assert CollaborationMode.SEQUENTIAL == "sequential"
         assert CollaborationMode.ITERATIVE == "iterative"
     
-    def test_run_collaboration_defaults_to_sequential(self):
-        """Test run_collaboration uses sequential mode by default"""
-        with patch('ai_squad.core.collaboration._run_sequential_collaboration') as mock_seq:
-            mock_seq.return_value = {"success": True, "mode": "sequential"}
-            result = run_collaboration(123, ["pm", "architect"])
-            
-            assert result["success"]
-            assert result["mode"] == "sequential"
-            mock_seq.assert_called_once_with(123, ["pm", "architect"])
-    
-    def test_run_collaboration_iterative_mode(self):
-        """Test run_collaboration uses iterative mode when specified"""
+    def test_run_collaboration_defaults_to_iterative(self):
+        """Test run_collaboration uses iterative mode by default"""
         with patch('ai_squad.core.collaboration._run_iterative_collaboration') as mock_iter:
             mock_iter.return_value = {"success": True, "mode": "iterative"}
-            result = run_collaboration(123, ["pm", "architect"], mode=CollaborationMode.ITERATIVE)
+            result = run_collaboration(123, ["pm", "architect"])
             
             assert result["success"]
             assert result["mode"] == "iterative"
             mock_iter.assert_called_once()
+    
+    def test_run_collaboration_sequential_mode(self):
+        """Test run_collaboration uses sequential mode when specified"""
+        with patch('ai_squad.core.collaboration._run_sequential_collaboration') as mock_seq:
+            mock_seq.return_value = {"success": True, "mode": "sequential"}
+            result = run_collaboration(123, ["pm", "architect", "engineer"], mode=CollaborationMode.SEQUENTIAL)
+            
+            assert result["success"]
+            assert result["mode"] == "sequential"
+            mock_seq.assert_called_once()
 
 
 class TestSequentialCollaboration:
@@ -311,12 +311,12 @@ class TestBackwardCompatibility:
     """Test backward compatibility with legacy code"""
     
     def test_run_collaboration_without_mode_parameter(self):
-        """Test that run_collaboration works without mode parameter"""
-        with patch('ai_squad.core.collaboration._run_sequential_collaboration') as mock_seq:
-            mock_seq.return_value = {"success": True, "mode": "sequential"}
+        """Test that run_collaboration defaults to iterative when no mode specified"""
+        with patch('ai_squad.core.collaboration._run_iterative_collaboration') as mock_iter:
+            mock_iter.return_value = {"success": True, "mode": "iterative"}
             
             # Old API: run_collaboration(issue, agents)
             result = run_collaboration(123, ["pm", "architect"])
             
             assert result["success"]
-            assert mock_seq.called
+            assert mock_iter.called

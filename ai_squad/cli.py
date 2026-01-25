@@ -282,24 +282,25 @@ def review(pr_number):
 @main.command(name="joint-op")
 @click.argument("issue_number", type=int)
 @click.argument("agents", nargs=-1, required=True)
-@click.option("--iterative", "-i", is_flag=True, help="Enable iterative dialogue mode (2 agents only)")
-@click.option("--max-iterations", "-m", default=3, type=int, help="Max iteration rounds for iterative mode")
-def joint_op(issue_number, agents, iterative, max_iterations):
+@click.option("--sequential", "-s", is_flag=True, help="Use sequential mode (no dialogue, 2+ agents)")
+@click.option("--max-iterations", "-m", default=3, type=int, help="Max iteration rounds (default: 3)")
+def joint_op(issue_number, agents, sequential, max_iterations):
     """Multi-agent joint operation
     
-    Sequential Mode (default):
-      Agents execute in dependency order without interaction
-      Example: squad joint-op 123 pm architect engineer
-    
-    Iterative Mode (--iterative):
+    Iterative Mode (default - 2 agents):
       Two agents engage in back-and-forth dialogue with feedback
-      Example: squad joint-op 123 pm architect --iterative
-    """
-    mode = CollaborationMode.ITERATIVE if iterative else CollaborationMode.SEQUENTIAL
+      Example: squad joint-op 123 pm architect
     
-    if iterative and len(agents) != 2:
-        console.print("[bold red]FAIL: Iterative mode requires exactly 2 agents[/bold red]")
-        console.print("[yellow]Example: squad joint-op 123 pm architect --iterative[/yellow]")
+    Sequential Mode (--sequential - 2+ agents):
+      Agents execute in dependency order without interaction
+      Example: squad joint-op 123 pm architect engineer --sequential
+    """
+    mode = CollaborationMode.SEQUENTIAL if sequential else CollaborationMode.ITERATIVE
+    
+    if not sequential and len(agents) != 2:
+        console.print("[bold red]FAIL: Iterative mode (default) requires exactly 2 agents[/bold red]")
+        console.print("[yellow]Iterative: squad joint-op 123 pm architect[/yellow]")
+        console.print("[yellow]Sequential: squad joint-op 123 pm architect engineer --sequential[/yellow]")
         sys.exit(1)
     
     console.print(

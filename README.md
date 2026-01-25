@@ -390,31 +390,37 @@ squad dashboard
 
 Agents can work together in two modes:
 
-**Sequential Mode (Default):**
+**Iterative Mode (Default - 2 agents):**
 ```bash
-# Agents execute in dependency order without interaction
-squad joint-op 100 pm architect engineer
-# Flow: PM → Architect → Engineer (one-way execution)
-```
-
-**Iterative Mode (Back-and-Forth Dialogue):**
-```bash
-# Two agents engage in iterative dialogue with feedback
-squad joint-op 100 pm architect --iterative
+# Two agents engage in back-and-forth dialogue with feedback (DEFAULT)
+squad joint-op 100 pm architect
 
 # Flow:
 # 1. PM creates PRD
-# 2. Architect reviews and provides feedback
+# 2. Architect reviews and provides feedback via Signal
 # 3. PM iterates based on feedback
 # 4. Repeat until approved or max iterations (default: 3)
 # 5. Collaboration complete with conversation history
 ```
 
+**Sequential Mode (2+ agents):**
+```bash
+# Agents execute in dependency order without interaction
+squad joint-op 100 pm architect engineer --sequential
+# Flow: PM → Architect → Engineer (one-way execution)
+```
+
+**Configuration:**
+- **Max Iterations**: 3 (default) - Configure with `--max-iterations N`
+- **Approval Detection**: Keywords like "approved", "LGTM", "looks good"
+- **Feedback Tracking**: All conversations logged with timestamps
+- **Signal-based Communication**: Uses Signal system for agent messaging
+
 **Features:**
 - **Feedback Loops**: Reviewer provides constructive feedback via Signals
 - **Iteration Tracking**: Full conversation history preserved
 - **Approval Detection**: Automatic approval when reviewer satisfied
-- **Max Iterations**: Prevents infinite loops (configurable)
+- **Max Iterations**: Prevents infinite loops (configurable with `--max-iterations`)
 - **Thread Tracking**: All messages linked in conversation thread
 
 ### 🗡️ 18 Production Skills
