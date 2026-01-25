@@ -735,6 +735,35 @@ Always provide clear, structured coordination plans.
         summary += f"- Routing: {routing_source}\n"
         summary += "- Collaboration: coordinate via handoff and delegation\n"
         
+        # EXECUTE AGENTS VIA COLLABORATION (Battle Plan)
+        summary += "\n### Executing Mission\n"
+        if sequence:
+            try:
+                from ai_squad.core.collaboration import run_collaboration
+                
+                logger.info(f"Captain deploying agents for issue #{issue_number}: {sequence}")
+                summary += f"- Deploying agents: {' → '.join(sequence)}\n"
+                
+                # Execute agents in Battle Plan sequence
+                collab_result = run_collaboration(issue_number, sequence)
+                
+                if collab_result.get("success"):
+                    summary += "- ✅ Mission completed successfully!\n"
+                    summary += f"- Files created: {len(collab_result.get('files', []))}\n"
+                    for result in collab_result.get("results", []):
+                        agent = result.get("agent")
+                        success = result.get("result", {}).get("success")
+                        status = "✅" if success else "❌"
+                        summary += f"  {status} {agent}\n"
+                else:
+                    summary += f"- ⚠️ Mission failed: {collab_result.get('error')}\n"
+                    
+            except Exception as e:
+                logger.error(f"Captain agent execution failed: {e}")
+                summary += f"- ❌ Execution error: {str(e)}\n"
+        else:
+            summary += "- No agent sequence determined, manual coordination required\n"
+        
         return summary
     
     def coordinate(

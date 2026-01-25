@@ -199,8 +199,9 @@ This creates:
 # 2. Creates Mission Brief in GitHub
 # 3. Breaks down into Mission Objectives
 # 4. 🎖️ DEPLOYS TO CAPTAIN for orchestration
-# 5. Captain uses Battle Plans & Convoys
-# 6. Agents execute via handoffs
+# 5. Captain selects Battle Plan (feature/epic workflow)
+# 6. Captain executes agents via collaboration: PM → Architect → Engineer → UX → Reviewer
+# 7. Multi-agent team collaborates to complete mission!
 
 squad auto -p "Create a REST API for user management with authentication"
 

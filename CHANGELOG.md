@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - PM validates mission as **EPIC** or **FEATURE**
   - Creates **Mission Brief** and **Mission Objectives** in GitHub
   - **🎖️ DEPLOYS TO CAPTAIN** for orchestration using Battle Plans
-  - Captain coordinates agents via handoffs and Convoys
+  - **Captain EXECUTES agents via collaboration** (PM → Architect → Engineer → UX → Reviewer)
+  - Multi-agent team collaboration using Battle Plan sequence
   - Maintains military theme: Captain, Battle Plans, Work Items, Convoys
   - Respects existing orchestration architecture
   - Optional `--plan-only` flag to create mission brief without Captain deployment

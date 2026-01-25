@@ -48,14 +48,14 @@ squad captain <mission-issue-number>
    - Selects appropriate Battle Plan
    - Creates Work Items for tracking
    - Organizes into Convoys (parallel batches)
-   - Dispatches agents via handoffs:
+   - **EXECUTES agents via collaboration**:
      * PM: Creates PRD
      * Architect: Creates ADR and specs
      * Engineer: Implements with tests
      * UX: Creates designs (if UI)
      * Reviewer: Reviews and creates PRs
    ↓
-6. Captain tracks progress and coordinates completion
+6. Multi-agent team completes mission with Captain coordination
 ```
 
 ### What Gets Created
