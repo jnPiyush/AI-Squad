@@ -2,7 +2,7 @@
 
 ## Overview
 
-Autonomous Mode (`squad auto`) enables true autonomous app development by accepting your requirements and handling the entire workflow from issue creation to execution.
+Autonomous Mode (`squad mission`) enables true autonomous app development by accepting your requirements and handling the entire workflow from issue creation to execution.
 
 **No more manual issue creation!** Just describe what you want, and Squad takes care of everything.
 
@@ -14,16 +14,16 @@ Autonomous Mode (`squad auto`) enables true autonomous app development by accept
 
 ```bash
 # Inline mission brief (DEPLOYS TO CAPTAIN - full orchestration)
-squad auto -p "Create a REST API for user management"
+squad mission -p "Create a REST API for user management"
 
 # From mission brief file
-squad auto -f mission-brief.txt
+squad mission -f mission-brief.txt
 
 # Interactive mission briefing
-squad auto -i
+squad mission -i
 
 # Create mission brief only (manual Captain deployment)
-squad auto -p "Add authentication system" --plan-only
+squad mission -p "Add authentication system" --plan-only
 # Then deploy manually:
 squad captain <mission-issue-number>
 ```
@@ -80,9 +80,9 @@ squad captain <mission-issue-number>
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `--prompt` / `-p` | Inline requirement text | `squad auto -p "Create user auth"` |
-| `--file` / `-f` | Requirements from file | `squad auto -f requirements.txt` |
-| `--interactive` / `-i` | Interactive input mode | `squad auto -i` |
+| `--prompt` / `-p` | Inline requirement text | `squad mission -p "Create user auth"` |
+| `--file` / `-f` | Requirements from file | `squad mission -f requirements.txt` |
+| `--interactive` / `-i` | Interactive input mode | `squad mission -i` |
 
 ### Execution Options
 
@@ -97,7 +97,7 @@ squad captain <mission-issue-number>
 ### Example 1: Simple Feature
 
 ```bash
-squad auto -p "Create a health check endpoint that returns server status"
+squad mission -p "Create a health check endpoint that returns server status"
 ```
 
 **Creates:**
@@ -117,7 +117,7 @@ As an admin, I want to manage user roles
 ```
 
 ```bash
-squad auto -f requirements.txt --auto-execute
+squad mission -f requirements.txt --auto-execute
 ```
 
 **Creates:**
@@ -131,7 +131,7 @@ squad auto -f requirements.txt --auto-execute
 ### Example 3: Interactive Mode
 
 ```bash
-squad auto -i
+squad mission -i
 ```
 
 **You type:**
@@ -211,7 +211,7 @@ squad review <pr>
 
 ```bash
 # One command does everything!
-squad auto -p "Implement Feature X" --auto-execute
+squad mission -p "Implement Feature X" --auto-execute
 ```
 
 **Benefits:**
@@ -288,7 +288,7 @@ squad dashboard
 cat requirements.txt
 
 # Provide non-empty prompt
-squad auto -p "Your requirement here"
+squad mission -p "Your requirement here"
 ```
 
 ### "Must provide requirements via --prompt, --file, or --interactive"
@@ -297,9 +297,9 @@ squad auto -p "Your requirement here"
 
 **Fix:** Choose ONE input method:
 ```bash
-squad auto -p "..."     # Inline
-squad auto -f file.txt  # File
-squad auto -i           # Interactive
+squad mission -p "..."     # Inline
+squad mission -f file.txt  # File
+squad mission -i           # Interactive
 ```
 
 ### "Use only ONE input method"
@@ -309,10 +309,10 @@ squad auto -i           # Interactive
 **Fix:** Use only one:
 ```bash
 # WRONG
-squad auto -p "..." -f file.txt
+squad mission -p "..." -f file.txt
 
 # CORRECT
-squad auto -p "..."
+squad mission -p "..."
 ```
 
 ---
@@ -330,7 +330,7 @@ squad architect 123
 
 **After:**
 ```bash
-squad auto -p "Feature: Description" --auto-execute
+squad mission -p "Feature: Description" --auto-execute
 ```
 
 ### If you have existing requirements docs:
@@ -338,7 +338,7 @@ squad auto -p "Feature: Description" --auto-execute
 ```bash
 # Convert your docs to requirements.txt format
 # Then run:
-squad auto -f requirements.txt --auto-execute
+squad mission -f requirements.txt --auto-execute
 ```
 
 ---
@@ -349,7 +349,7 @@ squad auto -f requirements.txt --auto-execute
 
 ```bash
 # Create issues, then review before executing
-squad auto -f requirements.txt
+squad mission -f requirements.txt
 # Review issues in GitHub
 gh issue list --label "ai-squad:auto"
 # Manually run captain if satisfied
@@ -368,7 +368,7 @@ gh issue edit <issue> --add-label "priority:high"
 
 ## Next Steps
 
-- Try `squad auto -i` for interactive requirements gathering
+- Try `squad mission -i` for interactive requirements gathering
 - Use `--auto-execute` for full autonomous development
 - Monitor progress with `squad dashboard`
 - Review output issues in GitHub

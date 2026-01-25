@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **TRUE AUTONOMOUS DEVELOPMENT** - The game changer for AI-Squad!
 
-- **Squad Mission Mode (`squad auto`)**: Revolutionary autonomous workflow
+- **Squad Mission Mode (`squad mission`)**: Revolutionary autonomous workflow
   - Provide mission brief via `--prompt`, `--file`, or `--interactive`
   - PM validates mission as **EPIC** or **FEATURE**
   - Automatically creates **Mission Brief** and **Mission Objectives** in GitHub
@@ -89,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **🎖️ Squad Mission Mode**: New `squad auto` command with military-themed autonomous workflow!
+- **🎖️ Squad Mission Mode**: New `squad mission` command with military-themed autonomous workflow!
   - Accept mission brief via `--prompt`, `--file`, or `--interactive`
   - PM validates mission as **EPIC** or **FEATURE**
   - Creates **Mission Brief** and **Mission Objectives** in GitHub
@@ -100,10 +100,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Respects existing orchestration architecture
   - Optional `--plan-only` flag to create mission brief without Captain deployment
   - Examples:
-    - `squad auto -p "Create REST API"` (full Captain deployment!)
-    - `squad auto -f mission-brief.txt` (mission from file)
-    - `squad auto -i` (interactive mission briefing)
-    - `squad auto -p "..." --plan-only` (just create brief)
+    - `squad mission -p "Create REST API"` (full Captain deployment!)
+    - `squad mission -f mission-brief.txt` (mission from file)
+    - `squad mission -i` (interactive mission briefing)
+    - `squad mission -p "..." --plan-only` (just create brief)
 
 ### Fixed
 - **Import Issue**: Fixed incorrect import of GitHub Copilot SDK

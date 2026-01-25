@@ -205,16 +205,16 @@ This creates:
 # 6. Captain executes agents via collaboration: PM → Architect → Engineer → UX → Reviewer
 # 7. Multi-agent team collaborates to complete mission!
 
-squad auto -p "Create a REST API for user management with authentication"
+squad mission -p "Create a REST API for user management with authentication"
 
 # From a file
-squad auto -f mission-brief.txt
+squad mission -f mission-brief.txt
 
 # Interactive mode
-squad auto -i
+squad mission -i
 
 # Create mission brief only (manual Captain deployment)
-squad auto -p "Add payment integration" --plan-only
+squad mission -p "Add payment integration" --plan-only
 ```
 
 **Individual Agent Commands:**

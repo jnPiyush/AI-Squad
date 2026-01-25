@@ -24,7 +24,7 @@ AI-Squad includes five expert agents that work together to deliver complete feat
 
 ```bash
 # Provide mission brief - Captain orchestrates the entire team!
-squad auto -p "Create a REST API for task management with CRUD operations"
+squad mission -p "Create a REST API for task management with CRUD operations"
 ```
 
 ### What Happens:

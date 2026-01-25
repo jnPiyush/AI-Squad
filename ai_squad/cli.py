@@ -502,7 +502,7 @@ def clarify(issue_number):
 @click.option("--file", "-f", type=click.Path(exists=True), help="Mission brief file path")
 @click.option("--interactive", "-i", is_flag=True, help="Interactive mission briefing")
 @click.option("--plan-only", is_flag=True, help="Only create mission brief, don't deploy to Captain")
-def auto(prompt, file, interactive, plan_only):
+def mission(prompt, file, interactive, plan_only):
     """
     SQUAD MISSION MODE - Deploy autonomous development missions
     
@@ -518,10 +518,10 @@ def auto(prompt, file, interactive, plan_only):
     By default, FULL DEPLOYMENT. Use --plan-only to create brief only.
     
     Examples:
-        squad auto -p "Create a REST API for user management"
-        squad auto -f mission-brief.txt
-        squad auto -i
-        squad auto -p "Add authentication" --plan-only  # Create brief only
+        squad mission -p "Create a REST API for user management"
+        squad mission -f mission-brief.txt
+        squad mission -i
+        squad mission -p "Add authentication" --plan-only  # Create brief only
     """
     print_banner()
     
@@ -530,9 +530,9 @@ def auto(prompt, file, interactive, plan_only):
     if input_count == 0:
         console.print("[bold red]Error: Must provide mission brief via --prompt, --file, or --interactive[/bold red]")
         console.print("\n[yellow]Examples:[/yellow]")
-        console.print("  squad auto -p \"Create user management API\"")
-        console.print("  squad auto -f mission-brief.txt")
-        console.print("  squad auto -i")
+        console.print("  squad mission -p \"Create user management API\"")
+        console.print("  squad mission -f mission-brief.txt")
+        console.print("  squad mission -i")
         sys.exit(1)
     
     if input_count > 1:
