@@ -635,7 +635,7 @@ class SignalManager:
         return {
             "total_messages": total_messages,
             "by_status": status_counts,
-            "by_Signal": Signal_stats
+            "by_signal": Signal_stats
         }
 
 
