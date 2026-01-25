@@ -38,6 +38,7 @@ from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.delegation import DelegationManager
 from ai_squad.core.router import OrgRouter, PolicyRule, HealthConfig
 from ai_squad.core.reporting import ReportManager
+from ai_squad.core.validation import validate_agent_execution, PrerequisiteError, ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -205,6 +206,37 @@ class AgentExecutor:
                 "success": False,
                 "error": f"Unknown agent type: {agent_type}. Available: {list(self.agents.keys())}"
             }
+        
+        # PREREQUISITE VALIDATION - Added to fix workflow enforcement bug
+        # Validates that required documents (PRD, ADR, SPEC) exist before agent execution
+        # Prevents Engineer from running without PRD/ADR, etc.
+        # Skip validation for Captain (meta-agent coordinator) and PM (no prerequisites)
+        if agent_type not in ["captain", "pm"]:
+            try:
+                from pathlib import Path
+                workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
+                
+                logger.info(f"Validating prerequisites for {agent_type} (issue={issue_number})")
+                validate_agent_execution(
+                    agent_type=agent_type,
+                    issue_number=issue_number,
+                    workspace_root=workspace_root,
+                    strict=True  # Raise exception if validation fails
+                )
+                logger.info(f"Prerequisites validated successfully for {agent_type}")
+                
+            except PrerequisiteError as e:
+                # Prerequisite validation failed - return detailed error
+                logger.error(f"Prerequisite validation failed: {e}")
+                return {
+                    "success": False,
+                    "error": str(e),
+                    "error_type": "prerequisite_validation",
+                    "using_sdk": self.using_sdk
+                }
+            except Exception as e:
+                # Unexpected validation error - log but don't block
+                logger.warning(f"Prerequisite validation encountered error (non-blocking): {e}")
         
         if self.org_router and agent_type != "captain":
             enforce_cli = self.orchestration.get("routing_config", {}).get("enforce_cli_routing", False)

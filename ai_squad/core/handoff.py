@@ -249,6 +249,10 @@ class HandoffManager:
         """
         Initiate a handoff from one agent to another.
         
+        Validates that prerequisite work (PRD, ADR, SPEC) exists before
+        handing off to dependent agents. Prevents handing off to Engineer
+        without PRD/ADR, for example.
+        
         Args:
             work_item_id: ID of work item being handed off
             from_agent: Source agent
@@ -272,6 +276,52 @@ class HandoffManager:
         if not work_item:
             logger.error("Work item not found: %s", work_item_id)
             return None
+        
+        # PREREQUISITE VALIDATION - Validate handoff target has prerequisites
+        # Prevents handing off to Engineer without PRD/ADR, for example
+        # Skip validation for non-standard agents and captain (meta-agent)
+        if to_agent not in ["captain", "pm", "deacon", "witness", "refinery"]:
+            try:
+                from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
+                
+                logger.info(f"Validating handoff prerequisites: {from_agent} → {to_agent} (issue={work_item.issue_number})")
+                validate_agent_execution(
+                    agent_type=to_agent,
+                    issue_number=work_item.issue_number,
+                    workspace_root=self.workspace_root,
+                    strict=True
+                )
+                logger.info(f"Handoff prerequisites validated: {to_agent} ready to receive work")
+                
+            except PrerequisiteError as e:
+                # Prerequisite validation failed - cannot hand off
+                logger.error(f"Handoff blocked due to missing prerequisites: {e}")
+                
+                # Create failed handoff record for audit trail
+                handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"
+                handoff = Handoff(
+                    id=handoff_id,
+                    work_item_id=work_item_id,
+                    from_agent=from_agent,
+                    to_agent=to_agent,
+                    reason=reason,
+                    context=context,
+                    priority=priority,
+                    requires_ack=requires_ack,
+                    metadata={"validation_error": str(e)},
+                )
+                handoff.status = HandoffStatus.REJECTED.value
+                handoff.add_audit_entry(
+                    action="validation_failed",
+                    agent="system",
+                    details=f"Handoff rejected: {str(e)}"
+                )
+                self._handoffs[handoff_id] = handoff
+                self._save_state()
+                
+                return None
+            except Exception as e:
+                logger.warning(f"Handoff validation encountered error (non-blocking): {e}")
 
         # Normalize context input (tests may pass raw dict)
         if context and not isinstance(context, HandoffContext):

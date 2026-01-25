@@ -413,6 +413,39 @@ class BattlePlanExecutor:
         if not strategy:
             raise ValueError(f"Battle plan not found: {strategy_name}")
 
+        # PREREQUISITE VALIDATION - Validate battle plan steps respect dependencies
+        # Check that each step's prerequisites are satisfied before execution
+        try:
+            from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
+            from pathlib import Path
+            
+            workspace_root = Path.cwd()
+            logger.info(f"Validating battle plan prerequisites for {strategy_name}")
+            
+            # Validate each step's agent has prerequisites
+            for phase in strategy.phases:
+                # Skip validation for PM (no prerequisites) and non-standard agents
+                if phase.agent in ["pm", "captain", "deacon", "witness", "refinery"]:
+                    continue
+                
+                try:
+                    validate_agent_execution(
+                        agent_type=phase.agent,
+                        issue_number=issue_number,
+                        workspace_root=workspace_root,
+                        strict=True
+                    )
+                except PrerequisiteError as e:
+                    # Phase cannot execute - fail the battle plan
+                    logger.error(f"Battle plan validation failed at phase '{phase.name}': {e}")
+                    execution.status = "failed"
+                    execution.error = f"Prerequisite validation failed: {str(e)}"
+                    raise ValueError(f"Battle plan validation failed: {str(e)}")
+            
+            logger.info("Battle plan prerequisites validated successfully")
+        except (ImportError, AttributeError) as e:
+            logger.warning(f"Battle plan validation encountered error (non-blocking): {e}")
+
         while True:
             ready_steps = self.get_next_steps(execution.id)
             if not ready_steps:
