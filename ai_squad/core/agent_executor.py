@@ -114,22 +114,7 @@ class AgentExecutor:
             workspace_root=workspace_root,
             config=self.config.data,
         )
-    
-    @staticmethod
-    def _check_gh_oauth() -> bool:
-        """Check if gh CLI is authenticated via OAuth"""
-        import subprocess
-        try:
-            result = subprocess.run(
-                ["gh", "auth", "status"],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                check=False
-            )
-            return result.returncode == 0
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            return False
+        
         self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root, config=self.config.data)
         self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root, config=self.config.data)
         self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr, config=self.config.data)
@@ -209,6 +194,22 @@ class AgentExecutor:
             "reviewer": ReviewerAgent(self.config, self.sdk, self.orchestration),
             "captain": Captain(self.config, self.sdk, self.orchestration),
         }
+    
+    @staticmethod
+    def _check_gh_oauth() -> bool:
+        """Check if gh CLI is authenticated via OAuth"""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
     
     @property
     def using_sdk(self) -> bool:
