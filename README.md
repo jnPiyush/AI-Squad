@@ -93,7 +93,7 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant Dev as 👩‍💻 Developer
+    participant Dev as ⭐ High Command
     participant CLI as 🖥️ CLI
     participant Captain as 🎖️ Captain
     participant Router as 🧭 Router
@@ -257,7 +257,8 @@ Here's how Squad Mission Mode orchestrates your entire development lifecycle:
 ```mermaid
 graph TB
     subgraph "1️⃣ Mission Submission"
-        User["👤 Developer"] -->|"squad auto -p 'requirements'"| Auto["🎖️ Squad Mission Mode"]
+        User["⭐ High Command"] -->|"squad auto -p 'requirements'"| Auto["🎖️ Squad Mission Mode"]
+    end
     end
     
     subgraph "2️⃣ Mission Analysis"
@@ -691,7 +692,7 @@ graph TB
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Developer                                                │
+│ High Command                                             │
 │   ↓                                                      │
 │ squad captain 123                                        │
 │   ↓                                                      │

@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Complete Workflow**:
   ```
-  Mission Brief → PM Analysis → GitHub Issues → Captain Deployment
+  High Command provides Mission Brief → PM Analysis → GitHub Issues → Captain Deployment
        ↓
   Captain selects Battle Plan → Creates Work Items → Organizes Convoys
        ↓

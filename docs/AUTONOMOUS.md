@@ -35,7 +35,7 @@ squad captain <mission-issue-number>
 ### Workflow (🎖️ SQUAD MISSION - CAPTAIN DEPLOYMENT)
 
 ```
-1. You provide mission brief (inline, file, or interactive)
+1. High Command provides mission brief (inline, file, or interactive)
    ↓
 2. PM validates mission type (epic vs feature)
    ↓
