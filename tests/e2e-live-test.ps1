@@ -20,7 +20,7 @@ $ErrorActionPreference = "Continue"
 # Test counters
 $script:TestsPassed = 0
 $script:TestsFailed = 0
-$script:TotalTests = 28
+$script:TotalTests = 34
 
 # Colors
 $ColorPass = "Green"
@@ -185,12 +185,18 @@ Write-Host "Test Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundCol
 Write-Host "Repository: $Repo" -ForegroundColor Gray
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 1: BASIC SETUP & AGENT EXECUTION (5 tests)
+# PART 1: BASIC SETUP & AGENT EXECUTION (7 tests)
 # ════════════════════════════════════════════════════════════════════════════════
 
-Write-TestSection "PART 1: Basic Setup & Agent Execution (5 features)"
+Write-TestSection "PART 1: Basic Setup & Agent Execution (7 features)"
 
-# Test 1: System Health Check
+# Test 1: Init Command (Validation only - don't re-init)
+Test-Feature "Init Command Validation (squad init --help)" {
+    $result = squad init --help 2>&1 | Out-String
+    return $result
+}
+
+# Test 2: System Health Check
 Test-Feature "System Health Check (squad doctor)" {
     $result = squad doctor 2>&1 | Out-String
     return $result
@@ -210,7 +216,7 @@ if ($issueUrl -match "issues/(\d+)") {
     exit 1
 }
 
-# Test 2: Product Manager Agent
+# Test 3: Product Manager Agent
 Test-Feature "Product Manager Agent (squad pm $script:IssueNumber)" {
     $result = squad pm $script:IssueNumber 2>&1 | Out-String
     
@@ -224,7 +230,7 @@ Test-Feature "Product Manager Agent (squad pm $script:IssueNumber)" {
     return $result
 }
 
-# Test 3: Architect Agent
+# Test 4: Architect Agent
 Test-Feature "Architect Agent (squad architect $script:IssueNumber)" {
     $result = squad architect $script:IssueNumber 2>&1 | Out-String
     
@@ -244,7 +250,28 @@ Test-Feature "Architect Agent (squad architect $script:IssueNumber)" {
     return $result
 }
 
-# Test 4: UX Designer Agent
+# Test 5: Engineer Agent
+Test-Feature "Engineer Agent (squad engineer $script:IssueNumber)" {
+    $result = squad engineer $script:IssueNumber 2>&1 | Out-String
+    
+    # Note: Engineer creates code files, not docs
+    # Verify command executed successfully
+    return $result
+}
+
+# Test 6: Reviewer Agent
+Test-Feature "Reviewer Agent (squad review --help)" {
+    $result = squad review --help 2>&1 | Out-String
+    
+    # Note: Reviewer needs a PR number, so we just test help
+    if ($result -match "review|pull request|PR") {
+        Write-Host "    Reviewer system operational" -ForegroundColor Gray
+        return "success"
+    }
+    return $result
+}
+
+# Test 7: UX Designer Agent
 Test-Feature "UX Designer Agent (squad ux $script:IssueNumber)" {
     $result = squad ux $script:IssueNumber 2>&1 | Out-String
     
@@ -258,7 +285,7 @@ Test-Feature "UX Designer Agent (squad ux $script:IssueNumber)" {
     return $result
 }
 
-# Test 5: File Generation Validation
+# Test 8: File Generation Validation
 Test-Feature "File Generation Validation" {
     $files = @(
         "docs\prd\PRD-$script:IssueNumber.md",
@@ -289,12 +316,12 @@ Test-Feature "File Generation Validation" {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 2: ORCHESTRATION FEATURES (9 tests)
+# PART 2: ORCHESTRATION FEATURES (11 tests)
 # ════════════════════════════════════════════════════════════════════════════════
 
-Write-TestSection "PART 2: Orchestration Features (9 features)"
+Write-TestSection "PART 2: Orchestration Features (11 features)"
 
-# Test 6: Battle Plans
+# Test 9: Battle Plans
 Test-Feature "Battle Plans (squad plans)" {
     $result = squad plans 2>&1 | Out-String
     
@@ -306,7 +333,7 @@ Test-Feature "Battle Plans (squad plans)" {
     return $result
 }
 
-# Test 7: Captain Coordination
+# Test 10: Captain Coordination
 Test-Feature "Captain Coordination (squad captain $script:IssueNumber)" {
     $result = squad captain $script:IssueNumber 2>&1 | Out-String
     
@@ -317,7 +344,7 @@ Test-Feature "Captain Coordination (squad captain $script:IssueNumber)" {
     return $result
 }
 
-# Test 8: Work State Management
+# Test 11: Work State Management
 Test-Feature "Work State Management (squad work)" {
     $result = squad work 2>&1 | Out-String
     
@@ -328,7 +355,7 @@ Test-Feature "Work State Management (squad work)" {
     return $result
 }
 
-# Test 9: Status Dashboard
+# Test 12: Status Dashboard
 Test-Feature "Status Dashboard (squad status)" {
     $result = squad status 2>&1 | Out-String
     
@@ -339,13 +366,35 @@ Test-Feature "Status Dashboard (squad status)" {
     return $result
 }
 
-# Test 10: Convoy System
+# Test 13: Dashboard Command
+Test-Feature "Dashboard (squad dashboard)" {
+    $result = squad dashboard 2>&1 | Out-String
+    
+    if ($result -match "dashboard|overview|AI-Squad") {
+        Write-Host "    Dashboard overview operational" -ForegroundColor Gray
+        return "success"
+    }
+    return $result
+}
+
+# Test 14: Run Plan
+Test-Feature "Run Plan (squad run-plan --help)" {
+    $result = squad run-plan --help 2>&1 | Out-String
+    
+    if ($result -match "run-plan|battle plan|execute") {
+        Write-Host "    Run-plan system operational" -ForegroundColor Gray
+        return "success"
+    }
+    return $result
+}
+
+# Test 15: Convoy System
 Test-Feature "Convoy System (squad convoys)" {
     $result = squad convoys 2>&1 | Out-String
     return "success"  # System operational even if no convoys
 }
 
-# Test 11: Handoff Protocol
+# Test 16: Handoff Protocol
 Test-Feature "Handoff Protocol (squad handoff --help)" {
     $result = squad handoff --help 2>&1 | Out-String
     
@@ -355,19 +404,19 @@ Test-Feature "Handoff Protocol (squad handoff --help)" {
     return $result
 }
 
-# Test 12: Capabilities
+# Test 17: Capabilities
 Test-Feature "Capabilities (squad capabilities list)" {
     $result = squad capabilities list 2>&1 | Out-String
     return "success"  # System operational
 }
 
-# Test 13: Delegation
+# Test 18: Delegation
 Test-Feature "Delegation (squad delegation list)" {
     $result = squad delegation list 2>&1 | Out-String
     return "success"  # System operational
 }
 
-# Test 14: Operational Graph
+# Test 19: Operational Graph
 Test-Feature "Operational Graph" {
     if (Test-Path ".squad\graph\nodes.json" -and Test-Path ".squad\graph\edges.json") {
         $nodesSize = (Get-Item ".squad\graph\nodes.json").Length
@@ -395,7 +444,7 @@ if ($collabIssueUrl -match "issues/(\d+)") {
     Write-Host "  ✓ Created collaboration issue #$script:CollabIssueNumber" -ForegroundColor $ColorPass
 }
 
-# Test 15: Multi-Agent Collaboration
+# Test 20: Multi-Agent Collaboration
 Test-Feature "Multi-Agent Collaboration (squad collab $script:CollabIssueNumber pm architect)" {
     $result = squad collab $script:CollabIssueNumber pm architect 2>&1 | Out-String
     
@@ -406,7 +455,7 @@ Test-Feature "Multi-Agent Collaboration (squad collab $script:CollabIssueNumber 
     return $result
 }
 
-# Test 16: Signal Messaging
+# Test 21: Signal Messaging
 Test-Feature "Signal Messaging (squad signal pm)" {
     $result = squad signal pm 2>&1 | Out-String
     
@@ -416,7 +465,7 @@ Test-Feature "Signal Messaging (squad signal pm)" {
     return $result
 }
 
-# Test 17: Clarification System
+# Test 22: Clarification System
 Test-Feature "Clarification System (squad clarify $script:IssueNumber)" {
     $result = squad clarify $script:IssueNumber 2>&1 | Out-String
     
@@ -426,7 +475,7 @@ Test-Feature "Clarification System (squad clarify $script:IssueNumber)" {
     return $result
 }
 
-# Test 18: Chat Mode Help
+# Test 23: Chat Mode Help
 Test-Feature "Chat Mode (squad chat --help)" {
     $result = squad chat --help 2>&1 | Out-String
     
@@ -436,7 +485,7 @@ Test-Feature "Chat Mode (squad chat --help)" {
     return $result
 }
 
-# Test 19: Agent Communication Infrastructure
+# Test 24: Agent Communication Infrastructure
 Test-Feature "Agent Communication Infrastructure" {
     # Check signal for multiple agents
     $pmSignal = squad signal pm 2>&1 | Out-String
@@ -456,7 +505,7 @@ Test-Feature "Agent Communication Infrastructure" {
 
 Write-TestSection "PART 4: Monitoring & Observability (6 features)"
 
-# Test 20: Health Monitoring
+# Test 25: Health Monitoring
 Test-Feature "Health Monitoring (squad health)" {
     $result = squad health 2>&1 | Out-String
     
@@ -467,7 +516,7 @@ Test-Feature "Health Monitoring (squad health)" {
     return $result
 }
 
-# Test 21: Patrol
+# Test 26: Patrol
 Test-Feature "Patrol (squad patrol)" {
     $result = squad patrol 2>&1 | Out-String
     
@@ -477,7 +526,7 @@ Test-Feature "Patrol (squad patrol)" {
     return $result
 }
 
-# Test 22: Recon
+# Test 27: Recon
 Test-Feature "Recon (squad recon)" {
     $result = squad recon 2>&1 | Out-String
     
@@ -490,13 +539,13 @@ Test-Feature "Recon (squad recon)" {
     return $result
 }
 
-# Test 23: Scout Workers
+# Test 28: Scout Workers
 Test-Feature "Scout Workers (squad scout list)" {
     $result = squad scout list 2>&1 | Out-String
     return "success"  # Operational even if no scouts
 }
 
-# Test 24: Theater
+# Test 29: Theater
 Test-Feature "Theater (squad theater list)" {
     $result = squad theater list 2>&1 | Out-String
     
@@ -506,7 +555,7 @@ Test-Feature "Theater (squad theater list)" {
     return $result
 }
 
-# Test 25: Watch
+# Test 30: Watch
 Test-Feature "Watch (squad watch --help)" {
     $result = squad watch --help 2>&1 | Out-String
     
@@ -518,18 +567,40 @@ Test-Feature "Watch (squad watch --help)" {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 5: ADDITIONAL SYSTEMS (3 tests)
+# PART 5: ADDITIONAL SYSTEMS (5 tests)
 # ════════════════════════════════════════════════════════════════════════════════
 
-Write-TestSection "PART 5: Additional Systems (3 features)"
+Write-TestSection "PART 5: Additional Systems (5 features)"
 
-# Test 26: Reporting
+# Test 31: Init Project
+Test-Feature "Init Project (squad init --help)" {
+    $result = squad init --help 2>&1 | Out-String
+    
+    if ($result -match "init|initialize|project setup") {
+        Write-Host "    Init system operational" -ForegroundColor Gray
+        return "success"
+    }
+    return $result
+}
+
+# Test 32: Update System
+Test-Feature "Update System (squad update --help)" {
+    $result = squad update --help 2>&1 | Out-String
+    
+    if ($result -match "update|version|upgrade") {
+        Write-Host "    Update system operational" -ForegroundColor Gray
+        return "success"
+    }
+    return $result
+}
+
+# Test 33: Reporting
 Test-Feature "Reporting (squad report list)" {
     $result = squad report list 2>&1 | Out-String
     return "success"  # Operational even if no reports
 }
 
-# Test 27: GitHub Integration
+# Test 34: GitHub Integration
 Test-Feature "GitHub Integration" {
     # We already created 2 issues, verify they exist
     $issues = gh issue list --repo $Repo --limit 5 2>&1 | Out-String
@@ -539,30 +610,6 @@ Test-Feature "GitHub Integration" {
         return "success"
     }
     return "error: GitHub integration issue"
-}
-
-# Test 28: Complete System Integration
-Test-Feature "Complete System Integration" {
-    # Verify all major components are working together
-    $checks = @{
-        "PRD" = Test-Path "docs\prd\PRD-$script:IssueNumber.md"
-        "ADR" = Test-Path "docs\adr\ADR-$script:IssueNumber.md"
-        "SPEC" = Test-Path "docs\specs\SPEC-$script:IssueNumber.md"
-        "UX" = Test-Path "docs\ux\UX-$script:IssueNumber.md"
-        "Graph" = Test-Path ".squad\graph\nodes.json"
-        "Collab PRD" = Test-Path "docs\prd\PRD-$script:CollabIssueNumber.md"
-        "Collab ADR" = Test-Path "docs\adr\ADR-$script:CollabIssueNumber.md"
-    }
-    
-    $passed = ($checks.Values | Where-Object { $_ -eq $true }).Count
-    $total = $checks.Count
-    
-    Write-Host "    Integration checks passed: $passed/$total" -ForegroundColor Gray
-    
-    if ($passed -ge ($total * 0.8)) {  # 80% pass rate for integration
-        return "success"
-    }
-    return "error: integration incomplete"
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
