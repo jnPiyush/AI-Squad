@@ -5,6 +5,72 @@ All notable changes to AI-Squad will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-01-25
+
+### Changed - Complete Military Terminology Alignment
+
+**FULL MILITARY THEME** - Every aspect now matches military orchestration!
+
+- **All Commands Renamed** (Breaking Changes):
+  - `squad init` → `squad deploy` - Deploy Squad to project
+  - `squad doctor` → `squad sitrep` - Generate situation report
+  - `squad collab` → `squad joint-op` - Multi-agent joint operation
+  - `squad watch` → `squad patrol` - Patrol for changes
+  - `squad work` → `squad ops` - Report operations
+  - `squad health` → `squad status` - Operational status
+  - `squad auto` → `squad mission` - Squad Mission Mode
+
+- **Terminology Updates Throughout**:
+  - "work items" → "operations" (consistent military term)
+  - "execute agent" → "engage/deploy agent"
+  - "run" → "deploy" (for agent commands)
+  - "Developer" → "High Command" (user role)
+  - "OrgRouter" → "Command Router"
+  - ".squad/work_items/" → ".squad/operations/"
+
+- **Documentation Overhaul**:
+  - README.md: Updated all command references, terminology tables
+  - AGENTS.md: Squad Mission Mode section clarified
+  - QUICK-START.md: All examples use new commands
+  - docs/commands.md: Complete command reference updated
+  - All examples and diagrams now military-themed
+
+### Fixed
+
+- **Mermaid Diagram**: Fixed broken Squad Mission Workflow
+  - Removed duplicate `end` statement
+  - Updated `squad auto` → `squad mission` reference
+
+- **Stale Information**: Removed outdated content from README
+  - Removed deprecated `squad run-plan` command references
+  - Updated terminology tables with correct terms
+  - Fixed inconsistent "operations" vs "work items" usage
+  - Updated storage structure documentation
+  - Clarified current functionality vs. legacy features
+
+### Migration Guide
+
+If upgrading from 0.5.0, update your scripts:
+
+```bash
+# Old Commands → New Commands
+squad init       → squad deploy
+squad doctor     → squad sitrep
+squad collab     → squad joint-op
+squad watch      → squad patrol
+squad work       → squad ops
+squad health     → squad status
+squad auto       → squad mission
+```
+
+Agent commands now say "Deploy" instead of "Run":
+```bash
+squad pm 123        # Output: "✅ Deploying PM Agent..."
+squad engineer 456  # Output: "✅ Deploying Engineer Agent..."
+```
+
+---
+
 ## [0.5.0] - 2026-01-25
 
 ### Added - Squad Mission Mode 🎖️

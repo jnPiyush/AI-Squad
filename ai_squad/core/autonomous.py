@@ -217,7 +217,7 @@ def _create_mission_brief(
 ⏳ Awaiting Captain deployment
 
 ---
-*Mission created by AI-Squad v{config.get('version', '0.5.0')}*
+*Mission created by AI-Squad v{config.get('version', '0.6.0')}*
 """
     
     # Create issue
@@ -259,7 +259,7 @@ Part of Mission #{mission_issue}
 ⏳ Awaiting Captain coordination
 
 ---
-*Objective created by AI-Squad v{config.get('version', '0.5.0')}*
+*Objective created by AI-Squad v{config.get('version', '0.6.0')}*
 """
         
         issue = github.create_issue(

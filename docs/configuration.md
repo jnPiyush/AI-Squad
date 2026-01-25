@@ -8,7 +8,7 @@ AI-Squad uses `squad.yaml` in your project root.
 
 **Create with:**
 ```bash
-squad init
+squad deploy
 ```
 
 ## Default Configuration
@@ -290,7 +290,7 @@ runtime:
 
 ### Hook Persistence
 
-Enable hook persistence for Work Items.
+Enable hook persistence for Operations.
 
 ```yaml
 hooks:
@@ -390,7 +390,7 @@ skills:
 Check if configuration is valid:
 
 ```bash
-squad doctor
+squad sitrep
 ```
 
 **Validates:**
@@ -521,7 +521,7 @@ skills:
 ## Tips
 
 1. **Start with defaults** - Modify as needed
-2. **Use `squad doctor`** - Validate config
+2. **Use `squad sitrep`** - Validate config
 3. **Commit `squad.yaml`** - Share with team
 4. **Different configs per environment** - Use `SQUAD_CONFIG` env var
 5. **Document customizations** - Add comments in YAML

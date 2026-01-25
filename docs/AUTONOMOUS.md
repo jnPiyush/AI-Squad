@@ -46,7 +46,7 @@ squad captain <mission-issue-number>
 5. 🎖️ DEPLOYS TO CAPTAIN for orchestration:
    - Captain analyzes mission
    - Selects appropriate Battle Plan
-   - Creates Work Items for tracking
+   - Creates Operations for tracking
    - Organizes into Convoys (parallel batches)
    - **EXECUTES agents via collaboration**:
      * PM: Creates PRD

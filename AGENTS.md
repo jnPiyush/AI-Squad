@@ -16,7 +16,7 @@ AI-Squad includes five expert agents that work together to deliver complete feat
 
 ---
 
-## 🎖️ Squad Mission Mode (NEW in v0.5.0!)
+## 🎖️ Squad Mission Mode
 
 **The fastest way to build features** - Provide requirements and let Squad handle EVERYTHING!
 

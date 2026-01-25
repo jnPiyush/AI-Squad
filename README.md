@@ -31,7 +31,7 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 | 🎭 **UX Designer** | User Experience | Creates wireframes, HTML prototypes, accessibility guidelines |
 | 🛡️ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
 
-**New in v0.5.0**: 🎖️ Squad Mission Mode - True autonomous development! Provide requirements, Captain orchestrates multi-agent collaboration to complete entire features end-to-end!
+**New in v0.6.0**: Complete military terminology alignment, enhanced monitoring, and improved operational tracking!
 
 **From v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), web dashboard, retry logic, rate limiting, persistent storage
 
@@ -52,7 +52,7 @@ graph TB
     
     subgraph "🎯 MISSION CONTROL"
         BP["📜 Battle Plans<br/><i>Workflows</i>"]
-        WI["💼 operations<br/><i>Tasks</i>"]
+        WI["💼 Operations<br/><i>Tasks</i>"]
         Convoy["🚐 Convoys<br/><i>Parallel Batches</i>"]
     end
     
@@ -75,7 +75,7 @@ graph TB
 |------|---------------|--------|
 | **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
 | **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
-| **💼 operation** | Single unit of work tracked in system | Issue #123 becomes operation `sq-abc12` |
+| 💼 **Operation** | Single unit of work tracked in system | Issue #123 becomes operation `sq-abc12` |
 | **🚐 Convoy** | Parallel batch of related operations | 5 stories from an epic processed together |
 | **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
 | **📡 Signal** | Message sent between agents | "PRD ready for review" notification |
@@ -257,8 +257,7 @@ Here's how Squad Mission Mode orchestrates your entire development lifecycle:
 ```mermaid
 graph TB
     subgraph "1️⃣ Mission Submission"
-        User["⭐ High Command"] -->|"squad auto -p 'requirements'"| Auto["🎖️ Squad Mission Mode"]
-    end
+        User["⭐ High Command"] -->|"squad mission -p 'requirements'"| Auto["🎖️ Squad Mission Mode"]
     end
     
     subgraph "2️⃣ Mission Analysis"
@@ -311,7 +310,7 @@ graph TB
 |-----------|------|--------|
 | **🎖️ Captain** | Meta-coordinator | Analyzes, plans, and orchestrates |
 | **📜 Battle Plan** | Workflow template | Defines agent sequence |
-| **💼 operations** | Task tracking | Tracks status per issue |
+| **💼 Operations** | Task tracking | Tracks status per issue |
 | **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
 | **🤝 Collaboration** | Multi-agent coordinator | Executes agents in sequence |
 | **🔍 Patrol** | Monitoring | Detects stale/stuck work |
@@ -382,7 +381,7 @@ squad dashboard
 **Dashboard Pages:**
 - **Overview** - Stats, health status, recent activity
 - **Health** - Routing health with circuit breakers
-- **operations** - Track all work across agents
+- **Operations** - Track all work across agents
 - **Delegations** - View delegation links and audit trails
 - **Convoys** - Monitor parallel work batches
 - **Graph** - Interactive operational graph visualization
@@ -545,7 +544,6 @@ squad review <pr>             # 🛡️ Reviewer: Review PR
 squad captain <issue>         # 🎖️ Captain coordinates work
 squad joint-op <issue> <agents> # Multi-agent collaboration
 squad patrol                   # Auto-trigger on labels
-squad run-plan <plan> <issue> # Execute a battle plan
 ```
 
 ### Monitoring Commands
@@ -564,7 +562,6 @@ squad graph impact <node>     # Analyze impact of changes
 squad captain 123                   # Let Captain handle everything
 squad joint-op 123 pm architect       # Epic planning
 squad joint-op 456 architect engineer # Technical design + implementation
-squad run-plan feature 123          # Execute feature workflow
 squad status                        # Check system health
 squad dashboard --port 8080         # Custom dashboard port
 ```
@@ -685,7 +682,7 @@ graph TB
 ├── identity/            # Current identity dossier
 ├── scout_workers/       # Scout run checkpoints
 ├── signals/             # Inter-agent messages
-└── work_items/          # operation state
+└── operations/          # Operation state tracking
 ```
 
 ### CLI Tool + GitHub Actions
@@ -698,9 +695,27 @@ graph TB
 │   ↓                                                      │
 │ AI-Squad CLI (Python)                                   │
 │   ├─ Loads squad.yaml                                   │
+┌─────────────────────────────────────────────────────────┐
+│ High Command                                             │
+│   ↓                                                      │
+│ squad captain 123                                        │
+│   ↓                                                      │
+│ AI-Squad CLI (Python)                                   │
+│   ├─ Loads squad.yaml                                   │
 │   ├─ Fetches issue from GitHub                          │
 │   ├─ Captain analyzes & creates operations              │
 │   └─ Routes to appropriate agents                       │
+│   ↓                                                      │
+│ Agent Execution                                         │
+│   ├─ Production skills loaded                           │
+│   ├─ Tools (GitHub, templates)                          │
+│   ├─ Identity dossier attached                          │
+│   └─ Output generated                                   │
+│   ↓                                                      │
+│ Output: docs/prd/PRD-123.md (with provenance)           │
+│   ↓                                                      │
+│ Git commit + push (if auto_commit: true)                │
+└─────────────────────────────────────────────────────────┘
 │   ↓                                                      │
 │ Agent Execution                                         │
 │   ├─ Production skills loaded                           │
@@ -772,6 +787,7 @@ Team of 10 developers, 100 agent runs/week:
 | **Production skills** | ✅ 18 battle-tested skills | ❌ Generic advice |
 | **GitHub integration** | ✅ Native issue/PR workflow | ⚠️ Manual copying |
 | **Template-driven** | ✅ Standardized outputs | ❌ Inconsistent |
+| **Orchestration** | ✅ Captain + Battle Plans | ❌ Manual coordination |
 | **Cost** | ✅ $0 (uses your Copilot) | ⚠️ $20-100+/mo |
 | **Hosting** | ✅ None needed | ⚠️ Cloud service |
 

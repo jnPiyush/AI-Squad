@@ -199,7 +199,7 @@ squad captain <issue-number>
 - `issue-number` - GitHub issue number
 
 **Output:**
-- Coordination plan and work items in `.squad/`
+- Coordination plan and operations in `.squad/`
 
 **Example:**
 ```bash
@@ -279,19 +279,25 @@ squad plans --label bugfix
 
 ---
 
-### `squad run-plan <plan> <issue#>`
+### `squad joint-op <issue#> <agents...>`
+
+Run multi-agent collaboration (joint operation).
 
 Run a Battle Plan for an issue.
 
 **Usage:**
 ```bash
-squad run-plan <plan-name> <issue-number> [--var key=value]
+squad joint-op <issue-number> <agent1> <agent2> [agent3...]
 ```
+
+**Arguments:**
+- `issue-number` - GitHub issue number
+- `agents` - Space-separated list of agents to collaborate
 
 **Example:**
 ```bash
-squad run-plan feature 123
-squad run-plan api-feature 123 --var api_version=v2
+squad joint-op 123 pm architect
+squad joint-op 456 architect engineer ux
 ```
 
 ---
