@@ -38,11 +38,11 @@ def print_banner():
     # Tagline and version in panel
     console.print(
         Panel(
-            "[bold cyan]🎖️ Five expert AI agents orchestrated by a Captain[/bold cyan]\n"
+            "[bold cyan]Five expert AI agents orchestrated by a Captain[/bold cyan]\n"
             "[dim italic]Squad Assembled • Mission Ready • Awaiting Orders[/dim italic]\n\n"
-            "🎨 [bold]Product Manager[/bold] • 🧩 [bold]Architect[/bold] • "
-            "🔧 [bold]Engineer[/bold] • 🎭 [bold]UX Designer[/bold] • "
-            "🛡️ [bold]Reviewer[/bold]\n\n"
+            "[bold]Product Manager[/bold] • [bold]Architect[/bold] • "
+            "[bold]Engineer[/bold] • [bold]UX Designer[/bold] • "
+            "[bold]Reviewer[/bold]\n\n"
             f"[dim]Version {__version__}[/dim]",
             style="cyan",
             border_style="bright_cyan"
@@ -91,22 +91,22 @@ def init(force):
         result = initialize_project(force=force)
         
         if result["success"]:
-            console.print("[bold green]✅ AI-Squad initialized successfully![/bold green]\n")
+            console.print("[bold green]OK AI-Squad initialized successfully![/bold green]\n")
             
             console.print("[bold]Created:[/bold]")
             for item in result["created"]:
-                console.print(f"  ✅ {item}")
+                console.print(f"  OK {item}")
             
             console.print("\n[bold]Next steps:[/bold]")
             console.print("  1. Configure GitHub token: [cyan]export GITHUB_TOKEN=ghp_xxx[/cyan]")
             console.print("  2. Run a command: [cyan]squad pm 123[/cyan]")
             console.print("  3. Or validate setup: [cyan]squad doctor[/cyan]")
         else:
-            console.print(f"[bold red]❌ Initialization failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL Initialization failed: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -121,13 +121,13 @@ def pm(issue_number):
         result = executor.execute("pm", issue_number)
         
         if result["success"]:
-            console.print(f"[bold green]✅ PRD created: {result['file_path']}[/bold green]")
+            console.print(f"[bold green]OK PRD created: {result['file_path']}[/bold green]")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -142,13 +142,13 @@ def architect(issue_number):
         result = executor.execute("architect", issue_number)
         
         if result["success"]:
-            console.print(f"[bold green]✅ ADR created: {result['file_path']}[/bold green]")
+            console.print(f"[bold green]OK ADR created: {result['file_path']}[/bold green]")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -163,15 +163,15 @@ def engineer(issue_number):
         result = executor.execute("engineer", issue_number)
         
         if result["success"]:
-            console.print(f"[bold green]✅ Implementation complete[/bold green]")
+            console.print(f"[bold green]OK Implementation complete[/bold green]")
             for file in result.get("files", []):
-                console.print(f"  📄 {file}")
+                console.print(f"  - {file}")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -186,13 +186,13 @@ def ux(issue_number):
         result = executor.execute("ux", issue_number)
         
         if result["success"]:
-            console.print(f"[bold green]✅ UX design created: {result['file_path']}[/bold green]")
+            console.print(f"[bold green]OK UX design created: {result['file_path']}[/bold green]")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -207,13 +207,13 @@ def review(pr_number):
         result = executor.execute("reviewer", pr_number)
         
         if result["success"]:
-            console.print(f"[bold green]✅ Review completed: {result['file_path']}[/bold green]")
+            console.print(f"[bold green]OK Review completed: {result['file_path']}[/bold green]")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -234,15 +234,15 @@ def collab(issue_number, agents):
         result = run_collaboration(issue_number, list(agents))
         
         if result["success"]:
-            console.print("[bold green]✅ Collaboration complete![/bold green]")
+            console.print("[bold green]OK Collaboration complete![/bold green]")
             for file in result.get("files", []):
-                console.print(f"  📄 {file}")
+                console.print(f"  - {file}")
         else:
-            console.print(f"[bold red]❌ Failed: {result['error']}[/bold red]")
+            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -272,19 +272,19 @@ def doctor():
         
         console.print("[bold]Check Results:[/bold]")
         for check in result["checks"]:
-            status = "✅" if check["passed"] else "❌"
+            status = "OK" if check["passed"] else "FAIL"
             console.print(f"  {status} {check['name']}: {check['message']}")
         
         console.print()
         
         if result["all_passed"]:
-            console.print("[bold green]✅ All checks passed! AI-Squad is ready to use.[/bold green]")
+            console.print("[bold green]OK All checks passed! AI-Squad is ready to use.[/bold green]")
         else:
-            console.print("[bold yellow]⚠️  Some checks failed. See messages above.[/bold yellow]")
+            console.print("[bold yellow]WARN Some checks failed. See messages above.[/bold yellow]")
             sys.exit(1)
             
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -322,21 +322,21 @@ def watch(interval, repo):
     try:
         config = Config.load()
     except Exception as e:
-        console.print(f"[bold red]❌ Error loading config: {e}[/bold red]")
-        console.print("[yellow]💡 Run 'squad init' first[/yellow]")
+        console.print(f"[bold red]FAIL Error loading config: {e}[/bold red]")
+        console.print("[yellow]TIP Run 'squad init' first[/yellow]")
         sys.exit(1)
     
     # Check GitHub token
     import os
     if not os.getenv("GITHUB_TOKEN"):
-        console.print("[bold red]❌ GITHUB_TOKEN not set[/bold red]")
-        console.print("[yellow]💡 Set it with: export GITHUB_TOKEN=ghp_xxx[/yellow]")
+        console.print("[bold red]FAIL GITHUB_TOKEN not set[/bold red]")
+        console.print("[yellow]TIP Set it with: export GITHUB_TOKEN=ghp_xxx[/yellow]")
         sys.exit(1)
     
     # Check repo
     if not repo and not config.github_repo:
-        console.print("[bold red]❌ GitHub repo not configured[/bold red]")
-        console.print("[yellow]💡 Use --repo option or configure in squad.yaml[/yellow]")
+        console.print("[bold red]FAIL GitHub repo not configured[/bold red]")
+        console.print("[yellow]TIP Use --repo option or configure in squad.yaml[/yellow]")
         sys.exit(1)
     
     console.print("[bold cyan]Starting AI-Squad Watch Mode...[/bold cyan]\n")
@@ -347,7 +347,7 @@ def watch(interval, repo):
     except KeyboardInterrupt:
         console.print("\n[yellow]Watch mode stopped[/yellow]")
     except Exception as e:
-        console.print(f"\n[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"\n[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -362,9 +362,9 @@ def update():
             ["pip", "install", "--upgrade", "ai-squad"],
             check=True
         )
-        console.print("[bold green]✅ AI-Squad updated successfully![/bold green]")
+        console.print("[bold green]OK AI-Squad updated successfully![/bold green]")
     except subprocess.CalledProcessError:
-        console.print("[bold red]❌ Update failed. Try: pip install --upgrade ai-squad[/bold red]")
+        console.print("[bold red]FAIL Update failed. Try: pip install --upgrade ai-squad[/bold red]")
         sys.exit(1)
 
 
@@ -402,21 +402,21 @@ def clarify(issue_number):
                     f"[bold]To:[/bold] {msg.to_agent.title()} Agent\n\n"
                     f"{msg.content}\n\n"
                     f"[dim]ID: {msg.id}[/dim]",
-                    title=f"❓ Question ({msg.timestamp.strftime('%H:%M:%S')})",
+                    title=f"Question ({msg.timestamp.strftime('%H:%M:%S')})",
                     border_style="yellow"
                 ))
             elif msg.message_type.value == "response":
                 console.print(Panel(
                     f"[bold]From:[/bold] {msg.from_agent.title()} Agent\n\n"
                     f"{msg.content}",
-                    title=f"💬 Response ({msg.timestamp.strftime('%H:%M:%S')})",
+                    title=f"Response ({msg.timestamp.strftime('%H:%M:%S')})",
                     border_style="green"
                 ))
         
-        console.print("\n[dim]💡 To respond, use GitHub Copilot Chat in VS Code[/dim]")
+        console.print("\n[dim]TIP To respond, use GitHub Copilot Chat in VS Code[/dim]")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -520,20 +520,20 @@ def work(status, agent):
         table.add_column("Issue")
         
         for item in items:
-            status_emoji = {
-                "backlog": "📋",
-                "ready": "🟢",
-                "in_progress": "🔄",
-                "hooked": "🪝",
-                "blocked": "🔴",
-                "in_review": "👀",
-                "done": "✅",
-                "failed": "❌",
-            }.get(item.status.value, "❓")
+            status_label = {
+                "backlog": "BACKLOG",
+                "ready": "READY",
+                "in_progress": "IN_PROGRESS",
+                "hooked": "HOOKED",
+                "blocked": "BLOCKED",
+                "in_review": "IN_REVIEW",
+                "done": "DONE",
+                "failed": "FAILED",
+            }.get(item.status.value, "UNKNOWN")
             
             table.add_row(
                 item.id,
-                f"{status_emoji} {item.status.value}",
+                f"{status_label} {item.status.value}",
                 item.title[:40] + "..." if len(item.title) > 40 else item.title,
                 item.agent_assignee or "-",
                 str(item.issue_number) if item.issue_number else "-"
@@ -549,7 +549,7 @@ def work(status, agent):
                      f"Completed: {stats['completed']}[/dim]")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -574,10 +574,10 @@ def plans(label):
         
         if not plan_list:
             console.print("[yellow]No battle plans found[/yellow]")
-            console.print("[dim]💡 Create custom plans in ai_squad/templates/strategies/[/dim]")
+            console.print("[dim]TIP Create custom plans in ai_squad/templates/strategies/[/dim]")
             return
         
-        console.print("[bold cyan]📜 Available Battle Plans[/bold cyan]\n")
+        console.print("[bold cyan]Available Battle Plans[/bold cyan]\n")
         
         for plan in plan_list:
             console.print(Panel(
@@ -586,12 +586,12 @@ def plans(label):
                 f"[bold]Labels:[/bold] {', '.join(plan.labels) if plan.labels else 'none'}\n\n"
                 f"[bold]Variables:[/bold] {', '.join(plan.variables.keys()) if plan.variables else 'none'}\n\n"
                 f"[dim]Phases: {' → '.join(p.name for p in plan.phases)}[/dim]",
-                title=f"📋 {plan.name}",
+                title=f"Plan: {plan.name}",
                 border_style="cyan"
             ))
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -610,7 +610,7 @@ def run_plan(plan_name, issue_number, vars):
         squad run-plan feature 123
         squad run-plan bugfix 456
     """
-    console.print(f"[bold cyan]🚀 Running battle plan '{plan_name}' for issue #{issue_number}...[/bold cyan]\n")
+    console.print(f"[bold cyan]Running battle plan '{plan_name}' for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         from ai_squad.core.workstate import WorkStateManager
@@ -626,11 +626,11 @@ def run_plan(plan_name, issue_number, vars):
         execution = executor.start_execution(plan_name, issue_number, variables)
         
         if not execution:
-            console.print(f"[bold red]❌ Battle plan '{plan_name}' not found[/bold red]")
-            console.print("[dim]💡 Run 'squad plans' to see available battle plans[/dim]")
+            console.print(f"[bold red]FAIL Battle plan '{plan_name}' not found[/bold red]")
+            console.print("[dim]TIP Run 'squad plans' to see available battle plans[/dim]")
             sys.exit(1)
         
-        console.print(f"[green]✅ Battle plan execution started: {execution.id}[/green]\n")
+        console.print(f"[green]OK Battle plan execution started: {execution.id}[/green]\n")
         
         # Show next steps
         next_steps = executor.get_next_steps(execution.id)
@@ -639,10 +639,10 @@ def run_plan(plan_name, issue_number, vars):
             for step in next_steps:
                 console.print(f"  • [{step.agent}] {step.name}: {step.description}")
         
-        console.print("\n[dim]💡 Run 'squad work' to see created work items[/dim]")
+        console.print("\n[dim]TIP Run 'squad work' to see created work items[/dim]")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -694,7 +694,7 @@ def convoys(convoy_id, issue):
             console.print("[yellow]No convoys found[/yellow]")
             return
         
-        console.print("[bold cyan]🚛 Active Convoys[/bold cyan]\n")
+        console.print("[bold cyan]Active Convoys[/bold cyan]\n")
         
         table = Table()
         table.add_column("ID", style="cyan")
@@ -716,7 +716,7 @@ def convoys(convoy_id, issue):
         console.print(table)
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -741,20 +741,20 @@ def signal(agent, unread):
         # Get inbox
         messages = manager.get_inbox(agent, unread_only=unread)
         
-        console.print(f"[bold cyan]� Signal Messages for {agent.upper()}[/bold cyan]\n")
+        console.print(f"[bold cyan]Signal Messages for {agent.upper()}[/bold cyan]\n")
         
         if not messages:
             console.print("[yellow]No messages[/yellow]")
             return
         
         for msg in messages:
-            status_emoji = {
-                "pending": "📩",
-                "delivered": "📨",
-                "read": "📖",
-                "acknowledged": "✅",
-                "expired": "⏰",
-            }.get(msg.status.value, "📧")
+            status_label = {
+                "pending": "PENDING",
+                "delivered": "DELIVERED",
+                "read": "READ",
+                "acknowledged": "ACK",
+                "expired": "EXPIRED",
+            }.get(msg.status.value, "MESSAGE")
             
             priority_color = {
                 "urgent": "red",
@@ -768,7 +768,7 @@ def signal(agent, unread):
                 f"[bold]Priority:[/bold] [{priority_color}]{msg.priority.value}[/{priority_color}]\n\n"
                 f"{msg.body[:200]}{'...' if len(msg.body) > 200 else ''}\n\n"
                 f"[dim]{msg.created_at}[/dim]",
-                title=f"{status_emoji} {msg.subject}",
+                title=f"{status_label} {msg.subject}",
                 border_style="cyan" if msg.status.value in ("pending", "delivered") else "dim"
             ))
         
@@ -780,7 +780,7 @@ def signal(agent, unread):
                      f"Sent: {signal_stats.get('outbox', 0)}[/dim]")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -801,7 +801,7 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
     Example:
         squad handoff sq-abc12 pm architect --reason workflow --summary "PRD complete"
     """
-    console.print(f"[bold cyan]🤝 Initiating handoff: {from_agent} → {to_agent}[/bold cyan]\n")
+    console.print(f"[bold cyan]Initiating handoff: {from_agent} → {to_agent}[/bold cyan]\n")
     
     try:
         from ai_squad.core.workstate import WorkStateManager
@@ -840,15 +840,15 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
         )
         
         if handoff_obj:
-            console.print(f"[green]✅ Handoff initiated: {handoff_obj.id}[/green]")
+            console.print(f"[green]OK Handoff initiated: {handoff_obj.id}[/green]")
             console.print(f"[dim]Status: {handoff_obj.status.value}[/dim]")
-            console.print(f"\n[dim]💡 {to_agent.upper()} agent will receive notification[/dim]")
+            console.print(f"\n[dim]TIP {to_agent.upper()} agent will receive notification[/dim]")
         else:
-            console.print("[bold red]❌ Failed to initiate handoff[/bold red]")
+            console.print("[bold red]FAIL Failed to initiate handoff[/bold red]")
             sys.exit(1)
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -875,7 +875,7 @@ def status():
         delegation_manager = DelegationManager(workspace_root=Path.cwd(), signal_manager=signal_manager)
         handoff_manager = HandoffManager(work_manager, signal_manager, delegation_manager)
         
-        console.print("[bold cyan]📊 AI-Squad Orchestration Status[/bold cyan]\n")
+        console.print("[bold cyan]AI-Squad Orchestration Status[/bold cyan]\n")
         
         # Work Items Summary
         work_stats = work_manager.get_stats()
@@ -884,7 +884,7 @@ def status():
             f"[green]In Progress:[/green] {work_stats['in_progress']}\n"
             f"[red]Blocked:[/red] {work_stats['blocked']}\n"
             f"[cyan]Completed:[/cyan] {work_stats['completed']}",
-            title="📋 Work Items",
+            title="Work Items",
             border_style="cyan"
         ))
         
@@ -894,7 +894,7 @@ def status():
         console.print(Panel(
             f"[bold]Running:[/bold] {len(active_convoys)}\n"
             f"[bold]Pending:[/bold] {len(pending_convoys)}",
-            title="🚛 Convoys",
+            title="Convoys",
             border_style="yellow"
         ))
         
@@ -904,7 +904,7 @@ def status():
             f"[bold]Pending:[/bold] {handoff_stats['pending']}\n"
             f"[bold]Completed:[/bold] {handoff_stats['completed']}\n"
             f"[bold]Rejected:[/bold] {handoff_stats['rejected']}",
-            title="🤝 Handoffs",
+            title="Handoffs",
             border_style="green"
         ))
         
@@ -917,7 +917,7 @@ def status():
         console.print(Panel(
             f"[bold]Total Messages:[/bold] {signal_stats['total_messages']}\n"
             f"[bold]Unread:[/bold] {total_unread}",
-            title="📡 Signals",
+            title="Signals",
             border_style="magenta"
         ))
         
@@ -932,7 +932,7 @@ def status():
         console.print("[dim]  • squad scout           - View scout runs[/dim]")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -942,7 +942,7 @@ def health():
     try:
         from ai_squad.core.router import HealthView, HealthConfig
         
-        console.print("[bold cyan]📊 Routing Health Status[/bold cyan]\n")
+        console.print("[bold cyan]Routing Health Status[/bold cyan]\n")
         
         health_view = HealthView()
         health_cfg = HealthConfig()
@@ -990,7 +990,7 @@ def health():
                 console.print(f"  {priority}: {stats['routed']}/{stats['total']} routed")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1030,7 +1030,7 @@ def capabilities_list():
         console.print(table)
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1044,12 +1044,12 @@ def capabilities_install(package_path):
         registry = CapabilityRegistry()
         pkg = registry.install(Path(package_path))
         
-        console.print(f"[bold green]✅ Installed {pkg.name} v{pkg.version}[/bold green]")
+        console.print(f"[bold green]OK Installed {pkg.name} v{pkg.version}[/bold green]")
         console.print(f"   Scope: {pkg.scope}")
         console.print(f"   Tags: {', '.join(pkg.capability_tags)}")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1064,7 +1064,7 @@ def capabilities_key(set_key, show_key):
 
         if set_key:
             key_path.write_text(set_key.strip(), encoding="utf-8")
-            console.print("[bold green]✅ Signature key saved[/bold green]")
+            console.print("[bold green]OK Signature key saved[/bold green]")
             return
 
         if show_key:
@@ -1077,7 +1077,7 @@ def capabilities_key(set_key, show_key):
         console.print("[yellow]Provide --set or --show[/yellow]")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1121,7 +1121,7 @@ def delegation_list():
         console.print(table)
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1164,7 +1164,7 @@ def scout_list():
         console.print(table)
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1194,7 +1194,7 @@ def scout_show(run_id):
         console.print(table)
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1218,10 +1218,10 @@ def scout_run(tasks):
 
         worker = ScoutWorker()
         run = worker.run(run_tasks, metadata={"tasks": selected})
-        console.print(f"[bold green]✅ Scout run completed[/bold green] {run.run_id}")
+        console.print(f"[bold green]OK Scout run completed[/bold green] {run.run_id}")
 
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1239,7 +1239,7 @@ def graph_export(format):
             console.print(diagram)
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1254,7 +1254,7 @@ def graph_impact(node_id):
         impact = op_graph.impact_analysis(node_id)
         
         if "error" in impact:
-            console.print(f"[bold red]❌ {impact['error']}[/bold red]")
+            console.print(f"[bold red]FAIL {impact['error']}[/bold red]")
             return
         
         console.print(f"[bold cyan]Impact Analysis for {node_id}[/bold cyan]\n")
@@ -1274,7 +1274,7 @@ def graph_impact(node_id):
                 console.print(f"  ... and {len(impact['affected_nodes']) - 10} more")
         
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1298,7 +1298,7 @@ def dashboard(host, port, debug):
         squad dashboard --host 0.0.0.0 --debug
     """
     print_banner()
-    console.print("[bold cyan]🚀 Starting AI-Squad Dashboard...[/bold cyan]\n")
+    console.print("[bold cyan]Starting AI-Squad Dashboard...[/bold cyan]\n")
     
     try:
         from ai_squad.dashboard import run_dashboard
@@ -1309,11 +1309,11 @@ def dashboard(host, port, debug):
         run_dashboard(host=host, port=port, debug=debug)
         
     except ImportError as e:
-        console.print("[bold red]❌ Flask is not installed[/bold red]")
+        console.print("[bold red]FAIL Flask is not installed[/bold red]")
         console.print("[yellow]Install with: pip install flask[/yellow]")
         sys.exit(1)
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1341,7 +1341,7 @@ def theater_list():
             for sector in t.sectors.values():
                 console.print(f"  • {sector.name} -> {sector.repo_path}")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1359,9 +1359,9 @@ def theater_add_sector(theater_name, sector_name, repo_path, staging_path):
         config = Config.load()
         registry = TheaterRegistry(config=config.data)
         sector = registry.add_sector(theater_name, sector_name, repo_path, staging_path)
-        console.print(f"[bold green]✅ Added sector {sector.name}[/bold green]")
+        console.print(f"[bold green]OK Added sector {sector.name}[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1378,9 +1378,9 @@ def theater_route(theater_name, prefix, sector_name):
         config = Config.load()
         registry = TheaterRegistry(config=config.data)
         registry.set_route(theater_name, prefix, sector_name)
-        console.print(f"[bold green]✅ Routed {prefix} -> {sector_name}[/bold green]")
+        console.print(f"[bold green]OK Routed {prefix} -> {sector_name}[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1395,9 +1395,9 @@ def theater_staging(theater_name):
         config = Config.load()
         registry = TheaterRegistry(config=config.data)
         paths = registry.ensure_staging_areas(theater_name)
-        console.print(f"[bold green]✅ Staging areas ready ({len(paths)})[/bold green]")
+        console.print(f"[bold green]OK Staging areas ready ({len(paths)})[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1412,9 +1412,9 @@ def recon():
         recon_manager = ReconManager(routing_config=config.get("routing", {}))
         summary = recon_manager.build_summary()
         path = recon_manager.save_summary(summary)
-        console.print(f"[bold green]✅ Recon summary saved to {path}[/bold green]")
+        console.print(f"[bold green]OK Recon summary saved to {path}[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1432,9 +1432,9 @@ def patrol():
             statuses=patrol_cfg.get("statuses", None),
         )
         events = manager.run()
-        console.print(f"[bold green]✅ Patrol complete ({len(events)} stale items)[/bold green]")
+        console.print(f"[bold green]OK Patrol complete ({len(events)} stale items)[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1457,7 +1457,7 @@ def report_list():
         for path in sorted(mgr.reports_dir.glob("after-operation-*.md")):
             console.print(f"• {path.name}")
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -1471,11 +1471,11 @@ def report_show(report_name):
         mgr = ReportManager()
         path = mgr.reports_dir / report_name
         if not path.exists():
-            console.print(f"[bold red]❌ Report not found: {report_name}[/bold red]")
+            console.print(f"[bold red]FAIL Report not found: {report_name}[/bold red]")
             return
         console.print(path.read_text(encoding="utf-8"))
     except Exception as e:
-        console.print(f"[bold red]❌ Error: {e}[/bold red]")
+        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 

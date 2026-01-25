@@ -288,7 +288,7 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
             "looks good",
             "ready to merge",
             "all checks passed",
-            "✅"
+            "ok"
         ]
         
         failure_keywords = [
@@ -297,7 +297,7 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
             "blocking issue",
             "security vulnerability",
             "failed",
-            "❌"
+            "fail"
         ]
         
         content_lower = review_content.lower()
@@ -362,16 +362,16 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
         _ = review_content  # Placeholder until review text is used in closure comment
         try:
             # Create closure comment
-            comment = f"""✅ **Issue Closed by Reviewer Agent**
+            comment = f"""OK: **Issue Closed by Reviewer Agent**
 
 **Pull Request**: #{pr_number}
 **Review**: All acceptance criteria met
 
 **Summary**:
-- Code quality: ✅ Passed
-- Tests: ✅ Passed  
-- Security: ✅ No issues found
-- Documentation: ✅ Complete
+- Code quality: OK - Passed
+- Tests: OK - Passed  
+- Security: OK - No issues found
+- Documentation: OK - Complete
 
 The implementation has been reviewed and approved. All requirements from the PRD have been satisfied.
 

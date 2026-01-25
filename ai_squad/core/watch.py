@@ -62,9 +62,9 @@ class WatchDaemon:
         
     def run(self):
         """Main watch loop"""
-        self.console.print(f"[bold cyan]🔍 Monitoring:[/bold cyan] {self.repo}")
-        self.console.print(f"[bold cyan]⏱️  Interval:[/bold cyan] {self.interval}s")
-        self.console.print("[bold cyan]🔄 Flow:[/bold cyan] PM → Architect → Engineer → Reviewer\n")
+        self.console.print(f"[bold cyan]Monitoring:[/bold cyan] {self.repo}")
+        self.console.print(f"[bold cyan]Interval:[/bold cyan] {self.interval}s")
+        self.console.print("[bold cyan]Flow:[/bold cyan] PM → Architect → Engineer → Reviewer\n")
         self.console.print("[yellow]Press Ctrl+C to stop[/yellow]\n")
         
         with Live(self._create_status_table(), refresh_per_second=4) as live:
@@ -170,7 +170,7 @@ class WatchDaemon:
         issue = event["issue"]
         agent = event["agent"]
         
-        live.console.print(f"\n[bold green]🚀 Triggering {agent.upper()} for issue #{issue['number']}[/bold green]")
+        live.console.print(f"\n[bold green]Starting {agent.upper()} for issue #{issue['number']}[/bold green]")
         live.console.print(f"   Title: {issue.get('title', 'N/A')}")
         
         try:
@@ -191,18 +191,18 @@ class WatchDaemon:
                 comment_body = self._create_completion_comment(agent, result)
                 self.github.add_comment(issue["number"], comment_body)
                 
-                live.console.print(f"[green]✅ {agent.upper()} completed successfully[/green]")
+                live.console.print(f"[green]OK {agent.upper()} completed successfully[/green]")
                 live.console.print(f"   Output: {result.get('output_path', 'N/A')}")
                 
                 return True
             else:
                 error = result.get("error", "Unknown error")
-                live.console.print(f"[red]❌ {agent.upper()} failed: {error}[/red]")
+                live.console.print(f"[red]FAIL {agent.upper()} failed: {error}[/red]")
                 
                 # Add failure comment
                 self.github.add_comment(
                     issue["number"],
-                    f"⚠️ {agent.title()} agent failed automatically.\n\n"
+                    f"WARN: {agent.title()} agent failed automatically.\n\n"
                     f"**Error**: {error}\n\n"
                     f"Please review and retry manually: `squad {agent} {issue['number']}`"
                 )
@@ -210,14 +210,14 @@ class WatchDaemon:
                 return False
                 
         except (GitHubCommandError, TimeoutError, RuntimeError) as e:
-            live.console.print(f"[red]❌ Error executing {agent}: {e}[/red]")
+            live.console.print(f"[red]FAIL Error executing {agent}: {e}[/red]")
             return False
     
     def _create_completion_comment(self, agent: str, result: Dict) -> str:
         """Create GitHub comment for completed agent"""
         next_step = self._get_next_step(agent)
         
-        comment = f"✅ **{agent.title()} agent completed automatically**\n\n"
+        comment = f"OK: **{agent.title()} agent completed automatically**\n\n"
         
         if result.get("output_path"):
             comment += f"**Output**: `{result['output_path']}`\n\n"
@@ -233,7 +233,7 @@ class WatchDaemon:
             "pm": "Architect will design the technical solution",
             "architect": "Engineer will implement the features",
             "engineer": "Reviewer will review the code",
-            "reviewer": "All agents completed! 🎉",
+            "reviewer": "All agents completed!",
         }
         return next_steps.get(completed_agent, "Check issue for next steps")
     
@@ -249,7 +249,7 @@ class WatchDaemon:
         table.add_column("Value", style="green", width=30)
         
         # Status
-        status = "🟢 Active" if self.stats["checks"] > 0 else "🟡 Starting"
+        status = "Active" if self.stats["checks"] > 0 else "Starting"
         table.add_row("Status", status)
         
         # Configuration
@@ -273,7 +273,7 @@ class WatchDaemon:
     
     def _print_summary(self):
         """Print summary statistics"""
-        self.console.print("\n[bold cyan]📊 Watch Mode Summary[/bold cyan]")
+        self.console.print("\n[bold cyan]Watch Mode Summary[/bold cyan]")
         self.console.print(f"   Total checks: {self.stats['checks']}")
         self.console.print(f"   Events processed: {self.stats['events']}")
         self.console.print(f"   [green]Successes: {self.stats['successes']}[/green]")

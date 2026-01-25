@@ -21,7 +21,7 @@ $ErrorActionPreference = "Continue"
 
 # Validate mutually exclusive parameters
 if ($SkipAutonomousTest -and $AutonomousOnly) {
-    Write-Host "`n❌ ERROR: Cannot use -SkipAutonomousTest and -AutonomousOnly together" -ForegroundColor Red
+    Write-Host "`nERROR: Cannot use -SkipAutonomousTest and -AutonomousOnly together" -ForegroundColor Red
     Write-Host "   Choose one mode:" -ForegroundColor Yellow
     Write-Host "   • No flags: Run all tests (component + autonomous)" -ForegroundColor Gray
     Write-Host "   • -SkipAutonomousTest: Run only component tests (faster)" -ForegroundColor Gray
@@ -107,9 +107,9 @@ function Write-Summary {
     Write-Host "  Pass Rate: $passRate%" -ForegroundColor $(if ($passRate -ge 90) { $ColorPass } else { $ColorWarning })
     
     if ($script:TestsFailed -eq 0) {
-        Write-Host "`n  🚀 ALL TESTS PASSED - PRODUCTION READY!" -ForegroundColor $ColorPass
+        Write-Host "`n  ALL TESTS PASSED - PRODUCTION READY!" -ForegroundColor $ColorPass
     } else {
-        Write-Host "`n  ⚠️  Some tests failed - Review required" -ForegroundColor $ColorWarning
+        Write-Host "`n  WARNING: Some tests failed - Review required" -ForegroundColor $ColorWarning
     }
     Write-Host "════════════════════════════════════════════════════════════════════════════════`n" -ForegroundColor $ColorInfo
 }
@@ -182,11 +182,11 @@ Workflow States:
 if ([string]::IsNullOrWhiteSpace($TestAppRequirement)) {
     $FeatureRequirement = $DefaultIdeaManagementFeature
     $AppName = "Idea Management System"
-    Write-Host "`n💡 Using DEFAULT test application: Idea Management System" -ForegroundColor $ColorInfo
+    Write-Host "`nINFO: Using DEFAULT test application: Idea Management System" -ForegroundColor $ColorInfo
 } else {
     $FeatureRequirement = $TestAppRequirement
     $AppName = "Custom Application"
-    Write-Host "`n✨ Using CUSTOM test application requirements" -ForegroundColor $ColorInfo
+    Write-Host "`nINFO: Using CUSTOM test application requirements" -ForegroundColor $ColorInfo
     if ($Verbose) {
         Write-Host "`nCustom Requirements Preview:" -ForegroundColor Gray
         Write-Host ($TestAppRequirement.Substring(0, [Math]::Min(300, $TestAppRequirement.Length))) -ForegroundColor Gray
@@ -202,7 +202,7 @@ if ([string]::IsNullOrWhiteSpace($TestAppRequirement)) {
 
 if ($AutonomousOnly) {
     Write-Host "`n════════════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
-    Write-Host "  🤖 AUTONOMOUS MODE - GITHUB CONFIGURATION" -ForegroundColor Magenta
+    Write-Host "  AUTONOMOUS MODE - GITHUB CONFIGURATION" -ForegroundColor Magenta
     Write-Host "════════════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
     Write-Host "`nThe autonomous lifecycle test will create a real GitHub issue and orchestrate" -ForegroundColor Yellow
     Write-Host "the complete development workflow. Please provide GitHub details:`n" -ForegroundColor Yellow
@@ -210,20 +210,20 @@ if ($AutonomousOnly) {
     # Check GitHub CLI authentication
     $ghAuthStatus = gh auth status 2>&1 | Out-String
     if ($ghAuthStatus -match "Logged in") {
-        Write-Host "✅ GitHub CLI authenticated" -ForegroundColor Green
+        Write-Host "OK GitHub CLI authenticated" -ForegroundColor Green
         if ($ghAuthStatus -match "Logged in to github\.com account (\S+)") {
             $ghUser = $Matches[1]
             Write-Host "   Account: $ghUser" -ForegroundColor Gray
         }
     } else {
-        Write-Host "❌ GitHub CLI not authenticated" -ForegroundColor Red
+        Write-Host "FAIL GitHub CLI not authenticated" -ForegroundColor Red
         Write-Host "`n   Please run: gh auth login" -ForegroundColor Yellow
         Write-Host "   Then re-run this test.`n" -ForegroundColor Yellow
         exit 1
     }
     
     # Prompt for repository
-    Write-Host "`n📦 GitHub Repository Configuration:" -ForegroundColor Cyan
+    Write-Host "`nGitHub Repository Configuration:" -ForegroundColor Cyan
     Write-Host "   Current: $Repo" -ForegroundColor Gray
     Write-Host "`n   Press ENTER to use current, or type new repo (format: owner/repo):" -ForegroundColor White
     $userRepo = Read-Host "   Repository"
@@ -233,7 +233,7 @@ if ($AutonomousOnly) {
             $Repo = $userRepo
             Write-Host "   ✓ Using repository: $Repo" -ForegroundColor Green
         } else {
-            Write-Host "   ❌ Invalid format. Expected: owner/repo" -ForegroundColor Red
+            Write-Host "   FAIL Invalid format. Expected: owner/repo" -ForegroundColor Red
             Write-Host "   Using default: $Repo" -ForegroundColor Yellow
         }
     } else {
@@ -241,12 +241,12 @@ if ($AutonomousOnly) {
     }
     
     # Verify repository access
-    Write-Host "`n🔍 Verifying repository access..." -ForegroundColor Cyan
+    Write-Host "`nVerifying repository access..." -ForegroundColor Cyan
     $repoCheck = gh repo view $Repo 2>&1 | Out-String
     if ($LASTEXITCODE -eq 0) {
         Write-Host "   ✓ Repository accessible" -ForegroundColor Green
     } else {
-        Write-Host "   ❌ Cannot access repository: $Repo" -ForegroundColor Red
+        Write-Host "   FAIL Cannot access repository: $Repo" -ForegroundColor Red
         Write-Host "   Error: $repoCheck" -ForegroundColor Gray
         Write-Host "`n   Please verify:" -ForegroundColor Yellow
         Write-Host "   • Repository name is correct (owner/repo)" -ForegroundColor Gray
@@ -260,7 +260,7 @@ if ($AutonomousOnly) {
         }
     }
     
-    Write-Host "`n✅ GitHub configuration complete" -ForegroundColor Green
+    Write-Host "`nOK GitHub configuration complete" -ForegroundColor Green
     Write-Host "   Repository: $Repo" -ForegroundColor Gray
     Write-Host "   Test will create issue and run full autonomous workflow`n" -ForegroundColor Gray
 }
@@ -772,15 +772,15 @@ if ($lifecycleIssueUrl -match "issues/(\d+)") {
 
 # Test 35: Autonomous Workflow Validation (Captain's Autonomous Behavior)
 Test-Feature "Autonomous Workflow (validate Captain's output and validation enforcement)" {
-    Write-Host "`n  🚀 TESTING CAPTAIN AUTONOMOUS BEHAVIOR..." -ForegroundColor Cyan
+    Write-Host "`n  TESTING CAPTAIN AUTONOMOUS BEHAVIOR..." -ForegroundColor Cyan
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-    Write-Host "  🧠 VALIDATE OUTCOMES: What does Captain produce autonomously?" -ForegroundColor Magenta
+    Write-Host "  VALIDATE OUTCOMES: What does Captain produce autonomously?" -ForegroundColor Magenta
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
     
     $startTime = Get-Date
     
     # PHASE 1: Run Captain - Let it do whatever it does autonomously
-    Write-Host "  📋 PHASE 1: Captain Autonomous Execution" -ForegroundColor Yellow
+    Write-Host "  PHASE 1: Captain Autonomous Execution" -ForegroundColor Yellow
     Write-Host "     → Running Captain in autonomous mode..." -ForegroundColor Gray
     Write-Host "     → Captain will analyze, plan, and coordinate..." -ForegroundColor Gray
     Write-Host "     → Validating what Captain actually produces...`n" -ForegroundColor Gray
@@ -794,7 +794,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     Start-Sleep -Seconds 3
     
     # PHASE 2: Validate Captain's Planning Output
-    Write-Host "`n  📊 PHASE 2: Analyze Captain's Plan" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 2: Analyze Captain's Plan" -ForegroundColor Yellow
     Write-Host "     → Checking coordination report..." -ForegroundColor Gray
     
     $captainCreatedPlan = $captainResult -match "work items|coordination|breakdown|recommend|battle plan"
@@ -804,7 +804,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     if ($captainCreatedPlan) {
         Write-Host "     ✓ Captain created coordination plan" -ForegroundColor Green
     } else {
-        Write-Host "     ⚠ Captain planning output unclear" -ForegroundColor Yellow
+        Write-Host "     WARN Captain planning output unclear" -ForegroundColor Yellow
     }
     
     if ($captainIdentifiedDeps) {
@@ -816,7 +816,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 3: Check What Artifacts Captain Actually Produced
-    Write-Host "`n  🔍 PHASE 3: Validate Artifacts Produced by Captain" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 3: Validate Artifacts Produced by Captain" -ForegroundColor Yellow
     Write-Host "     → Checking if Captain executed agents automatically..." -ForegroundColor Gray
     
     $prdPath = "docs\prd\PRD-$script:LifecycleIssueNumber.md"
@@ -868,7 +868,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 4: Test Prerequisite Validation Framework
-    Write-Host "`n  🛡️  PHASE 4: Validate Prerequisite Enforcement" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 4: Validate Prerequisite Enforcement" -ForegroundColor Yellow
     Write-Host "     → Testing validation framework blocks invalid execution..." -ForegroundColor Gray
     
     # Try to run Engineer without prerequisites (should block)
@@ -883,13 +883,13 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         Write-Host "       → PrerequisiteValidator enforcement confirmed" -ForegroundColor Gray
         $validationWorking = $true
     } else {
-        Write-Host "     ⚠ Validation may not be blocking properly" -ForegroundColor Yellow
+        Write-Host "     WARN Validation may not be blocking properly" -ForegroundColor Yellow
         Write-Host "       → Check if Engineer ran without PRD/ADR" -ForegroundColor Gray
         $validationWorking = $false
     }
     
     # PHASE 5: Determine Captain's Execution Model
-    Write-Host "`n  🔬 PHASE 5: Determine Captain's Behavior Model" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 5: Determine Captain's Behavior Model" -ForegroundColor Yellow
     Write-Host "     → Analyzing Captain's autonomous behavior..." -ForegroundColor Gray
     
     $captainExecutionModel = if ($prdGenerated -and $adrGenerated) {
@@ -909,7 +909,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     $isPartialExecute = $prdGenerated -and -not $adrGenerated
     
     # PHASE 6: Convoy System Validation
-    Write-Host "`n  🚚 PHASE 6: Convoy System Validation" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 6: Convoy System Validation" -ForegroundColor Yellow
     Write-Host "     → Testing convoy creation and tracking..." -ForegroundColor Gray
     
     $convoyList = squad convoys 2>&1 | Out-String
@@ -946,7 +946,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 7: Battle Plan & Delegation Validation
-    Write-Host "`n  ⚔️  PHASE 7: Battle Plan & Agent Delegation" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 7: Battle Plan & Agent Delegation" -ForegroundColor Yellow
     Write-Host "     → Checking battle plan creation..." -ForegroundColor Gray
     
     # Check for battle plan indicators in Captain's output
@@ -964,7 +964,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 8: Communication & Handoff Validation
-    Write-Host "`n  💬 PHASE 8: Agent Communication & Handoff" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 8: Agent Communication & Handoff" -ForegroundColor Yellow
     Write-Host "     → Checking communication mechanisms..." -ForegroundColor Gray
     
     # Check if work state manager has communication logs
@@ -997,7 +997,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 9: Collaboration Features
-    Write-Host "`n  🤝 PHASE 9: Collaboration System Validation" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 9: Collaboration System Validation" -ForegroundColor Yellow
     Write-Host "     → Testing multi-agent collaboration..." -ForegroundColor Gray
     
     # Check if Captain identified collaboration needs
@@ -1016,7 +1016,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 10: Work State & Operational Graph
-    Write-Host "`n  📊 PHASE 10: System State & Tracing" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 10: System State & Tracing" -ForegroundColor Yellow
     Write-Host "     → Checking work state tracking..." -ForegroundColor Gray
     
     $workState = squad work 2>&1 | Out-String
@@ -1046,7 +1046,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # PHASE 11: Delegation & Routing Validation
-    Write-Host "`n  🔀 PHASE 11: Agent Routing & Organization" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 11: Agent Routing & Organization" -ForegroundColor Yellow
     Write-Host "     → Validating org router functionality..." -ForegroundColor Gray
     
     # Check if Captain used org router for delegation
@@ -1065,7 +1065,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # FINAL VALIDATION & RESULTS
-    Write-Host "`n  ✅ PHASE 12: Final Comprehensive Validation" -ForegroundColor Yellow
+    Write-Host "`n  PHASE 12: Final Comprehensive Validation" -ForegroundColor Yellow
     
     $endTime = Get-Date
     $duration = ($endTime - $startTime).TotalSeconds
@@ -1119,13 +1119,13 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     $passRate = [math]::Round(($passedChecks / $totalChecks) * 100, 0)
     
     Write-Host "`n  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-    Write-Host "  📈 COMPREHENSIVE CAPTAIN VALIDATION RESULTS:" -ForegroundColor Cyan
+    Write-Host "  COMPREHENSIVE CAPTAIN VALIDATION RESULTS:" -ForegroundColor Cyan
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
-    Write-Host "     🔬 Captain Execution Model: $($captainExecutionModel)" -ForegroundColor Magenta
+    Write-Host "     Captain Execution Model: $($captainExecutionModel)" -ForegroundColor Magenta
     Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
     
     # Group validations by category
-    Write-Host "`n  📋 Planning & Coordination:" -ForegroundColor Cyan
+    Write-Host "`n  Planning & Coordination:" -ForegroundColor Cyan
     @("Captain Generated Plan", "Captain Identified Dependencies", "Proper Agent Sequence", 
       "Battle Plan Created", "Agent Delegation Identified") | ForEach-Object {
         if ($validations.Contains($_)) {
@@ -1135,7 +1135,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         }
     }
     
-    Write-Host "`n  🚚 Convoy & Work Management:" -ForegroundColor Cyan
+    Write-Host "`n  Convoy & Work Management:" -ForegroundColor Cyan
     @("Convoy System Operational", "Work Items Created", "Work State Tracked", 
       "Work State Manager Operational") | ForEach-Object {
         if ($validations.Contains($_)) {
@@ -1145,7 +1145,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         }
     }
     
-    Write-Host "`n  🤝 Collaboration & Communication:" -ForegroundColor Cyan
+    Write-Host "`n  Collaboration & Communication:" -ForegroundColor Cyan
     @("Collaboration Needs Identified", "Collaboration System Available", 
       "Handoff System Available", "Org Router Used") | ForEach-Object {
         if ($validations.Contains($_)) {
@@ -1155,7 +1155,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         }
     }
     
-    Write-Host "`n  🛡️  Validation & Execution:" -ForegroundColor Cyan
+    Write-Host "`n  Validation & Execution:" -ForegroundColor Cyan
     @("Prerequisite Validation Works", "Captain Execution Model Detected", 
       "Captain Planning-Only Confirmed", "Captain Auto-Executed Agents", 
       "No Premature Execution") | ForEach-Object {
@@ -1166,7 +1166,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         }
     }
     
-    Write-Host "`n  📊 Observability & Tracing:" -ForegroundColor Cyan
+    Write-Host "`n  Observability & Tracing:" -ForegroundColor Cyan
     @("Operational Graph Exists", "Issue Created") | ForEach-Object {
         if ($validations.Contains($_)) {
             $status = if ($validations[$_]) { "✓" } else { "✗" }
@@ -1182,34 +1182,34 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     
     # Interpretation of results with feature breakdown
     if ($isPlanningOnly -and $validationWorking -and $passRate -ge 70) {
-        Write-Host "  🎉 COMPREHENSIVE CAPTAIN VALIDATION SUCCESSFUL!" -ForegroundColor Green
+        Write-Host "  COMPREHENSIVE CAPTAIN VALIDATION SUCCESSFUL!" -ForegroundColor Green
         Write-Host "     ✓ Planning & coordination features operational" -ForegroundColor Green
         Write-Host "     ✓ Convoy system and work management validated" -ForegroundColor Green
         Write-Host "     ✓ Collaboration & communication systems available" -ForegroundColor Green
         Write-Host "     ✓ Prerequisite validation enforces dependencies" -ForegroundColor Green
         Write-Host "     ✓ Observability & tracing infrastructure present" -ForegroundColor Green
-        Write-Host "     📋 Architecture: Captain = Meta-Agent Coordinator | Validation = Enforcement Layer`n" -ForegroundColor Cyan
+        Write-Host "     Architecture: Captain = Meta-Agent Coordinator | Validation = Enforcement Layer`n" -ForegroundColor Cyan
         return "success"
     } elseif ($isAutoExecute -and $validationWorking -and $passRate -ge 70) {
-        Write-Host "  🎉 AUTO-EXECUTE MODE VALIDATED!" -ForegroundColor Green
+        Write-Host "  AUTO-EXECUTE MODE VALIDATED!" -ForegroundColor Green
         Write-Host "     ✓ Captain automatically executed agents" -ForegroundColor Green
         Write-Host "     ✓ All coordination systems operational" -ForegroundColor Green
         Write-Host "     ✓ Artifacts generated autonomously" -ForegroundColor Green
         Write-Host "     ✓ Prerequisite validation working" -ForegroundColor Green
-        Write-Host "     🤖 Architecture: Captain = Coordinator + Executor | Validation = Enforcement`n" -ForegroundColor Cyan
+        Write-Host "     Architecture: Captain = Coordinator + Executor | Validation = Enforcement`n" -ForegroundColor Cyan
         return "success"
     } elseif ($passRate -ge 70) {
-        Write-Host "  ✅ AUTONOMOUS VALIDATION SUCCESSFUL!" -ForegroundColor Green
+        Write-Host "  AUTONOMOUS VALIDATION SUCCESSFUL!" -ForegroundColor Green
         Write-Host "     Core Captain features validated" -ForegroundColor Green
         Write-Host "     System behavior meets expectations`n" -ForegroundColor Green
         return "success"
     } elseif ($passRate -ge 50) {
-        Write-Host "  ⚠️  PARTIAL SUCCESS" -ForegroundColor Yellow
+        Write-Host "  WARNING: PARTIAL SUCCESS" -ForegroundColor Yellow
         Write-Host "     Some Captain features operational" -ForegroundColor Yellow
         Write-Host "     Review failed validations for improvement areas`n" -ForegroundColor Yellow
         return "partial success"
     } else {
-        Write-Host "  ⚠️  VALIDATION INCOMPLETE" -ForegroundColor Yellow
+        Write-Host "  WARNING: VALIDATION INCOMPLETE" -ForegroundColor Yellow
         Write-Host "     Multiple Captain features not validated" -ForegroundColor Yellow
         Write-Host "     Review Captain output: $captainOutputFile" -ForegroundColor Yellow
         Write-Host "     Check system logs for errors`n" -ForegroundColor Yellow

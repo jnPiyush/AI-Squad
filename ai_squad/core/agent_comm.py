@@ -268,7 +268,7 @@ class AgentCommunicator:
         """
         # Post a comment suggesting the user respond via Copilot Chat
         if self.github and message.issue_number:
-            comment = f"""💬 **Clarification Needed**
+            comment = f"""NOTE: **Clarification Needed**
 
 **From**: {message.from_agent.title()} Agent  
 **Question**: {message.content}
@@ -292,7 +292,7 @@ class AgentCommunicator:
         
         if self.execution_mode == "automated":
             # Agent-to-agent in automated mode
-            comment = f"""🤖 **Agent Communication (Automated Mode)**
+            comment = f"""AUTO: **Agent Communication (Automated Mode)**
 
 **From**: {message.from_agent.title()} Agent  
 **To**: {message.to_agent.title()} Agent  
@@ -305,7 +305,7 @@ class AgentCommunicator:
 """
         else:
             # Agent-to-user in manual mode
-            comment = f"""💬 **Clarification Needed (Manual Mode)**
+            comment = f"""NOTE: **Clarification Needed (Manual Mode)**
 
 **From**: {message.from_agent.title()} Agent  
 **Question**: {message.content}
@@ -327,7 +327,7 @@ class AgentCommunicator:
         if not response.issue_number:
             return
         
-        comment = f"""💬 **Agent Response**
+        comment = f"""NOTE: **Agent Response**
 
 **From**: {response.from_agent.title()} Agent  
 **In Response To**: {original.from_agent.title()} Agent  

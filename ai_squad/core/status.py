@@ -230,7 +230,7 @@ class StatusManager:
         reason: Optional[str]
     ) -> str:
         """Create GitHub comment for status transition"""
-        comment = "🔄 **Status Update**\n\n"
+        comment = "Status Update\n\n"
         comment += f"**{from_status.value}** → **{to_status.value}**\n\n"
         comment += f"*Updated by {agent.title()} Agent*\n"
         

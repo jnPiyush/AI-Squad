@@ -509,15 +509,15 @@ class ConvoyManager:
 ### Members
 """
         for member in convoy.members:
-            status_emoji = {
-                "pending": "⏳",
-                "running": "🔄",
-                "completed": "✅",
-                "failed": "❌",
-                "skipped": "⏭️"
-            }.get(member.status, "❓")
+            status_label = {
+                "pending": "PENDING",
+                "running": "RUNNING",
+                "completed": "COMPLETED",
+                "failed": "FAILED",
+                "skipped": "SKIPPED"
+            }.get(member.status, "UNKNOWN")
             
-            summary += f"- {status_emoji} [{member.agent_type}] {member.work_item_id}\n"
+            summary += f"- {status_label} [{member.agent_type}] {member.work_item_id}\n"
             if member.error:
                 summary += f"  - Error: {member.error}\n"
         

@@ -334,5 +334,5 @@ def run_dashboard(host: str = "127.0.0.1", port: int = 5050, debug: bool = False
         )
     
     app = create_app()
-    print(f"\n🚀 AI-Squad Dashboard running at http://{host}:{port}\n")
+    print(f"\nAI-Squad Dashboard running at http://{host}:{port}\n")
     app.run(host=host, port=port, debug=debug)

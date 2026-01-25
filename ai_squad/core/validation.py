@@ -280,7 +280,7 @@ class PrerequisiteValidator:
         ])
 
         return f"""
-❌ Prerequisite Validation Failed
+    ERROR: Prerequisite Validation Failed
 
 Agent: {agent_type.value.upper()}
 Missing Prerequisites:

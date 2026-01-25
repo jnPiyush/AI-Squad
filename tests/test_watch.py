@@ -86,7 +86,7 @@ class TestWatchDaemon:
         
         comment = mock_daemon._create_completion_comment("architect", result)
         
-        assert "✅" in comment
+        assert "OK" in comment
         assert "architect" in comment.lower()
         assert "docs/adr/ADR-123.md" in comment
         assert "Engineer" in comment  # Next step
