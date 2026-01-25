@@ -202,6 +202,58 @@ class TestE2EBattlePlanExecution:
         assert execution is not None
         assert len(execution.work_items) == 3
 
+    @pytest.mark.asyncio
+    async def test_execute_strategy_runs_steps_in_order(self, managers, temp_dir, monkeypatch):
+        """Test: execute_strategy runs steps in order and completes work items"""
+        # Create prerequisites for validation
+        prd_dir = temp_dir / "docs" / "prd"
+        adr_dir = temp_dir / "docs" / "adr"
+        prd_dir.mkdir(parents=True)
+        adr_dir.mkdir(parents=True)
+        (prd_dir / "PRD-321.md").write_text("# PRD", encoding="utf-8")
+        (adr_dir / "ADR-321.md").write_text("# ADR", encoding="utf-8")
+
+        monkeypatch.chdir(temp_dir)
+
+        BattlePlan_mgr = managers["BattlePlan"]
+        BattlePlan_mgr.create_strategy(
+            name="test-full-exec",
+            description="Test full execution",
+            phases=[
+                BattlePlanPhase(name="requirements", agent="pm"),
+                BattlePlanPhase(name="design", agent="architect", depends_on=["requirements"]),
+                BattlePlanPhase(name="implement", agent="engineer", depends_on=["design"]),
+            ],
+        )
+
+        call_order = []
+
+        async def agent_executor(issue_number=None, agent_type=None, **_kwargs):
+            call_order.append(agent_type)
+            return {
+                "success": True,
+                "artifacts": [f"docs/{agent_type}-{issue_number}.md"],
+            }
+
+        executor = BattlePlanExecutor(
+            strategy_manager=BattlePlan_mgr,
+            work_state_manager=managers["workstate"],
+            agent_executor=agent_executor,
+        )
+
+        execution_id = await executor.execute_strategy("test-full-exec", issue_number=321)
+        execution = executor.get_execution(execution_id)
+
+        assert execution is not None
+        assert execution.status == "completed"
+        assert execution.completed_steps == ["requirements", "design", "implement"]
+        assert call_order == ["pm", "architect", "engineer"]
+
+        for work_item_id in execution.work_items:
+            item = managers["workstate"].get_work_item(work_item_id)
+            assert item is not None
+            assert item.status == WorkStatus.DONE
+
 
 class TestE2ECaptainCoordination:
     """Test end-to-end Captain coordination"""
@@ -250,6 +302,7 @@ class TestE2ECaptainCoordination:
     @pytest.mark.asyncio
     async def test_captain_coordinates_and_executes_work(self, captain, config):
         """Test: Captain creates plan and executes it"""
+        _ = config
         # Create work items
         item1 = captain.work_state_manager.create_work_item(
             title="Create user API",

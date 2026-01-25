@@ -47,6 +47,7 @@ class TestEndToEndWorkflow:
                 "prd_dir": str(temp_dir / "prd"),
                 "adr_dir": str(temp_dir / "adr"),
                 "specs_dir": str(temp_dir / "specs"),
+                "architecture_dir": str(temp_dir / "architecture"),
                 "reviews_dir": str(temp_dir / "reviews")
             },
             "skills": ["all"]
@@ -95,6 +96,7 @@ class TestEndToEndWorkflow:
         # Create output directories
         (temp_dir / "prd").mkdir(exist_ok=True)
         (temp_dir / "adr").mkdir(exist_ok=True)
+        (temp_dir / "architecture").mkdir(exist_ok=True)
         
         # Step 1: PM creates PRD
         pm = ProductManagerAgent(config, sdk=None)
@@ -135,9 +137,11 @@ class TestEndToEndWorkflow:
         
         assert result["success"] is True
         assert (temp_dir / "adr" / "ADR-123.md").exists()
+        assert (temp_dir / "architecture" / "ARCH-123.md").exists()
     
     def test_status_transitions_through_workflow(self, config, mock_github):
         """Test status transitions from Backlog to Done"""
+        _ = config
         # Track current labels to simulate real behavior
         current_labels = [{"name": "type:feature"}]
         
@@ -207,6 +211,7 @@ class TestEndToEndWorkflow:
     
     def test_invalid_status_transition(self, config, mock_github):
         """Test that invalid transitions are rejected"""
+        _ = config
         from ai_squad.core.status import StatusTransitionError
         
         status_manager = StatusManager(mock_github)
@@ -222,6 +227,7 @@ class TestEndToEndWorkflow:
     
     def test_agent_communication_workflow(self, config, mock_github):
         """Test agent-to-agent communication"""
+        _ = config
         communicator = AgentCommunicator(
             execution_mode="automated",
             github_tool=mock_github
@@ -417,6 +423,7 @@ class TestErrorScenarios:
     
     def test_status_manager_resets_on_failure(self, config):
         """Test status can be reset on failure"""
+        _ = config
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = {
             "number": 123,
@@ -459,6 +466,7 @@ class TestMultiAgentCollaboration:
     
     def test_agents_can_clarify_with_each_other(self, config):
         """Test agents can ask each other for clarification"""
+        _ = config
         github = Mock(spec=GitHubTool)
         github.get_issue.return_value = {"number": 123, "state": "open"}
         github.is_configured.return_value = True
@@ -486,6 +494,7 @@ class TestMultiAgentCollaboration:
     
     def test_conversation_thread_tracking(self, config):
         """Test conversation threads are tracked properly"""
+        _ = config
         github = Mock(spec=GitHubTool)
         communicator = AgentCommunicator(
             execution_mode="automated",

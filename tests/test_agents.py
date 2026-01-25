@@ -2,7 +2,7 @@
 Tests for agent implementations
 """
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from pathlib import Path
 import tempfile
 import shutil
@@ -67,7 +67,7 @@ class TestProductManagerAgent:
         assert "PRD-123.md" in str(path)
     
     @patch("ai_squad.tools.github.GitHubTool.get_issue")
-    def test_execute_creates_prd(self, mock_get_issue, agent, tmp_path):
+    def test_execute_creates_prd(self, mock_get_issue, agent):
         """Test PRD creation"""
         # Mock issue
         mock_get_issue.return_value = {
@@ -135,7 +135,11 @@ class TestArchitectAgent:
         return Config({
             "project": {"name": "Test"},
             "agents": {"architect": {"enabled": True, "model": "claude-sonnet-4.5"}},
-            "output": {"adr_dir": "docs/adr", "specs_dir": "docs/specs"},
+            "output": {
+                "adr_dir": "docs/adr",
+                "specs_dir": "docs/specs",
+                "architecture_dir": "docs/architecture",
+            },
             "skills": ["all"]
         })
     
@@ -158,6 +162,38 @@ class TestArchitectAgent:
     def test_agent_type(self, agent):
         """Test agent type is set correctly"""
         assert "architect" in agent.agent_type.lower()
+
+    @patch("ai_squad.tools.github.GitHubTool.get_issue")
+    def test_execute_creates_architecture_doc(self, mock_get_issue, tmp_path, monkeypatch):
+        """Architect should generate ADR, SPEC, and ARCH documents"""
+        config = Config({
+            "project": {"name": "Test"},
+            "agents": {"architect": {"enabled": True, "model": "claude-sonnet-4.5"}},
+            "output": {
+                "adr_dir": str(tmp_path / "adr"),
+                "specs_dir": str(tmp_path / "specs"),
+                "architecture_dir": str(tmp_path / "architecture"),
+            },
+            "skills": ["all"],
+        })
+
+        mock_get_issue.return_value = {
+            "number": 321,
+            "title": "Test Feature",
+            "body": "Test description",
+            "labels": ["type:feature"],
+            "user": {"login": "testuser"},
+            "created_at": "2026-01-22",
+        }
+
+        agent = ArchitectAgent(config, sdk=None)
+        agent.workflow_validator.get_missing_prerequisites = Mock(return_value=[])
+
+        monkeypatch.chdir(tmp_path)
+        result = agent.execute(321)
+
+        assert result["success"] is True
+        assert (tmp_path / "architecture" / "ARCH-321.md").exists()
 
 
 class TestEngineerAgent:
