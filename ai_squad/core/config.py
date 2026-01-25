@@ -41,6 +41,10 @@ class Config:
             },
         },
         "skills": ["all"],  # or list specific skills
+        "collaboration": {
+            "max_iterations": 3,
+            "default_mode": "iterative",
+        },
         "quality": {
             "test_coverage_threshold": 80,
             "test_pyramid": {
@@ -95,6 +99,10 @@ class Config:
             "enabled": True,
             "use_git_worktree": False,
             "hooks_dir": ".squad/hooks",
+        },
+        "collaboration": {
+            "max_iterations": 3,
+            "default_mode": "iterative",
         },
         "theater": {
             "default": "default",

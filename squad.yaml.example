@@ -53,6 +53,14 @@ github:
   
   # Automatically create pull requests (experimental)
   auto_create_prs: false
+
+# Collaboration configuration
+collaboration:
+  # Maximum iteration rounds for iterative dialogue mode (1-10)
+  max_iterations: 3
+  
+  # Default collaboration mode: "iterative" or "sequential"
+  default_mode: iterative
   
   # Label mappings for issue types
   labels:

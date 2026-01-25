@@ -68,6 +68,10 @@ hooks:
   enabled: true
   use_git_worktree: false
   hooks_dir: .squad/hooks
+
+collaboration:
+  max_iterations: 3
+  default_mode: iterative
 ```
 
 ## Configuration Options
@@ -516,6 +520,64 @@ skills:
   - performance
   - documentation
   - version-control
+
+collaboration:
+  max_iterations: 5  # More iterations for complex projects
+  default_mode: iterative
+```
+
+### Collaboration Configuration
+
+Control how agents work together in joint operations.
+
+#### `collaboration.max_iterations`
+
+**Type:** Integer (1-10)  
+**Default:** 3  
+**Description:** Maximum iteration rounds for iterative dialogue mode
+
+When two agents collaborate iteratively (e.g., PM and Architect), they engage in back-and-forth dialogue. Agent A produces output, Agent B reviews and provides feedback, Agent A refines based on feedback. This continues until approval or max_iterations is reached.
+
+```yaml
+collaboration:
+  max_iterations: 3  # Quick iterations
+  # or
+  max_iterations: 5  # More thorough review cycles
+```
+
+**Recommendations:**
+- **3 iterations** - Good for most cases, balances quality and speed
+- **5 iterations** - Use for critical features requiring thorough review
+- **1-2 iterations** - Fast prototyping, less critical features
+- **CLI Override** - Use `--max-iterations` flag to override per-command
+
+#### `collaboration.default_mode`
+
+**Type:** String (`iterative` or `sequential`)  
+**Default:** `iterative`  
+**Description:** Default collaboration mode for joint operations
+
+- **`iterative`** - Agents engage in dialogue with feedback loops (requires exactly 2 agents)
+- **`sequential`** - Agents execute in dependency order without interaction (2+ agents)
+
+```yaml
+collaboration:
+  default_mode: iterative  # Recommended for quality
+  # or
+  default_mode: sequential  # For legacy workflows
+```
+
+**Examples:**
+
+```bash
+# Uses iterative mode with config max_iterations
+squad joint-op 123 pm architect
+
+# Override to sequential mode
+squad joint-op 123 pm architect engineer --sequential
+
+# Override max_iterations via CLI
+squad joint-op 123 pm architect --max-iterations 5
 ```
 
 ## Tips

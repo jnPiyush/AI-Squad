@@ -16,6 +16,7 @@ from ai_squad.core.agent_executor import AgentExecutor
 from ai_squad.core.validation import PrerequisiteValidator
 from ai_squad.core.signal import SignalManager, MessagePriority
 from ai_squad.core.handoff import HandoffManager, HandoffReason
+from ai_squad.core.config import Config
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -31,17 +32,17 @@ def run_collaboration(
     issue_number: int, 
     agents: List[str],
     mode: CollaborationMode = CollaborationMode.ITERATIVE,
-    max_iterations: int = 3
+    max_iterations: Optional[int] = None
 ) -> Dict[str, Any]:
     """
     Run multiple agents in collaboration with optional iterative dialogue.
     
-    Iterative Mode (default - for 2 agents):
+    Sequential Mode (for 2+ agents):
     - Validates agents are executed in correct dependency order
     - Each agent runs once in sequence
     - E.g., cannot run Engineer before Architect, Architect before PM
     
-    Iterative Mode:
+    Iterative Mode (default - for 2 agents):
     - Agents engage in back-and-forth dialogue
     - Agent A produces output → Agent B reviews and provides feedback
     - Agent A iterates based on feedback → Repeat until approval or max iterations
@@ -51,7 +52,7 @@ def run_collaboration(
         issue_number: GitHub issue number
         agents: List of agent types (exactly 2 for iterative mode, 2+ for sequential)
         mode: Collaboration mode (default: iterative)
-        max_iterations: Maximum iteration rounds for iterative mode (default: 3)
+        max_iterations: Maximum iteration rounds (default: from config or 3)
         
     Returns:
         Dict with collaboration result including:
@@ -65,6 +66,11 @@ def run_collaboration(
     Raises:
         ValueError: If agents list is invalid for selected mode
     """
+    # Load max_iterations from config if not specified
+    if max_iterations is None:
+        config = Config.load()
+        max_iterations = config.get("collaboration", {}).get("max_iterations", 3)
+    
     if mode == CollaborationMode.ITERATIVE:
         return _run_iterative_collaboration(issue_number, agents, max_iterations)
     else:

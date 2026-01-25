@@ -283,7 +283,7 @@ def review(pr_number):
 @click.argument("issue_number", type=int)
 @click.argument("agents", nargs=-1, required=True)
 @click.option("--sequential", "-s", is_flag=True, help="Use sequential mode (no dialogue, 2+ agents)")
-@click.option("--max-iterations", "-m", default=3, type=int, help="Max iteration rounds (default: 3)")
+@click.option("--max-iterations", "-m", default=None, type=int, help="Max iteration rounds (default: from config or 3)")
 def joint_op(issue_number, agents, sequential, max_iterations):
     """Multi-agent joint operation
     

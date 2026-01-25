@@ -320,3 +320,64 @@ class TestBackwardCompatibility:
             
             assert result["success"]
             assert mock_iter.called
+
+
+class TestConfigBasedIterationLimit:
+    """Test configuration-based max_iterations"""
+    
+    def test_max_iterations_from_config(self):
+        """Test that max_iterations is read from config when not specified"""
+        mock_config = Mock()
+        mock_config.get.return_value = {"max_iterations": 5}
+        
+        with patch('ai_squad.core.collaboration.Config') as MockConfig:
+            MockConfig.load.return_value = mock_config
+            with patch('ai_squad.core.collaboration._run_iterative_collaboration') as mock_iter:
+                mock_iter.return_value = {"success": True, "mode": "iterative"}
+                
+                # Call without max_iterations - should read from config
+                run_collaboration(123, ["pm", "architect"])
+                
+                # Verify config was loaded
+                MockConfig.load.assert_called_once()
+                
+                # Verify _run_iterative_collaboration was called with config value
+                call_args = mock_iter.call_args
+                assert call_args[0][2] == 5  # max_iterations is 3rd positional arg
+    
+    def test_max_iterations_explicit_overrides_config(self):
+        """Test that explicit max_iterations overrides config"""
+        mock_config = Mock()
+        mock_config.get.return_value = {"max_iterations": 5}
+        
+        with patch('ai_squad.core.collaboration.Config') as MockConfig:
+            MockConfig.load.return_value = mock_config
+            with patch('ai_squad.core.collaboration._run_iterative_collaboration') as mock_iter:
+                mock_iter.return_value = {"success": True, "mode": "iterative"}
+                
+                # Call with explicit max_iterations - should NOT read from config
+                run_collaboration(123, ["pm", "architect"], max_iterations=10)
+                
+                # Verify config was NOT loaded
+                MockConfig.load.assert_not_called()
+                
+                # Verify _run_iterative_collaboration was called with explicit value
+                call_args = mock_iter.call_args
+                assert call_args[0][2] == 10
+    
+    def test_max_iterations_defaults_when_config_missing(self):
+        """Test that max_iterations defaults to 3 when config section missing"""
+        mock_config = Mock()
+        mock_config.get.return_value = {}  # Empty collaboration section
+        
+        with patch('ai_squad.core.collaboration.Config') as MockConfig:
+            MockConfig.load.return_value = mock_config
+            with patch('ai_squad.core.collaboration._run_iterative_collaboration') as mock_iter:
+                mock_iter.return_value = {"success": True, "mode": "iterative"}
+                
+                # Call without max_iterations - should use default
+                run_collaboration(123, ["pm", "architect"])
+                
+                # Verify default was used
+                call_args = mock_iter.call_args
+                assert call_args[0][2] == 3  # Default value
