@@ -15,13 +15,13 @@ squad [command] [arguments] [options]
 
 ## Commands
 
-### `squad init`
+### `squad deploy`
 
 Initialize AI-Squad in your project.
 
 **Usage:**
 ```bash
-squad init [--force]
+squad deploy [--force]
 ```
 
 **Options:**
@@ -37,7 +37,7 @@ squad init [--force]
 **Example:**
 ```bash
 cd my-project
-squad init
+squad deploy
 ```
 
 ---
@@ -213,13 +213,13 @@ squad captain 123
 
 ---
 
-### `squad collab <issue#> <agents...>`
+### `squad joint-op <issue#> <agents...>`
 
 Multi-agent collaboration - run multiple agents in sequence.
 
 **Usage:**
 ```bash
-squad collab <issue-number> <agent1> <agent2> [agent3...]
+squad joint-op <issue-number> <agent1> <agent2> [agent3...]
 ```
 
 **Arguments:**
@@ -229,35 +229,35 @@ squad collab <issue-number> <agent1> <agent2> [agent3...]
 **Example:**
 ```bash
 # Epic planning
-squad collab 123 pm architect
+squad joint-op 123 pm architect
 
 # Feature development
-squad collab 456 architect engineer ux
+squad joint-op 456 architect engineer ux
 
 # Full workflow
-squad collab 789 pm architect engineer ux
+squad joint-op 789 pm architect engineer ux
 ```
 
 **Common Patterns:**
 
 **Epic Planning:**
 ```bash
-squad collab <epic#> pm architect
+squad joint-op <epic#> pm architect
 ```
 
 **Feature Development:**
 ```bash
-squad collab <feature#> architect engineer ux
+squad joint-op <feature#> architect engineer ux
 ```
 
 **Bug Fix:**
 ```bash
-squad collab <bug#> engineer
+squad joint-op <bug#> engineer
 ```
 
 **Design Review:**
 ```bash
-squad collab <design#> ux architect
+squad joint-op <design#> ux architect
 ```
 
 ---
@@ -326,13 +326,13 @@ squad dashboard [--host 127.0.0.1] [--port 5050] [--debug]
 
 ---
 
-### `squad doctor`
+### `squad sitrep`
 
 Validate AI-Squad setup and configuration.
 
 **Usage:**
 ```bash
-squad doctor
+squad sitrep
 ```
 
 **Checks:**
@@ -344,7 +344,7 @@ squad doctor
 
 **Example:**
 ```bash
-squad doctor
+squad sitrep
 ```
 
 **Output:**

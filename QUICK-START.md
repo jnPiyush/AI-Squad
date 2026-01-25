@@ -33,7 +33,7 @@ pip install -e .
 
 ```bash
 cd /path/to/your/project
-squad init
+squad deploy
 ```
 
 This creates:
@@ -72,7 +72,7 @@ echo 'export GITHUB_TOKEN=ghp_your_token_here' >> ~/.bashrc
 ### Step 4: Verify Setup
 
 ```bash
-squad doctor
+squad sitrep
 ```
 
 Expected output when fully configured:
@@ -131,14 +131,14 @@ squad review 456  # PR number
 
 **Run multiple agents sequentially:**
 ```bash
-squad collab 123 pm architect engineer
+squad joint-op 123 pm architect engineer
 # PM creates PRD → Architect designs → Engineer implements
 # Results aggregated in terminal
 ```
 
 **Run all agents:**
 ```bash
-squad collab 123 --all
+squad joint-op 123 --all
 # Full workflow: PM → UX → Architect → Engineer → Reviewer
 ```
 
@@ -235,7 +235,7 @@ gh issue create --title "[Epic] User Authentication" --label "type:epic"
 squad pm 100
 
 # 3. Collaborate on architecture
-squad collab 100 pm ux architect
+squad joint-op 100 pm ux architect
 
 # 4. Implement features individually
 squad engineer 101  # Login
@@ -308,14 +308,14 @@ gh auth login
 gh auth status
 
 # Verify AI-Squad setup
-squad doctor
+squad sitrep
 ```
 
 ### "Configuration not found"
 ```bash
 # Run init in project root
 cd /path/to/project
-squad init
+squad deploy
 ```
 
 ### "Module not found: ai_squad"
@@ -371,8 +371,8 @@ agents:
 Try your first command:
 ```bash
 cd your-project
-squad init
-squad doctor
+squad deploy
+squad sitrep
 squad pm 123
 ```
 

@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Captain executes multi-agent collaboration** using Battle Plans
   - Complete agent sequence: PM → Architect → Engineer → UX → Reviewer
   - Multi-agent team works together to complete missions end-to-end
-  - Respects military theme: Captain, Battle Plans, Convoys, Work Items
+  - Respects military theme: Captain, Battle Plans, Convoys, operations
   - Optional `--plan-only` to create brief without execution
   
 - **Captain Agent Enhancements**:
@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ```
   High Command provides Mission Brief → PM Analysis → GitHub Issues → Captain Deployment
        ↓
-  Captain selects Battle Plan → Creates Work Items → Organizes Convoys
+  Captain selects Battle Plan → Creates operations → Organizes Convoys
        ↓
   Executes Agents: PM → Architect → Engineer → UX → Reviewer
        ↓
@@ -68,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Autonomous mode now respects orchestration architecture
   - Captain is the central coordinator (not bypassed)
   - Battle Plans drive agent sequences
-  - Work Items track all activities
+  - operations track all activities
   - Convoys enable parallel execution
 
 - **Military Theme Consistency**:
@@ -96,7 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **🎖️ DEPLOYS TO CAPTAIN** for orchestration using Battle Plans
   - **Captain EXECUTES agents via collaboration** (PM → Architect → Engineer → UX → Reviewer)
   - Multi-agent team collaboration using Battle Plan sequence
-  - Maintains military theme: Captain, Battle Plans, Work Items, Convoys
+  - Maintains military theme: Captain, Battle Plans, operations, Convoys
   - Respects existing orchestration architecture
   - Optional `--plan-only` flag to create mission brief without Captain deployment
   - Examples:
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated [sdk_compat.py](ai_squad/core/sdk_compat.py#L58) compatibility check
   - This resolves installation errors where AI-Squad couldn't find the SDK module
 
-- **Setup Experience**: Enhanced `squad init` with interactive GitHub configuration
+- **Setup Experience**: Enhanced `squad deploy` with interactive GitHub configuration
   - Added automatic detection of GITHUB_TOKEN environment variable
   - Added detection of `gh` CLI authentication status
   - Provides clear instructions for both `gh auth login` (recommended) and manual token setup
@@ -131,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CopilotSDK always uses OAuth (no token parameter)
   - Removed token checking and fallback logic
   - Updated all error messages to guide users to `gh auth login`
-  - Interactive setup (`squad init`) only shows OAuth instructions
+  - Interactive setup (`squad deploy`) only shows OAuth instructions
   - Documentation updated to remove all token references
   - If you were using GITHUB_TOKEN, run `gh auth login` to migrate
 
@@ -149,7 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `agents_definitions/*.md` - Agent definitions for GitHub Copilot
     - `copilot-instructions.md` - GitHub Copilot integration guide
   - Updated [init_project.py](ai_squad/core/init_project.py) to copy agent definitions and copilot instructions
-  - After installation, `squad init` now properly creates:
+  - After installation, `squad deploy` now properly creates:
     - `.github/agents/` with 5 agent definition files
     - `.github/skills/` with 18 skill files
     - `.github/templates/` with 7 template files
@@ -158,7 +158,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0] - 2026-01-22
 
 ### Added
-- **Watch Mode**: `squad watch` command for automatic agent orchestration
+- **Watch Mode**: `squad patrol` command for automatic agent orchestration
   - Monitors GitHub for label changes (orch:* labels)
   - Automatically triggers agents in sequence: PM → Architect → Engineer → Reviewer
   - Real-time status display with statistics
@@ -264,3 +264,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Removed` - Removed features
 - `Fixed` - Bug fixes
 - `Security` - Security improvements
+

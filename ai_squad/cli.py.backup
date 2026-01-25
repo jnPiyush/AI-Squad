@@ -160,8 +160,8 @@ def deploy(force, skip_setup):
                 _interactive_setup()
             
             console.print("\n[bold]Next steps:[/bold]")
-            console.print("  1. Deploy an agent: [cyan]squad pm 123[/cyan]")
-            console.print("  2. Or get situation report: [cyan]squad sitrep[/cyan]")
+            console.print("  1. Run a command: [cyan]squad pm 123[/cyan]")
+            console.print("  2. Or validate setup: [cyan]squad doctor[/cyan]")
             console.print("  3. View dashboard: [cyan]squad dashboard[/cyan]")
         else:
             console.print(f"[bold red]FAIL Deployment failed: {result['error']}[/bold red]")
@@ -175,8 +175,8 @@ def deploy(force, skip_setup):
 @main.command()
 @click.argument("issue_number", type=int)
 def pm(issue_number):
-    """Deploy Product Manager agent (creates PRD)"""
-    console.print(f"[bold cyan]Deploying Product Manager for issue #{issue_number}...[/bold cyan]\n")
+    """Run Product Manager agent (creates PRD)"""
+    console.print(f"[bold cyan]Running Product Manager for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         executor = AgentExecutor()
@@ -196,8 +196,8 @@ def pm(issue_number):
 @main.command()
 @click.argument("issue_number", type=int)
 def architect(issue_number):
-    """Deploy Architect agent (creates ADR/Spec)"""
-    console.print(f"[bold cyan]Deploying Architect for issue #{issue_number}...[/bold cyan]\n")
+    """Run Architect agent (creates ADR/Spec)"""
+    console.print(f"[bold cyan]Running Architect for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         executor = AgentExecutor()
@@ -217,8 +217,8 @@ def architect(issue_number):
 @main.command()
 @click.argument("issue_number", type=int)
 def engineer(issue_number):
-    """Deploy Engineer agent (implements feature)"""
-    console.print(f"[bold cyan]Deploying Engineer for issue #{issue_number}...[/bold cyan]\n")
+    """Run Engineer agent (implements feature)"""
+    console.print(f"[bold cyan]Running Engineer for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         executor = AgentExecutor()
@@ -240,8 +240,8 @@ def engineer(issue_number):
 @main.command()
 @click.argument("issue_number", type=int)
 def ux(issue_number):
-    """Deploy UX Designer agent (creates wireframes)"""
-    console.print(f"[bold cyan]Deploying UX Designer for issue #{issue_number}...[/bold cyan]\n")
+    """Run UX Designer agent (creates wireframes)"""
+    console.print(f"[bold cyan]Running UX Designer for issue #{issue_number}...[/bold cyan]\n")
     
     try:
         executor = AgentExecutor()
@@ -261,8 +261,8 @@ def ux(issue_number):
 @main.command()
 @click.argument("pr_number", type=int)
 def review(pr_number):
-    """Deploy Reviewer agent (reviews PR)"""
-    console.print(f"[bold cyan]Deploying Reviewer for PR #{pr_number}...[/bold cyan]\n")
+    """Run Reviewer agent (reviews PR)"""
+    console.print(f"[bold cyan]Running Reviewer for PR #{pr_number}...[/bold cyan]\n")
     
     try:
         executor = AgentExecutor()
@@ -279,16 +279,16 @@ def review(pr_number):
         sys.exit(1)
 
 
-@main.command(name="joint-op")
+@main.command()
 @click.argument("issue_number", type=int)
 @click.argument("agents", nargs=-1, required=True)
-def joint_op(issue_number, agents):
-    """Multi-agent joint operation
+def collab(issue_number, agents):
+    """Multi-agent collaboration
     
-    Example: squad joint-op 123 pm architect
+    Example: squad collab 123 pm architect
     """
     console.print(
-        f"[bold cyan]Launching Joint Operation for issue #{issue_number}...[/bold cyan]\n"
+        f"[bold cyan]Running collaboration for issue #{issue_number}...[/bold cyan]\n"
         f"[cyan]Participants: {', '.join(agents)}[/cyan]\n"
     )
     
@@ -296,7 +296,7 @@ def joint_op(issue_number, agents):
         result = run_collaboration(issue_number, list(agents))
         
         if result["success"]:
-            console.print("[bold green]OK Joint Operation complete![/bold green]")
+            console.print("[bold green]OK Collaboration complete![/bold green]")
             for file in result.get("files", []):
                 console.print(f"  - {file}")
         else:
@@ -322,11 +322,11 @@ def chat(agent_type):
 
 
 @main.command()
-def sitrep():
-    """Generate situation report - validate AI-Squad setup"""
+def doctor():
+    """Validate AI-Squad setup"""
     print_banner()
     
-    console.print("[bold cyan]Generating Situation Report...[/bold cyan]\n")
+    console.print("[bold cyan]Running diagnostic checks...[/bold cyan]\n")
     
     try:
         result = run_doctor_checks()
@@ -352,24 +352,24 @@ def sitrep():
 @main.command()
 @click.option("--interval", default=30, type=int, help="Polling interval in seconds (default: 30)")
 @click.option("--repo", help="GitHub repo (owner/repo) - overrides squad.yaml")
-def patrol(interval, repo):
+def watch(interval, repo):
     """
-    Patrol GitHub for label changes and auto-engage agents
+    Watch GitHub for label changes and auto-trigger agents
     
-    Monitors GitHub issues and automatically engages agents when
+    Monitors GitHub issues and automatically triggers agents when
     orchestration labels are detected:
     
-    • orch:pm-done → Deploys Architect
+    • orch:pm-done → Triggers Architect
     
-    • orch:architect-done → Deploys Engineer
+    • orch:architect-done → Triggers Engineer
     
-    • orch:engineer-done → Deploys Reviewer
+    • orch:engineer-done → Triggers Reviewer
     
     Example:
     
-        squad patrol
+        squad watch
         
-        squad patrol --interval 60 --repo jnPiyush/MyProject
+        squad watch --interval 60 --repo jnPiyush/MyProject
     """
     print_banner()
     
@@ -685,16 +685,16 @@ def captain(issue_number):
               help="Filter by status")
 @click.option("--agent", type=click.Choice(["pm", "architect", "engineer", "ux", "reviewer"]),
               help="Filter by assigned agent")
-def ops(status_filter, agent):
+def work(status_filter, agent):
     """
-    Report all operations (persistent operation state)
+    List work items (persistent work state)
     
-    Shows all tracked operations with their status and assignments.
+    Shows all tracked work items with their status and assignments.
     
     Examples:
-        squad ops
-        squad ops --status ready
-        squad ops --agent engineer
+        squad work
+        squad work --status ready
+        squad work --agent engineer
     """
     try:
         from ai_squad.core.workstate import WorkStateManager, WorkStatus
@@ -715,11 +715,11 @@ def ops(status_filter, agent):
         items = manager.list_work_items(status=status_filter, agent=agent)
         
         if not items:
-            console.print("[yellow]No operations found[/yellow]")
+            console.print("[yellow]No work items found[/yellow]")
             return
         
         # Create table
-        table = Table(title="Operations")
+        table = Table(title="Work Items")
         table.add_column("ID", style="cyan")
         table.add_column("Status", style="yellow")
         table.add_column("Title")
@@ -1145,12 +1145,12 @@ def status():
 
 
 @main.command()
-def status():
-    """View operational status and circuit breaker status"""
+def health():
+    """View routing health and circuit breaker status"""
     try:
         from ai_squad.core.router import HealthView, HealthConfig
         
-        console.print("[bold cyan]Operational Status Report[/bold cyan]\n")
+        console.print("[bold cyan]Routing Health Status[/bold cyan]\n")
         
         health_view = HealthView()
         health_cfg = HealthConfig()

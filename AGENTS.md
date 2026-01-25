@@ -41,7 +41,7 @@ squad mission -p "Create a REST API for task management with CRUD operations"
 3. **🎖️ Captain Takes Command**
    - Analyzes mission complexity
    - Selects Battle Plan (feature/epic workflow)
-   - Creates Work Items for tracking
+   - Creates operations for tracking
    - Organizes into Convoys (parallel execution)
 
 4. **🤝 Multi-Agent Collaboration Executes**
@@ -517,10 +517,10 @@ squad review <pr-number>
 
 ```bash
 # Run multiple agents in sequence
-squad collab 123 pm architect engineer
+squad joint-op 123 pm architect engineer
 
 # Or use automatic watch mode
-squad watch
+squad patrol
 ```
 
 See [Workflows](workflows.md) for more multi-agent patterns.
@@ -669,7 +669,7 @@ export AI_SQUAD_TEMPERATURE="0.5"
 1. Ensure previous agent outputs are committed
 2. Check `squad.yaml` skills configuration
 3. Verify GitHub token has repository access
-4. Run `squad doctor` to diagnose issues
+4. Run `squad sitrep` to diagnose issues
 
 ### Low Quality Output
 
@@ -694,3 +694,4 @@ export AI_SQUAD_TEMPERATURE="0.5"
 - 📖 [Documentation](README.md)
 - 🐛 [Report Issues](https://github.com/your-org/ai-squad/issues)
 - 💬 [Discussions](https://github.com/your-org/ai-squad/discussions)
+

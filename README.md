@@ -47,12 +47,12 @@ AI-Squad uses military-inspired terminology to describe its orchestration system
 graph TB
     subgraph "⚔️ COMMAND HQ"
         Captain["🎖️ Captain<br/><i>Coordinator</i>"]
-        Router["🧭 OrgRouter<br/><i>Policy & Health</i>"]
+        Router["🧭 Command Router<br/><i>Policy & Health</i>"]
     end
     
     subgraph "🎯 MISSION CONTROL"
         BP["📜 Battle Plans<br/><i>Workflows</i>"]
-        WI["💼 Work Items<br/><i>Tasks</i>"]
+        WI["💼 operations<br/><i>Tasks</i>"]
         Convoy["🚐 Convoys<br/><i>Parallel Batches</i>"]
     end
     
@@ -75,12 +75,12 @@ graph TB
 |------|---------------|--------|
 | **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
 | **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
-| **💼 Work Item** | Single unit of work tracked in system | Issue #123 becomes work item `sq-abc12` |
-| **🚐 Convoy** | Parallel batch of related work items | 5 stories from an epic processed together |
+| **💼 operation** | Single unit of work tracked in system | Issue #123 becomes operation `sq-abc12` |
+| **🚐 Convoy** | Parallel batch of related operations | 5 stories from an epic processed together |
 | **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
 | **📡 Signal** | Message sent between agents | "PRD ready for review" notification |
 | **👉 Delegation** | Explicit assignment with audit trail | PM delegates API design to Architect |
-| **🕸️ Graph** | Tracks relationships between entities | Shows which agent owns which work item |
+| **🕸️ Graph** | Tracks relationships between entities | Shows which agent owns which operation |
 | **🪪 Identity** | Provenance metadata embedded in outputs | Tracks who created what, when, and why |
 | **🔍 Scout** | Background worker for discovery tasks | Scans workspace for patterns |
 | **🧭 Router** | Policy enforcement and health monitoring | Routes requests to healthy agents |
@@ -102,7 +102,7 @@ sequenceDiagram
     
     Dev->>CLI: squad captain 123
     CLI->>Captain: Coordinate issue #123
-    Captain->>Captain: Analyze & create work items
+    Captain->>Captain: Analyze & create operations
     Captain->>Router: Route to best agent
     Router->>Router: Check policy & health
     Router->>Agent: Execute task
@@ -138,7 +138,7 @@ flowchart LR
 
 ### Routing & Health
 
-The **OrgRouter** ensures reliable execution with policy enforcement and health monitoring:
+The **Command Router** ensures reliable execution with policy enforcement and health monitoring:
 
 ```mermaid
 flowchart TD
@@ -174,7 +174,7 @@ pip install ai-squad
 
 ```bash
 cd /path/to/your-project
-squad init
+squad deploy
 ```
 
 **Interactive Setup**: The init command will:
@@ -228,12 +228,12 @@ squad review 456       # Reviewer checks PR
 
 # Orchestration commands
 squad captain 123      # 🎖️ Captain coordinates everything
-squad collab 100 pm architect  # Multi-agent collaboration
-squad watch            # Auto-trigger on GitHub labels
+squad joint-op 100 pm architect  # Multi-agent collaboration
+squad patrol            # Auto-trigger on GitHub labels
 
 # Monitoring commands
-squad health           # View routing health
-squad work             # List work items
+squad status           # View routing health
+squad ops             # List operations
 squad dashboard        # Launch web UI
 ```
 
@@ -279,7 +279,7 @@ graph TB
         Obj -->|Deploys to| Captain["🎖️ Captain"]
         Captain --> Analyze["Analyze Mission"]
         Analyze --> BP["Select Battle Plan"]
-        BP --> WI["Create Work Items"]
+        BP --> WI["Create operations"]
         WI --> Convoy["Organize Convoys"]
     end
     
@@ -311,7 +311,7 @@ graph TB
 |-----------|------|--------|
 | **🎖️ Captain** | Meta-coordinator | Analyzes, plans, and orchestrates |
 | **📜 Battle Plan** | Workflow template | Defines agent sequence |
-| **💼 Work Items** | Task tracking | Tracks status per issue |
+| **💼 operations** | Task tracking | Tracks status per issue |
 | **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
 | **🤝 Collaboration** | Multi-agent coordinator | Executes agents in sequence |
 | **🔍 Patrol** | Monitoring | Detects stale/stuck work |
@@ -355,7 +355,7 @@ graph LR
 |---------|-------------|
 | **🎖️ Captain** | Intelligent coordinator that analyzes issues and delegates to agents |
 | **📜 Battle Plans** | Pre-defined workflows (feature, bugfix, epic) with phase dependencies |
-| **🚐 Convoys** | Parallel processing of related work items |
+| **🚐 Convoys** | Parallel processing of related operations |
 | **👋➡️ Handoffs** | Automatic work transfer between agents with context |
 | **📡 Signals** | Inter-agent messaging system |
 | **👉 Delegations** | Explicit assignments with full audit trails |
@@ -382,7 +382,7 @@ squad dashboard
 **Dashboard Pages:**
 - **Overview** - Stats, health status, recent activity
 - **Health** - Routing health with circuit breakers
-- **Work Items** - Track all work across agents
+- **operations** - Track all work across agents
 - **Delegations** - View delegation links and audit trails
 - **Convoys** - Monitor parallel work batches
 - **Graph** - Interactive operational graph visualization
@@ -391,7 +391,7 @@ squad dashboard
 
 ```bash
 # PM and Architect collaborate on Epic planning
-squad collab 100 pm architect
+squad joint-op 100 pm architect
 
 # Flow:
 # 1. PM drafts PRD
@@ -490,7 +490,7 @@ squad review 456
 # Issue #100: "User Authentication System" (Epic)
 
 # Multi-agent collaboration
-squad collab 100 pm architect
+squad joint-op 100 pm architect
 
 # What happens:
 # - PM drafts initial PRD
@@ -524,8 +524,8 @@ squad engineer 789
 ### Initialization
 
 ```bash
-squad init                    # Initialize AI-Squad in project
-squad doctor                  # Validate setup
+squad deploy                    # Initialize AI-Squad in project
+squad sitrep                  # Validate setup
 squad update                  # Update AI-Squad
 ```
 
@@ -543,16 +543,16 @@ squad review <pr>             # 🛡️ Reviewer: Review PR
 
 ```bash
 squad captain <issue>         # 🎖️ Captain coordinates work
-squad collab <issue> <agents> # Multi-agent collaboration
-squad watch                   # Auto-trigger on labels
+squad joint-op <issue> <agents> # Multi-agent collaboration
+squad patrol                   # Auto-trigger on labels
 squad run-plan <plan> <issue> # Execute a battle plan
 ```
 
 ### Monitoring Commands
 
 ```bash
-squad health                  # View routing health status
-squad work                    # List all work items
+squad status                  # View routing health status
+squad ops                    # List all operations
 squad convoys                 # List active convoys
 squad dashboard               # Launch web dashboard
 squad graph export            # Export operational graph
@@ -562,10 +562,10 @@ squad graph impact <node>     # Analyze impact of changes
 **Examples:**
 ```bash
 squad captain 123                   # Let Captain handle everything
-squad collab 123 pm architect       # Epic planning
-squad collab 456 architect engineer # Technical design + implementation
+squad joint-op 123 pm architect       # Epic planning
+squad joint-op 456 architect engineer # Technical design + implementation
 squad run-plan feature 123          # Execute feature workflow
-squad health                        # Check system health
+squad status                        # Check system health
 squad dashboard --port 8080         # Custom dashboard port
 ```
 
@@ -573,7 +573,7 @@ squad dashboard --port 8080         # Custom dashboard port
 
 ## ⚙️ Configuration
 
-AI-Squad uses `squad.yaml` (created by `squad init`):
+AI-Squad uses `squad.yaml` (created by `squad deploy`):
 
 ```yaml
 # squad.yaml
@@ -639,7 +639,7 @@ graph TB
     
     subgraph "🎖️ Orchestration Layer"
         Captain["🎖️ Captain"]
-        Router["📡 OrgRouter"]
+        Router["📡 Command Router"]
         BPE["📜 BattlePlan Executor"]
     end
     
@@ -685,7 +685,7 @@ graph TB
 ├── identity/            # Current identity dossier
 ├── scout_workers/       # Scout run checkpoints
 ├── signals/             # Inter-agent messages
-└── work_items/          # Work item state
+└── work_items/          # operation state
 ```
 
 ### CLI Tool + GitHub Actions
@@ -699,7 +699,7 @@ graph TB
 │ AI-Squad CLI (Python)                                   │
 │   ├─ Loads squad.yaml                                   │
 │   ├─ Fetches issue from GitHub                          │
-│   ├─ Captain analyzes & creates work items              │
+│   ├─ Captain analyzes & creates operations              │
 │   └─ Routes to appropriate agents                       │
 │   ↓                                                      │
 │ Agent Execution                                         │
@@ -848,7 +848,7 @@ gh auth login
 gh auth status
 
 # 4. Verify AI-Squad setup
-squad doctor
+squad sitrep
 ```
 
 **Why OAuth Only?**
@@ -861,7 +861,7 @@ squad doctor
 
 ### Missing .github Files After Installation
 
-**Issue:** After installing AI-Squad and running `squad init`, the `.github/` folder is missing files or is empty
+**Issue:** After installing AI-Squad and running `squad deploy`, the `.github/` folder is missing files or is empty
 
 **Solution:**
 1. Ensure you have the latest version:
@@ -871,7 +871,7 @@ squad doctor
 
 2. Reinitialize the project:
    ```bash
-   squad init --force
+   squad deploy --force
    ```
 
 3. Verify files were created:
@@ -947,6 +947,7 @@ It helps others discover the tool and motivates us to keep improving it.
 ---
 
 **AI-Squad** - Your AI Development Squad, One Command Away 🚀
+
 
 
 
