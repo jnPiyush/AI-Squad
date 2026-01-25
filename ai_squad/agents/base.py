@@ -23,6 +23,7 @@ from ai_squad.tools.codebase import CodebaseSearch
 from ai_squad.core.signal import MessagePriority
 from ai_squad.core.handoff import HandoffReason
 from ai_squad.core.ai_provider import get_ai_provider
+from ai_squad.core.status import IssueStatus
 
 
 class InvalidIssueNumberError(ValueError):
@@ -267,12 +268,32 @@ class BaseAgent(ABC):
             # Update status to agent's start status
             start_status = self.status_manager.get_agent_start_status(self.agent_type)
             try:
-                self.status_manager.transition(
-                    issue_number,
-                    start_status,
-                    self.agent_type,
-                    f"{self.agent_type.title()} agent started"
-                )
+                # Get current status first
+                current_status = self.status_manager._get_current_status(issue_number)
+                
+                # Only transition if current status is earlier in the workflow
+                # Status order: Backlog < Ready < In Progress < In Review < Done
+                status_order = {
+                    IssueStatus.BACKLOG: 0,
+                    IssueStatus.READY: 1,
+                    IssueStatus.IN_PROGRESS: 2,
+                    IssueStatus.IN_REVIEW: 3,
+                    IssueStatus.DONE: 4
+                }
+                
+                # Skip transition if issue is already at or past the start status
+                if status_order.get(current_status, 0) < status_order.get(start_status, 0):
+                    self.status_manager.transition(
+                        issue_number,
+                        start_status,
+                        self.agent_type,
+                        f"{self.agent_type.title()} agent started"
+                    )
+                else:
+                    logger.info(
+                        "Skipping status transition: Issue #%d already at %s (target: %s)",
+                        issue_number, current_status.value, start_status.value
+                    )
             except (ConnectionError, TimeoutError, OSError) as e:
                 logger.warning("Could not update status: %s", e)
             
