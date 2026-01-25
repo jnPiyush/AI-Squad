@@ -13,8 +13,8 @@ git init
 # Initialize AI-Squad
 squad init
 
-# Configure GitHub
-export GITHUB_TOKEN=ghp_your_token_here
+# Authenticate with GitHub (OAuth)
+gh auth login
 ```
 
 ## Workflow

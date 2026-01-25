@@ -42,22 +42,24 @@ This creates:
 - Copies production skills to `.ai-squad/skills/`
 - Creates helpful README
 
-### Step 3: Set Your GitHub Token
-
-```powershell
-# Windows PowerShell
-$env:GITHUB_TOKEN="ghp_your_token_here"
-
-# Or add to your profile
-notepad $PROFILE
-# Add: $env:GITHUB_TOKEN="ghp_your_token_here"
-```
+### Step 3: Authenticate with GitHub
 
 ```bash
-# Linux/Mac
-export GITHUB_TOKEN=ghp_your_token_here
+# Install GitHub CLI (if not installed)
+winget install GitHub.cli  # Windows
+brew install gh            # Mac
 
-# Or add to ~/.bashrc or ~/.zshrc
+# Authenticate via OAuth (one command!)
+gh auth login
+
+# Verify
+gh auth status
+```
+
+**Why OAuth?**
+- ✅ Secure (no manual tokens)
+- ✅ One command setup
+- ✅ Works with SSO/MFA
 echo 'export GITHUB_TOKEN=ghp_your_token_here' >> ~/.bashrc
 ```
 
@@ -297,15 +299,16 @@ cp /path/to/custom-skills/* .ai-squad/skills/
 
 ## 🐛 Troubleshooting
 
-### "GitHub Token not set"
+### "GitHub authentication required"
 ```bash
-# Verify token is set
-echo $env:GITHUB_TOKEN  # Windows
-echo $GITHUB_TOKEN      # Linux/Mac
+# Authenticate with GitHub CLI
+gh auth login
 
-# Set it if missing
-$env:GITHUB_TOKEN="ghp_..."  # Windows
-export GITHUB_TOKEN=ghp_...  # Linux/Mac
+# Verify authentication
+gh auth status
+
+# Verify AI-Squad setup
+squad doctor
 ```
 
 ### "Configuration not found"
@@ -324,11 +327,10 @@ pip install -e .
 
 ### "GitHub API rate limit"
 ```bash
-# Check rate limit
-curl -H "Authorization: token $GITHUB_TOKEN" \
-  https://api.github.com/rate_limit
+# Check rate limit (uses gh CLI OAuth)
+gh api rate_limit
 
-# Wait for reset or use authenticated requests
+# OAuth provides higher rate limits than tokens
 ```
 
 ### "Agent timeout"

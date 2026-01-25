@@ -175,13 +175,19 @@ cd /path/to/your-project
 squad init
 ```
 
+**Interactive Setup**: The init command will:
+- Create all necessary directories and files
+- Check your GitHub CLI authentication status
+- Guide you through OAuth setup with `gh auth login`
+- Show clear setup instructions if not authenticated
+
 This creates:
-- ✅ `.github/workflows/` - Automated agent execution
-- ✅ `.github/agents/` - Agent definitions
+- ✅ `.github/agents/` - 5 agent definition files (pm, architect, engineer, ux, reviewer)
 - ✅ `.github/skills/` - 18 production skills
-- ✅ `.github/templates/` - Document templates
+- ✅ `.github/templates/` - 7 document templates
+- ✅ `.github/copilot-instructions.md` - GitHub Copilot integration instructions
 - ✅ `squad.yaml` - Configuration
-- ✅ `docs/` - Output directories
+- ✅ `docs/` - Output directories (prd, adr, specs, ux, reviews)
 - ✅ `.squad/` - Internal state (graph, events, identity)
 
 ### 3. Use Your Squad!
@@ -697,6 +703,100 @@ Check out the [`examples/`](examples/) directory:
 - **[multi-agent-collab/](examples/multi-agent-collab/)** - PM + Architect collaboration
 - **[github-actions/](examples/github-actions/)** - Full CI/CD integration
 - **[custom-config/](examples/custom-config/)** - Advanced configuration
+
+---
+
+## 🔧 Troubleshooting
+
+### Import Error: No module named 'github_copilot_sdk'
+
+**Issue:** You see an error like `ModuleNotFoundError: No module named 'github_copilot_sdk'`
+
+**Cause:** The PyPI package is named `github-copilot-sdk`, but it provides the `copilot` module (not `github_copilot_sdk`).
+
+**Solution:** 
+1. Ensure you have the latest version of AI-Squad:
+   ```bash
+   pip install --upgrade ai-squad
+   ```
+
+2. Verify the GitHub Copilot SDK is installed:
+   ```bash
+   pip install --upgrade github-copilot-sdk>=0.1.16
+   ```
+
+3. Test the import:
+   ```python
+   python -c "from copilot import CopilotSDK; print('✓ SDK available')"
+   ```
+
+### GitHub Authentication Required
+
+**Issue:** Authentication errors or "GitHub authentication not configured"
+
+**Solution: GitHub CLI OAuth Authentication**
+
+AI-Squad uses **GitHub CLI OAuth** as the only authentication method.
+
+```bash
+# 1. Install GitHub CLI (if not installed)
+winget install GitHub.cli  # Windows
+brew install gh            # Mac
+# Linux: https://github.com/cli/cli#installation
+
+# 2. Authenticate with OAuth
+gh auth login
+
+# 3. Verify authentication
+gh auth status
+
+# 4. Verify AI-Squad setup
+squad doctor
+```
+
+**Why OAuth Only?**
+- ✅ No manual token management or security risks
+- ✅ Automatic token rotation by GitHub
+- ✅ More secure than static tokens
+- ✅ Supports SSO, MFA, and enterprise features
+- ✅ Same auth method used by GitHub CLI
+- ✅ Simpler setup - just one command
+
+### Missing .github Files After Installation
+
+**Issue:** After installing AI-Squad and running `squad init`, the `.github/` folder is missing files or is empty
+
+**Solution:**
+1. Ensure you have the latest version:
+   ```bash
+   pip install --upgrade ai-squad
+   ```
+
+2. Reinitialize the project:
+   ```bash
+   squad init --force
+   ```
+
+3. Verify files were created:
+   ```bash
+   # Windows PowerShell
+   Get-ChildItem -Path ".github" -Recurse | Select-Object FullName
+   
+   # Linux/Mac
+   find .github -type f
+   ```
+
+   You should see:
+   - `.github/agents/` (5 files: pm.md, architect.md, engineer.md, ux.md, reviewer.md)
+   - `.github/skills/` (18 directories with SKILL.md files)
+   - `.github/templates/` (7 template files)
+   - `.github/copilot-instructions.md`
+
+### For More Issues
+
+- Check [docs/commands.md](docs/commands.md) for detailed command usage
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup
+- Open an issue: https://github.com/jnPiyush/AI-Squad/issues
 
 ---
 

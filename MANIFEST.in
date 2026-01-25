@@ -1,0 +1,48 @@
+# Include documentation
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include AGENTS.md
+include QUICK-START.md
+
+# Include configuration examples
+include squad.yaml.example
+include requirements.txt
+include pyproject.toml
+
+# Include templates
+recursive-include ai_squad/templates *.md
+recursive-include ai_squad/templates *.yaml
+recursive-include ai_squad/templates *.json
+
+# Include skills
+recursive-include ai_squad/skills *.md
+recursive-include ai_squad/skills *.yaml
+
+# Include prompts (agent system prompts)
+recursive-include ai_squad/prompts *.md
+
+# Include dashboard files
+recursive-include ai_squad/dashboard/templates *.html
+recursive-include ai_squad/dashboard/static *
+
+# Include agent definitions from .github
+recursive-include .github/agents *.md
+recursive-include .github/skills *.md
+recursive-include .github/templates *.md
+recursive-include .github/templates *.yaml
+include .github/copilot-instructions.md
+
+# Exclude unnecessary files
+exclude .gitignore
+exclude .gitattributes
+exclude Makefile
+recursive-exclude tests *
+recursive-exclude examples *
+recursive-exclude scripts *
+recursive-exclude htmlcov *
+recursive-exclude benchmarks *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .DS_Store

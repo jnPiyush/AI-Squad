@@ -60,21 +60,25 @@ class AgentExecutor:
     ):
         """Initialize agent executor with optional injected managers."""
         self.config = config or Config.load(config_path)
-        self.github_token = os.getenv("GITHUB_TOKEN")
         
-        if not self.github_token:
+        # Check for GitHub CLI OAuth authentication (only method supported)
+        self.has_gh_oauth = self._check_gh_oauth()
+        
+        if not self.has_gh_oauth:
             warnings.warn(
-                "GITHUB_TOKEN environment variable not set; using placeholder token for local/testing.",
+                "GitHub authentication not configured. Run 'gh auth login' to authenticate. "
+                "Falling back to template-based generation (reduced AI capabilities).",
                 UserWarning
             )
-            self.github_token = "ghp_mock_token"
         
         # Initialize SDK - this is our primary choice for AI generation
         self.sdk = None
         self._sdk_initialized = False
 
         try:
-            from github_copilot_sdk import CopilotSDK as CopilotSDKRuntime
+            # NOTE: The PyPI package 'github-copilot-sdk' provides the 'copilot' module
+            # Import from 'copilot', NOT 'github_copilot_sdk'
+            from copilot import CopilotSDK as CopilotSDKRuntime
             sdk_available = True
         except ImportError:
             CopilotSDKRuntime = None
@@ -82,12 +86,18 @@ class AgentExecutor:
 
         if sdk_available and CopilotSDKRuntime:
             try:
-                self.sdk = CopilotSDKRuntime(token=self.github_token)
-                self._sdk_initialized = True
+                # Use OAuth authentication via gh CLI (no token parameter)
+                if self.has_gh_oauth:
+                    self.sdk = CopilotSDKRuntime()  # Uses gh CLI OAuth
+                    self._sdk_initialized = True
+                else:
+                    # No valid auth available
+                    self.sdk = None
+                    raise RuntimeError("GitHub authentication required. Run 'gh auth login' to authenticate.")
             except (ConnectionError, TimeoutError, RuntimeError) as e:
                 warnings.warn(
                     f"Failed to initialize GitHub Copilot SDK: {e}. "
-                    "Falling back to template-based generation.",
+                    "Run 'gh auth login' to authenticate. Falling back to template-based generation.",
                     UserWarning
                 )
         else:
@@ -104,6 +114,22 @@ class AgentExecutor:
             workspace_root=workspace_root,
             config=self.config.data,
         )
+    
+    @staticmethod
+    def _check_gh_oauth() -> bool:
+        """Check if gh CLI is authenticated via OAuth"""
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False
+            )
+            return result.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
         self.worker_lifecycle = WorkerLifecycleManager(workspace_root=workspace_root, config=self.config.data)
         self.signal_mgr = signal_manager or SignalManager(workspace_root=workspace_root, config=self.config.data)
         self.delegation_mgr = DelegationManager(workspace_root=workspace_root, signal_manager=self.signal_mgr, config=self.config.data)

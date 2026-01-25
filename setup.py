@@ -76,8 +76,17 @@ setup(
     package_data={
         "ai_squad": [
             "templates/**/*",
+            "templates/**/*.md",
+            "templates/**/*.yaml",
             "skills/**/*",
-            "workflows/**/*",
+            "skills/**/*.md",
+            "skills/**/*.yaml",
+            "agents_definitions/*.md",
+            "prompts/*.md",
+            "prompts/README.md",
+            "copilot-instructions.md",
+            "dashboard/templates/*.html",
+            "dashboard/static/**/*",
         ],
     },
     python_requires=">=3.11",

@@ -399,15 +399,16 @@ squad pm 789 && squad architect 789 && squad engineer 789
 
 ## Environment Variables
 
-### `GITHUB_TOKEN`
+### Authentication
 
-**Required:** No (OAuth via `gh auth login` is supported)  
-**Description:** GitHub Personal Access Token with `repo` and `workflow` scopes (optional)
-
-**Set:**
+**Required:** Yes  
+**Method:** GitHub CLI OAuth  
+**Setup:**
 ```bash
-export GITHUB_TOKEN=ghp_your_token_here
+gh auth login
 ```
+
+AI-Squad uses OAuth exclusively. No token environment variables needed.
 
 ### `OPENAI_API_KEY`
 

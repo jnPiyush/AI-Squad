@@ -79,22 +79,18 @@ def run_doctor_checks() -> Dict[str, Any]:
     """
     checks = []
     
-    # Check 1: GitHub Authentication (Token or OAuth)
-    github_token = os.getenv("GITHUB_TOKEN")
+    # Check 1: GitHub OAuth Authentication (only method supported)
     gh_oauth = _check_gh_auth()
     
-    if github_token:
-        auth_message = "Token (GITHUB_TOKEN)"
-        auth_passed = True
-    elif gh_oauth:
-        auth_message = "OAuth (gh auth login)"
+    if gh_oauth:
+        auth_message = "OAuth (gh auth login) - Authenticated"
         auth_passed = True
     else:
-        auth_message = "Not configured. Use 'gh auth login' (recommended) or set GITHUB_TOKEN"
+        auth_message = "Not authenticated. Run 'gh auth login' to authenticate"
         auth_passed = False
     
     checks.append({
-        "name": "GitHub Auth",
+        "name": "GitHub OAuth",
         "passed": auth_passed,
         "message": auth_message
     })

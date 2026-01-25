@@ -62,6 +62,14 @@ def initialize_project(force: bool = False) -> Dict[str, Any]:
         _copy_skills(cwd)
         created.append(".github/skills/ (18 skills)")
         
+        # Copy agent definitions to .github/agents
+        _copy_agent_definitions(cwd)
+        created.append(".github/agents/ (5 agent definitions)")
+        
+        # Copy copilot instructions
+        _copy_copilot_instructions(cwd)
+        created.append(".github/copilot-instructions.md")
+        
         # Create README if not exists
         readme = cwd / "README.md"
         if not readme.exists():
@@ -188,6 +196,24 @@ def _copy_skills(project_dir: Path) -> None:
     
     if skills_dir.exists():
         shutil.copytree(skills_dir, target_dir, dirs_exist_ok=True)
+
+
+def _copy_agent_definitions(project_dir: Path) -> None:
+    """Copy agent definition files to project"""
+    agents_dir = Path(__file__).parent.parent / "agents_definitions"
+    target_dir = project_dir / ".github" / "agents"
+    
+    if agents_dir.exists():
+        shutil.copytree(agents_dir, target_dir, dirs_exist_ok=True)
+
+
+def _copy_copilot_instructions(project_dir: Path) -> None:
+    """Copy GitHub Copilot instructions to project"""
+    instructions_file = Path(__file__).parent.parent / "copilot-instructions.md"
+    target_file = project_dir / ".github" / "copilot-instructions.md"
+    
+    if instructions_file.exists():
+        shutil.copy2(instructions_file, target_file)
 
 
 def _create_readme(path: Path) -> None:

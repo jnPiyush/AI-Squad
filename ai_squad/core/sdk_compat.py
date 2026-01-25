@@ -55,7 +55,7 @@ def _get_latest_version() -> Optional[str]:
 
 
 def _is_sdk_compatible() -> bool:
-    return bool(importlib.util.find_spec("copilot") or importlib.util.find_spec("github_copilot_sdk"))
+    return bool(importlib.util.find_spec("copilot"))
 
 
 def _pip_install(spec: str) -> bool:

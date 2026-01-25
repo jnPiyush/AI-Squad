@@ -116,10 +116,11 @@ See `.github/workflows/test.yml` for CI configuration.
 pip install -e ".[dev]"
 ```
 
-### Tests Fail Due to GitHub Token
-Set mock token:
+### Tests Fail Due to Authentication
+Tests use mocked authentication. If you see auth errors:
 ```bash
-export GITHUB_TOKEN=ghp_mock_token
+# Check test fixtures in conftest.py
+# Mocked OAuth should be used automatically
 ```
 
 ### Tests Fail Due to SDK

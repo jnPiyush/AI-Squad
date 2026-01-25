@@ -17,6 +17,8 @@ from ai_squad.core.init_project import initialize_project
 from ai_squad.core.agent_executor import AgentExecutor
 from ai_squad.core.doctor import run_doctor_checks
 from ai_squad.core.collaboration import run_collaboration
+import yaml
+import os
 
 console = Console()
 
@@ -50,6 +52,59 @@ def print_banner():
     console.print()
 
 
+def _interactive_setup():
+    """Interactive setup for GitHub OAuth authentication"""
+    import subprocess
+    
+    # Check OAuth authentication
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False
+        )
+        if result.returncode == 0:
+            console.print("[green]✓ GitHub CLI is authenticated via OAuth[/green]")
+            console.print("[dim]  AI-Squad is ready to use full AI capabilities[/dim]")
+            return
+        else:
+            # OAuth not configured
+            console.print("[yellow]⚠ GitHub authentication required[/yellow]")
+            console.print("\n[bold]Authenticate with GitHub CLI:[/bold]")
+            console.print("  [cyan]gh auth login[/cyan]")
+            console.print("\n[dim]This uses OAuth (secure, no manual tokens)[/dim]")
+            console.print("\n[bold cyan]→ Run 'gh auth login' now to get started[/bold cyan]")
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        # gh CLI not installed
+        console.print("[yellow]⚠ GitHub CLI (gh) not installed[/yellow]")
+        console.print("\n[bold]Step 1: Install GitHub CLI[/bold]")
+        console.print("  Windows: [cyan]winget install GitHub.cli[/cyan]")
+        console.print("  Mac: [cyan]brew install gh[/cyan]")
+        console.print("  Linux: [cyan]https://github.com/cli/cli#installation[/cyan]")
+        console.print("\n[bold]Step 2: Authenticate[/bold]")
+        console.print("  [cyan]gh auth login[/cyan]")
+    
+    # Check repo configuration
+    config_file = Path("squad.yaml")
+    if config_file.exists():
+        with open(config_file, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        
+        repo = config.get("project", {}).get("github_repo")
+        owner = config.get("project", {}).get("github_owner")
+        
+        if repo and owner:
+            console.print(f"\n[green]✓ GitHub repo configured: {owner}/{repo}[/green]")
+        else:
+            console.print("\n[yellow]⚠ GitHub repo not detected[/yellow]")
+            console.print("[dim]  You can manually update 'github_repo' and 'github_owner' in squad.yaml[/dim]")
+            console.print("[dim]  Or ensure you're in a git repository with a GitHub remote[/dim]")
+    
+    console.print("\n[dim]Run [cyan]squad doctor[/cyan] to verify your setup[/dim]")
+
+
 @click.group(invoke_without_command=True)
 @click.option("--version", is_flag=True, help="Show version and exit")
 @click.pass_context
@@ -80,7 +135,8 @@ def main(ctx, version):
 
 @main.command()
 @click.option("--force", is_flag=True, help="Overwrite existing files")
-def init(force):
+@click.option("--skip-setup", is_flag=True, help="Skip interactive token/repo setup")
+def init(force, skip_setup):
     """Initialize AI-Squad in your project"""
     print_banner()
     
@@ -96,10 +152,15 @@ def init(force):
             for item in result["created"]:
                 console.print(f"  OK {item}")
             
+            # Interactive setup for token and repo
+            if not skip_setup:
+                console.print("\n[bold cyan]Let's configure your GitHub setup...[/bold cyan]\n")
+                _interactive_setup()
+            
             console.print("\n[bold]Next steps:[/bold]")
-            console.print("  1. Configure GitHub token: [cyan]export GITHUB_TOKEN=ghp_xxx[/cyan]")
-            console.print("  2. Run a command: [cyan]squad pm 123[/cyan]")
-            console.print("  3. Or validate setup: [cyan]squad doctor[/cyan]")
+            console.print("  1. Run a command: [cyan]squad pm 123[/cyan]")
+            console.print("  2. Or validate setup: [cyan]squad doctor[/cyan]")
+            console.print("  3. View dashboard: [cyan]squad dashboard[/cyan]")
         else:
             console.print(f"[bold red]FAIL Initialization failed: {result['error']}[/bold red]")
             sys.exit(1)
@@ -324,11 +385,23 @@ def watch(interval, repo):
         console.print("[yellow]TIP Run 'squad init' first[/yellow]")
         sys.exit(1)
     
-    # Check GitHub token
-    import os
-    if not os.getenv("GITHUB_TOKEN"):
-        console.print("[bold red]FAIL GITHUB_TOKEN not set[/bold red]")
-        console.print("[yellow]TIP Set it with: export GITHUB_TOKEN=ghp_xxx[/yellow]")
+    # Check GitHub OAuth authentication
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["gh", "auth", "status"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False
+        )
+        if result.returncode != 0:
+            console.print("[bold red]FAIL GitHub authentication required[/bold red]")
+            console.print("[yellow]TIP Run: gh auth login[/yellow]")
+            sys.exit(1)
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        console.print("[bold red]FAIL GitHub CLI (gh) not found[/bold red]")
+        console.print("[yellow]TIP Install: winget install GitHub.cli[/yellow]")
         sys.exit(1)
     
     # Check repo

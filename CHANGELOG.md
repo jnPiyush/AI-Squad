@@ -5,6 +5,58 @@ All notable changes to AI-Squad will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Import Issue**: Fixed incorrect import of GitHub Copilot SDK
+  - Changed `from github_copilot_sdk import CopilotSDK` to `from copilot import CopilotSDK`
+  - The PyPI package `github-copilot-sdk` provides the `copilot` module (not `github_copilot_sdk`)
+  - Updated [agent_executor.py](ai_squad/core/agent_executor.py#L77) to use correct import
+  - Updated [sdk_compat.py](ai_squad/core/sdk_compat.py#L58) compatibility check
+  - This resolves installation errors where AI-Squad couldn't find the SDK module
+
+- **Setup Experience**: Enhanced `squad init` with interactive GitHub configuration
+  - Added automatic detection of GITHUB_TOKEN environment variable
+  - Added detection of `gh` CLI authentication status
+  - Provides clear instructions for both `gh auth login` (recommended) and manual token setup
+  - Displays repo configuration status from squad.yaml
+  - Shows platform-specific commands (Windows PowerShell vs Linux/Mac)
+  - Added `--skip-setup` flag to skip interactive configuration
+  - Improved "Next steps" guidance with dashboard command
+  - Makes first-time setup more user-friendly and less error-prone
+
+- **OAuth-Only Authentication**: Removed GITHUB_TOKEN support, OAuth is now the only authentication method
+  - **BREAKING CHANGE**: GITHUB_TOKEN environment variable is no longer supported
+  - Users must authenticate via `gh auth login` (GitHub CLI OAuth)
+  - Simplified authentication: one method, one command to set up
+  - More secure: no static tokens, automatic rotation, enterprise SSO/MFA support
+  - CopilotSDK always uses OAuth (no token parameter)
+  - Removed token checking and fallback logic
+  - Updated all error messages to guide users to `gh auth login`
+  - Interactive setup (`squad init`) only shows OAuth instructions
+  - Documentation updated to remove all token references
+  - If you were using GITHUB_TOKEN, run `gh auth login` to migrate
+
+- **Packaging Issue**: Fixed missing files in package distribution
+  - Added `MANIFEST.in` to properly include all necessary files
+  - Created `ai_squad/agents_definitions/` with 5 agent definition files (pm, architect, engineer, ux, reviewer)
+  - Copied `.github/copilot-instructions.md` to package as `ai_squad/copilot-instructions.md`
+  - **Added `ai_squad/prompts/` directory** - 6 agent system prompt files (.md)
+  - **Added `ai_squad/dashboard/templates/` files** - 7 HTML templates for web dashboard
+  - **Added `ai_squad/dashboard/static/` files** - CSS and static assets
+  - Updated `setup.py` to include all missing files in `package_data`:
+    - `prompts/*.md` - Agent system prompts
+    - `dashboard/templates/*.html` - Dashboard HTML files
+    - `dashboard/static/**/*` - Dashboard CSS/JS/assets
+    - `agents_definitions/*.md` - Agent definitions for GitHub Copilot
+    - `copilot-instructions.md` - GitHub Copilot integration guide
+  - Updated [init_project.py](ai_squad/core/init_project.py) to copy agent definitions and copilot instructions
+  - After installation, `squad init` now properly creates:
+    - `.github/agents/` with 5 agent definition files
+    - `.github/skills/` with 18 skill files
+    - `.github/templates/` with 7 template files
+    - `.github/copilot-instructions.md` for GitHub Copilot integration
+
 ## [0.2.0] - 2026-01-22
 
 ### Added
