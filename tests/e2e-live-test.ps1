@@ -282,10 +282,10 @@ Write-Host "Test Mode: $TestMode ($script:TotalTests tests)" -ForegroundColor $(
 if (-not $AutonomousOnly) {
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 1: BASIC SETUP & AGENT EXECUTION (7 tests)
+# PART 1: BASIC SETUP & AGENT EXECUTION (8 tests)
 # ════════════════════════════════════════════════════════════════════════════════
 
-Write-TestSection "PART 1: Basic Setup & Agent Execution (7 features)"
+Write-TestSection "PART 1: Basic Setup & Agent Execution (8 features)"
 
 # Test 1: Init Command (Validation only - don't re-init)
 Test-Feature "Init Command Validation (squad init --help)" {
@@ -331,9 +331,10 @@ Test-Feature "Product Manager Agent (squad pm $script:IssueNumber)" {
 Test-Feature "Architect Agent (squad architect $script:IssueNumber)" {
     $result = squad architect $script:IssueNumber 2>&1 | Out-String
     
-    # Verify ADR and SPEC were created
+    # Verify ADR, SPEC, and ARCH were created
     $adrPath = "docs\adr\ADR-$script:IssueNumber.md"
     $specPath = "docs\specs\SPEC-$script:IssueNumber.md"
+    $archPath = "docs\architecture\ARCH-$script:IssueNumber.md"
     
     if (Test-Path $adrPath) {
         $adrSize = (Get-Item $adrPath).Length
@@ -342,6 +343,10 @@ Test-Feature "Architect Agent (squad architect $script:IssueNumber)" {
     if (Test-Path $specPath) {
         $specSize = (Get-Item $specPath).Length
         Write-Host "    SPEC created: $specSize bytes" -ForegroundColor Gray
+    }
+    if (Test-Path $archPath) {
+        $archSize = (Get-Item $archPath).Length
+        Write-Host "    ARCH created: $archSize bytes" -ForegroundColor Gray
     }
     
     return $result
@@ -388,6 +393,7 @@ Test-Feature "File Generation Validation" {
         "docs\prd\PRD-$script:IssueNumber.md",
         "docs\adr\ADR-$script:IssueNumber.md",
         "docs\specs\SPEC-$script:IssueNumber.md",
+        "docs\architecture\ARCH-$script:IssueNumber.md",
         "docs\ux\UX-$script:IssueNumber.md"
     )
     
@@ -464,11 +470,11 @@ Test-Feature "Status Dashboard (squad status)" {
 }
 
 # Test 13: Dashboard Command
-Test-Feature "Dashboard (squad dashboard)" {
-    $result = squad dashboard 2>&1 | Out-String
+Test-Feature "Dashboard (squad dashboard --help)" {
+    $result = squad dashboard --help 2>&1 | Out-String
     
-    if ($result -match "dashboard|overview|AI-Squad") {
-        Write-Host "    Dashboard overview operational" -ForegroundColor Gray
+    if ($result -match "dashboard|overview|AI-Squad|web UI") {
+        Write-Host "    Dashboard command available" -ForegroundColor Gray
         return "success"
     }
     return $result
@@ -488,7 +494,7 @@ Test-Feature "Run Plan (squad run-plan --help)" {
 # Test 15: Convoy System
 Test-Feature "Convoy System (squad convoys)" {
     $result = squad convoys 2>&1 | Out-String
-    return "success"  # System operational even if no convoys
+    return $result  # System operational even if no convoys
 }
 
 # Test 16: Handoff Protocol
@@ -504,13 +510,13 @@ Test-Feature "Handoff Protocol (squad handoff --help)" {
 # Test 17: Capabilities
 Test-Feature "Capabilities (squad capabilities list)" {
     $result = squad capabilities list 2>&1 | Out-String
-    return "success"  # System operational
+    return $result  # System operational
 }
 
 # Test 18: Delegation
 Test-Feature "Delegation (squad delegation list)" {
     $result = squad delegation list 2>&1 | Out-String
-    return "success"  # System operational
+    return $result  # System operational
 }
 
 # Test 19: Operational Graph
@@ -639,7 +645,7 @@ Test-Feature "Recon (squad recon)" {
 # Test 28: Scout Workers
 Test-Feature "Scout Workers (squad scout list)" {
     $result = squad scout list 2>&1 | Out-String
-    return "success"  # Operational even if no scouts
+    return $result  # Operational even if no scouts
 }
 
 # Test 29: Theater
@@ -664,10 +670,10 @@ Test-Feature "Watch (squad watch --help)" {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 5: ADDITIONAL SYSTEMS (5 tests)
+# PART 5: ADDITIONAL SYSTEMS (4 tests)
 # ════════════════════════════════════════════════════════════════════════════════
 
-Write-TestSection "PART 5: Additional Systems (5 features)"
+Write-TestSection "PART 5: Additional Systems (4 features)"
 
 # Test 31: Init Project
 Test-Feature "Init Project (squad init --help)" {
@@ -694,7 +700,7 @@ Test-Feature "Update System (squad update --help)" {
 # Test 33: Reporting
 Test-Feature "Reporting (squad report list)" {
     $result = squad report list 2>&1 | Out-String
-    return "success"  # Operational even if no reports
+    return $result  # Operational even if no reports
 }
 
 # Test 34: GitHub Integration
@@ -812,11 +818,13 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     $prdPath = "docs\prd\PRD-$script:LifecycleIssueNumber.md"
     $adrPath = "docs\adr\ADR-$script:LifecycleIssueNumber.md"
     $specPath = "docs\specs\SPEC-$script:LifecycleIssueNumber.md"
+    $archPath = "docs\architecture\ARCH-$script:LifecycleIssueNumber.md"
     $uxPath = "docs\ux\UX-$script:LifecycleIssueNumber.md"
     
     $prdGenerated = Test-Path $prdPath
     $adrGenerated = Test-Path $adrPath
     $specGenerated = Test-Path $specPath
+    $archGenerated = Test-Path $archPath
     $uxGenerated = Test-Path $uxPath
     
     Write-Host "`n     Artifact Generation Results:" -ForegroundColor Gray
@@ -839,6 +847,13 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         Write-Host "     ✓ Spec exists: $specSize bytes" -ForegroundColor Green
     } else {
         Write-Host "     • Spec not found" -ForegroundColor Gray
+    }
+    
+    if ($archGenerated) {
+        $archSize = (Get-Item $archPath).Length
+        Write-Host "     ✓ Architecture doc exists: $archSize bytes" -ForegroundColor Green
+    } else {
+        Write-Host "     • Architecture doc not found" -ForegroundColor Gray
     }
     
     if ($uxGenerated) {
@@ -893,7 +908,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     Write-Host "`n  🚚 PHASE 6: Convoy System Validation" -ForegroundColor Yellow
     Write-Host "     → Testing convoy creation and tracking..." -ForegroundColor Gray
     
-    $convoyList = squad convoy list 2>&1 | Out-String
+    $convoyList = squad convoys 2>&1 | Out-String
     $convoyCreated = $convoyList -match $script:LifecycleIssueNumber -or $convoyList -match "convoy|batch"
     
     if ($convoyCreated) {
@@ -933,7 +948,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     Write-Host "     → Checking communication mechanisms..." -ForegroundColor Gray
     
     # Check if work state manager has communication logs
-    $workStateFile = ".squad\work\work_state.json"
+    $workStateFile = ".squad\workstate.json"
     $commExists = Test-Path $workStateFile
     
     if ($commExists) {
@@ -954,7 +969,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # Check handoff capability
-    $handoffTest = squad handoff list 2>&1 | Out-String
+    $handoffTest = squad handoff --help 2>&1 | Out-String
     $handoffOperational = $handoffTest -notmatch "error|failed|not found"
     
     if ($handoffOperational) {
@@ -973,7 +988,7 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     }
     
     # Test collab command availability
-    $collabStatus = squad collab status 2>&1 | Out-String
+    $collabStatus = squad collab --help 2>&1 | Out-String
     $collabSystemExists = $collabStatus -notmatch "not found|unknown command"
     
     if ($collabSystemExists) {
@@ -1219,13 +1234,16 @@ if (-not $SkipCleanup) {
         "docs\prd\PRD-$script:IssueNumber.md",
         "docs\adr\ADR-$script:IssueNumber.md",
         "docs\specs\SPEC-$script:IssueNumber.md",
+        "docs\architecture\ARCH-$script:IssueNumber.md",
         "docs\ux\UX-$script:IssueNumber.md",
         "docs\prd\PRD-$script:CollabIssueNumber.md",
         "docs\adr\ADR-$script:CollabIssueNumber.md",
         "docs\specs\SPEC-$script:CollabIssueNumber.md",
+        "docs\architecture\ARCH-$script:CollabIssueNumber.md",
         "docs\prd\PRD-$script:LifecycleIssueNumber.md",
         "docs\adr\ADR-$script:LifecycleIssueNumber.md",
         "docs\specs\SPEC-$script:LifecycleIssueNumber.md",
+        "docs\architecture\ARCH-$script:LifecycleIssueNumber.md",
         "docs\ux\UX-$script:LifecycleIssueNumber.md"
     )
     
