@@ -13,42 +13,49 @@ Autonomous Mode (`squad auto`) enables true autonomous app development by accept
 ### Basic Usage
 
 ```bash
-# Inline prompt (FULLY AUTOMATIC - creates issues and executes all agents)
+# Inline mission brief (DEPLOYS TO CAPTAIN - full orchestration)
 squad auto -p "Create a REST API for user management"
 
-# From requirements file
-squad auto -f requirements.txt
+# From mission brief file
+squad auto -f mission-brief.txt
 
-# Interactive mode
+# Interactive mission briefing
 squad auto -i
 
-# Planning only (create issues but don't execute)
+# Create mission brief only (manual Captain deployment)
 squad auto -p "Add authentication system" --plan-only
+# Then deploy manually:
+squad captain <mission-issue-number>
 ```
 
 ---
 
 ## How It Works
 
-### Workflow (FULLY AUTOMATIC BY DEFAULT)
+### Workflow (🎖️ SQUAD MISSION - CAPTAIN DEPLOYMENT)
 
 ```
-1. You provide requirements (inline, file, or interactive)
+1. You provide mission brief (inline, file, or interactive)
    ↓
-2. PM Agent analyzes requirements
+2. PM validates mission type (epic vs feature)
    ↓
-3. Creates GitHub Epic issue
+3. Creates Mission Brief in GitHub
    ↓
-4. Breaks down into Story issues
+4. Breaks down into Mission Objectives (stories)
    ↓
-5. Multi-Agent Orchestration EXECUTES AUTOMATICALLY:
-   - PM: Creates PRD for each story
-   - Architect: Creates ADR and technical specs
-   - Engineer: Implements with comprehensive tests
-   - UX: Creates designs/prototypes (if UI)
-   - Reviewer: Reviews code and creates PRs
+5. 🎖️ DEPLOYS TO CAPTAIN for orchestration:
+   - Captain analyzes mission
+   - Selects appropriate Battle Plan
+   - Creates Work Items for tracking
+   - Organizes into Convoys (parallel batches)
+   - Dispatches agents via handoffs:
+     * PM: Creates PRD
+     * Architect: Creates ADR and specs
+     * Engineer: Implements with tests
+     * UX: Creates designs (if UI)
+     * Reviewer: Reviews and creates PRs
    ↓
-6. Tracks progress and updates issues
+6. Captain tracks progress and coordinates completion
 ```
 
 ### What Gets Created

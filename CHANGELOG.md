@@ -8,19 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Autonomous Mode**: New `squad auto` command for TRUE autonomous app development
-  - Accept requirements via `--prompt`, `--file`, or `--interactive`
-  - **FULLY AUTONOMOUS BY DEFAULT** - executes all agents automatically
-  - Multi-agent orchestration: PM → Architect → Engineer → UX → Reviewer
-  - Automatically creates GitHub epic and story issues
-  - Implements complete features end-to-end
-  - Creates PRs automatically
-  - Optional `--plan-only` flag to just create issues without execution
+- **🎖️ Squad Mission Mode**: New `squad auto` command with military-themed autonomous workflow!
+  - Accept mission brief via `--prompt`, `--file`, or `--interactive`
+  - PM validates mission as **EPIC** or **FEATURE**
+  - Creates **Mission Brief** and **Mission Objectives** in GitHub
+  - **🎖️ DEPLOYS TO CAPTAIN** for orchestration using Battle Plans
+  - Captain coordinates agents via handoffs and Convoys
+  - Maintains military theme: Captain, Battle Plans, Work Items, Convoys
+  - Respects existing orchestration architecture
+  - Optional `--plan-only` flag to create mission brief without Captain deployment
   - Examples:
-    - `squad auto -p \"Create REST API\"` (full automation!)
-    - `squad auto -f requirements.txt` (complete feature development)
-    - `squad auto -i` (interactive + automatic execution)
-    - `squad auto -p \"...\" --plan-only` (just planning)
+    - `squad auto -p "Create REST API"` (full Captain deployment!)
+    - `squad auto -f mission-brief.txt` (mission from file)
+    - `squad auto -i` (interactive mission briefing)
+    - `squad auto -p "..." --plan-only` (just create brief)
 
 ### Fixed
 - **Import Issue**: Fixed incorrect import of GitHub Copilot SDK

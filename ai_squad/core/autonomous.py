@@ -1,10 +1,18 @@
 """
-Autonomous Orchestration
+Squad Mission Mode (Autonomous Orchestration)
 
-Enables true autonomous app development by accepting requirements
-and handling the entire workflow from issue creation to execution.
+Enables autonomous mission execution by accepting requirements as a "Squad Mission",
+creating GitHub issues, and handing off to Captain for orchestration using Battle Plans.
+
+Military Theme Integration:
+- Requirements → Squad Mission
+- Validation → Mission Analysis
+- Issue Creation → Mission Assignment
+- Handoff to Captain → Mission Deployment
+- Captain uses Battle Plans and Convoys for orchestration
 """
 import logging
+import asyncio
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -16,27 +24,22 @@ def run_autonomous_workflow(
     plan_only: bool = False
 ) -> Dict[str, Any]:
     """
-    Run fully autonomous workflow from requirements to completion
+    Run Squad Mission workflow from requirements to completion.
     
-    Workflow:
-    1. Analyze requirements with PM agent
-    2. Create epic issue in GitHub
-    3. Break down into story issues
-    4. Run Captain to orchestrate ALL agents:
-       - PM: Analyze and create PRD
-       - Architect: Design solution and create ADR
-       - Engineer: Implement with tests
-       - UX: Design UI/UX (if needed)
-       - Reviewer: Review and approve
-    5. Track progress and update issues
-    6. Create PRs and merge when approved
+    Military-Themed Workflow:
+    1. Receive Squad Mission (requirements)
+    2. Mission Analysis with PM (validate feature vs epic)
+    3. Create Mission Brief in GitHub (epic/feature issue)
+    4. Break down into Objectives (story issues)
+    5. Deploy Mission to Captain for orchestration
+    6. Captain coordinates using Battle Plans and Convoys
     
     Args:
-        requirements: User requirements (text)
-        plan_only: If True, only create issues without executing agents
+        requirements: Squad Mission requirements (text)
+        plan_only: If True, create mission brief without deploying to Captain
         
     Returns:
-        Dict with workflow results
+        Dict with mission deployment results
     """
     from ai_squad.core.config import Config
     from ai_squad.tools.github import GitHubTool
@@ -48,266 +51,275 @@ def run_autonomous_workflow(
         config = Config.load()
         github = GitHubTool(config)
         
-        # Step 1: Analyze requirements with PM agent
-        logger.info("Step 1: Analyzing requirements with PM agent")
+        # Step 1: Mission Analysis with PM agent
+        logger.info("📋 MISSION RECEIVED: Analyzing with PM")
         pm_agent = ProductManagerAgent(config)
         
-        # Use PM to create PRD from requirements
-        prd_result = _analyze_requirements_with_pm(
+        # PM validates and analyzes the mission
+        mission_analysis = _analyze_mission_with_pm(
             pm_agent=pm_agent,
-            requirements=requirements,
+            mission_brief=requirements,
             config=config
         )
         
-        if not prd_result["success"]:
+        if not mission_analysis["success"]:
             return {
                 "success": False,
-                "error": f"PM analysis failed: {prd_result.get('error')}"
+                "error": f"Mission analysis failed: {mission_analysis.get('error')}"
             }
         
-        # Step 2: Create epic issue
-        logger.info("Step 2: Creating epic issue in GitHub")
-        epic_issue = _create_epic_issue(
+        # Step 2: Create Mission Brief (GitHub issue)
+        logger.info("📝 Creating Mission Brief in GitHub")
+        mission_issue = _create_mission_brief(
             github=github,
-            prd_result=prd_result,
+            mission_analysis=mission_analysis,
             config=config
         )
         
-        if not epic_issue:
+        if not mission_issue:
             return {
                 "success": False,
-                "error": "Failed to create epic issue"
+                "error": "Failed to create mission brief"
             }
         
-        # Step 3: Create story issues
-        logger.info("Step 3: Creating story issues")
-        story_issues = _create_story_issues(
+        # Step 3: Create Mission Objectives (story issues)
+        logger.info("🎯 Breaking down into Mission Objectives")
+        objective_issues = _create_mission_objectives(
             github=github,
-            prd_result=prd_result,
-            epic_issue=epic_issue,
+            mission_analysis=mission_analysis,
+            mission_issue=mission_issue,
             config=config
         )
         
         result = {
             "success": True,
-            "epic_issue": epic_issue,
-            "story_issues": story_issues,
-            "prd_path": prd_result.get("file_path")
+            "mission_brief": mission_issue,
+            "objectives": objective_issues,
+            "analysis_path": mission_analysis.get("file_path"),
+            "mission_type": mission_analysis.get("mission_type")  # epic or feature
         }
         
-        # Execute workflow with multi-agent orchestration (unless plan-only)
+        # Step 4: Deploy Mission to Captain (unless plan-only)
         if not plan_only:
-            logger.info("Step 4: Orchestrating all agents (PM → Architect → Engineer → UX → Reviewer)")
-            execution_status = _orchestrate_multi_agent_workflow(
-                captain=Captain(config),
-                epic_issue=epic_issue,
-                story_issues=story_issues,
+            logger.info("🎖️ DEPLOYING MISSION TO CAPTAIN")
+            captain = Captain(config)
+            
+            # Deploy mission brief to Captain for orchestration
+            logger.info(f"⚔️ Deploying mission #{mission_issue} to Captain")
+            
+            # Captain coordinates using Battle Plans and Convoys
+            deployment = _deploy_to_captain(
+                captain=captain,
+                issue_number=mission_issue,
                 config=config
             )
-            result["execution_status"] = execution_status
+            
+            result["captain_deployment"] = deployment
+        else:
+            logger.info("📋 PLAN-ONLY: Mission brief created, awaiting manual deployment")
         
         return result
         
     except (RuntimeError, OSError, ValueError) as e:
-        logger.error(f"Autonomous workflow failed: {e}")
+        logger.error(f"Squad Mission failed: {e}")
         return {
             "success": False,
             "error": str(e)
         }
 
 
-def _analyze_requirements_with_pm(
+def _analyze_mission_with_pm(
     pm_agent: Any,
-    requirements: str,
+    mission_brief: str,
     config: Any
 ) -> Dict[str, Any]:
     """
-    Use PM agent to analyze requirements and create PRD
+    PM analyzes mission brief and determines:
+    - Mission type (epic vs feature)
+    - Objectives breakdown
+    - Requirements structure
     
     Returns:
-        Dict with PRD analysis results
+        Dict with mission analysis results
     """
-    # Create a temporary "requirements" document
-    temp_requirements_path = Path(config.workspace_root) / "docs" / "requirements.txt"
-    temp_requirements_path.parent.mkdir(parents=True, exist_ok=True)
-    temp_requirements_path.write_text(requirements, encoding="utf-8")
+    # Create a temporary "mission brief" document
+    temp_brief_path = Path(config.workspace_root) / "docs" / "mission-brief.txt"
+    temp_brief_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_brief_path.write_text(mission_brief, encoding="utf-8")
     
-    # PM agent analyzes and creates PRD
-    # For now, extract key information from requirements
+    logger.info("PM analyzing mission brief...")
     
-    # Parse requirements into title, description, user stories
-    lines = requirements.strip().split("\n")
-    title = lines[0] if lines else "Feature Request"
-    description = requirements
+    # Parse mission brief into structured format
+    lines = mission_brief.strip().split("\n")
+    title = lines[0] if lines else "Squad Mission"
+    description = mission_brief
     
-    # Extract user stories (lines starting with "As a" or bullet points)
-    user_stories = []
+    # Determine mission type (epic = multiple major features, feature = single implementation)
+    # Heuristic: if multiple "features" mentioned or >500 chars, treat as epic
+    is_epic = (
+        len(mission_brief) > 500 or
+        mission_brief.lower().count("feature") > 1 or
+        mission_brief.lower().count("system") > 0 or
+        any(keyword in mission_brief.lower() for keyword in ["platform", "application", "app"])
+    )
+    
+    mission_type = "epic" if is_epic else "feature"
+    logger.info(f"Mission classified as: {mission_type.upper()}")
+    
+    # Extract objectives (user stories or features)
+    objectives = []
     for line in lines:
         line = line.strip()
         if line.startswith("- ") or line.startswith("* ") or line.lower().startswith("as a"):
-            user_stories.append(line.lstrip("-*").strip())
+            objectives.append(line.lstrip("-*").strip())
     
-    # If no explicit stories, create one from the whole requirement
-    if not user_stories:
-        user_stories = [title]
+    # If no explicit objectives, create one from the whole mission
+    if not objectives:
+        objectives = [title]
     
     return {
         "success": True,
         "title": title,
         "description": description,
-        "user_stories": user_stories,
-        "file_path": str(temp_requirements_path)
+        "mission_type": mission_type,
+        "objectives": objectives,
+        "file_path": str(temp_brief_path)
     }
 
 
-def _create_epic_issue(
+def _create_mission_brief(
     github: Any,
-    prd_result: Dict[str, Any],
+    mission_analysis: Dict[str, Any],
     config: Any
 ) -> int:
     """
-    Create epic issue in GitHub
+    Create mission brief issue in GitHub (epic or feature)
     
     Returns:
-        Epic issue number
+        Mission brief issue number
     """
-    title = f"[Epic] {prd_result['title']}"
-    body = f"""# Epic: {prd_result['title']}
+    mission_type = mission_analysis.get("mission_type", "feature")
+    title_prefix = "[MISSION: EPIC]" if mission_type == "epic" else "[MISSION: FEATURE]"
+    
+    title = f"{title_prefix} {mission_analysis['title']}"
+    body = f"""# Squad Mission Brief
 
-## Description
-{prd_result['description']}
+## Mission Type
+**{mission_type.upper()}**
 
-## User Stories
-{chr(10).join([f'- {story}' for story in prd_result['user_stories']])}
+## Objective
+{mission_analysis['description']}
 
-## Tracking
-This epic was created by AI-Squad autonomous mode.
+## Mission Objectives
+{chr(10).join([f'- {obj}' for obj in mission_analysis['objectives']])}
+
+## Deployment Status
+⏳ Awaiting Captain deployment
 
 ---
-*Generated by AI-Squad v{config.get('version', '0.4.0')}*
+*Mission created by AI-Squad v{config.get('version', '0.4.0')}*
 """
     
     # Create issue
+    labels = [f"type:{mission_type}", "ai-squad:mission", "status:pending-deployment"]
     issue = github.create_issue(
         title=title,
         body=body,
-        labels=["type:epic", "ai-squad:auto"]
+        labels=labels
     )
     
+    logger.info(f"✅ Mission brief created: #{issue['number'] if issue else 'FAILED'}")
     return issue["number"] if issue else None
 
 
-def _create_story_issues(
+def _create_mission_objectives(
     github: Any,
-    prd_result: Dict[str, Any],
-    epic_issue: int,
+    mission_analysis: Dict[str, Any],
+    mission_issue: int,
     config: Any
-) -> List[int]:
+) -> List[Dict[str, Any]]:
     """
-    Create story issues linked to epic
+    Create mission objective issues (stories) linked to mission brief
     
     Returns:
-        List of story issue numbers
+        List of objective issue dicts with 'number' key
     """
-    story_issues = []
+    objective_issues = []
     
-    for idx, story in enumerate(prd_result["user_stories"], 1):
-        title = f"[Story] {story[:80]}"  # Truncate long titles
-        body = f"""# User Story
+    for idx, objective in enumerate(mission_analysis["objectives"], 1):
+        title = f"[OBJECTIVE {idx}] {objective[:70]}"  # Truncate long titles
+        body = f"""# Mission Objective
 
-{story}
+{objective}
 
-## Epic
-Part of #{epic_issue}
+## Mission Brief
+Part of Mission #{mission_issue}
 
-## Acceptance Criteria
-- [ ] Requirements met
-- [ ] Tests written
-- [ ] Documentation updated
+## Deployment
+⏳ Awaiting Captain coordination
 
 ---
-*Generated by AI-Squad autonomous mode*
+*Objective created by AI-Squad v{config.get('version', '0.4.0')}*
 """
         
         issue = github.create_issue(
             title=title,
             body=body,
-            labels=["type:story", "ai-squad:auto"]
+            labels=["type:story", "ai-squad:objective", "status:pending-deployment"]
         )
         
         if issue:
-            story_issues.append(issue["number"])
+            objective_issues.append(issue)
             
-            # Add comment to epic linking this story
+            # Add comment to mission brief linking this objective
             github.add_comment(
-                epic_issue,
-                f"Story created: #{issue['number']} - {story[:50]}..."
+                mission_issue,
+                f"🎯 Objective created: #{issue['number']} - {objective[:50]}..."
             )
     
-    return story_issues
+    logger.info(f"✅ Created {len(objective_issues)} mission objectives")
+    return objective_issues
 
 
-def _orchestrate_multi_agent_workflow(
+def _deploy_to_captain(
     captain: Any,
-    epic_issue: int,
-    story_issues: List[int],
+    issue_number: int,
     config: Any
-) -> List[str]:
+) -> Dict[str, Any]:
     """
-    Orchestrate all agents for complete autonomous execution
+    Deploy mission to Captain for orchestration using Battle Plans
     
-    Agent sequence:
-    1. PM: Create PRD for epic
-    2. Architect: Design solution (ADR + specs)
-    3. Engineer: Implement each story with tests
-    4. UX: Design UI/UX for user-facing features
-    5. Reviewer: Review all code and create PRs
+    Captain will:
+    - Analyze the issue
+    - Select appropriate Battle Plan
+    - Create Work Items
+    - Organize into Convoys (parallel batches)
+    - Dispatch to agents using handoffs
+    - Monitor progress
     
     Returns:
-        List of status messages
+        Dict with deployment status
     """
-    from ai_squad.core.agent_executor import AgentExecutor
-    
-    status = []
-    executor = AgentExecutor(config=config)
+    logger.info(f"🎖️ Captain receiving mission #{issue_number}")
     
     try:
-        # Phase 1: PM analyzes epic
-        status.append(f"Phase 1: PM analyzing epic #{epic_issue}")
-        pm_result = executor.execute("pm", epic_issue)
-        if pm_result["success"]:
-            status.append(f"  ✓ PRD created: {pm_result.get('file_path', 'unknown')}")
+        # Captain's run method handles orchestration
+        # It will analyze task, select battle plan, create convoys, etc.
+        summary = asyncio.run(captain.run(issue_number))
         
-        # Phase 2: Architect designs solution
-        status.append(f"Phase 2: Architect designing solution for #{epic_issue}")
-        arch_result = executor.execute("architect", epic_issue)
-        if arch_result["success"]:
-            status.append(f"  ✓ ADR created: {arch_result.get('file_path', 'unknown')}")
-        
-        # Phase 3: Engineer implements each story
-        status.append(f"Phase 3: Engineer implementing {len(story_issues)} stories")
-        for story_num in story_issues:
-            eng_result = executor.execute("engineer", story_num)
-            if eng_result["success"]:
-                status.append(f"  ✓ Story #{story_num} implemented")
-        
-        # Phase 4: UX Designer (for UI features)
-        # Check if any stories are UI-related
-        status.append(f"Phase 4: UX Designer reviewing UI requirements")
-        ux_result = executor.execute("ux", epic_issue)
-        if ux_result["success"]:
-            status.append(f"  ✓ UX designs created")
-        
-        # Phase 5: Reviewer checks all work
-        status.append(f"Phase 5: Reviewer validating implementation")
-        # Note: Review typically works on PRs, not issues
-        # This would be triggered after PRs are created
-        status.append(f"  ℹ PRs will be created and reviewed automatically")
-        
-        status.append("\n✓ Multi-agent workflow completed successfully!")
+        logger.info(f"✅ Captain deployment complete for #{issue_number}")
+        return {
+            "success": True,
+            "issue_number": issue_number,
+            "captain_summary": summary,
+            "status": "deployed"
+        }
         
     except Exception as e:
-        status.append(f"✗ Error during orchestration: {e}")
-        logger.error(f"Multi-agent orchestration failed: {e}")
-    
-    return status
+        logger.error(f"Captain deployment failed for #{issue_number}: {e}")
+        return {
+            "success": False,
+            "issue_number": issue_number,
+            "error": str(e),
+            "status": "deployment-failed"
+        }

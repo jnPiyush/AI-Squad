@@ -496,38 +496,40 @@ def clarify(issue_number):
 # ============================================================
 
 @main.command()
-@click.option("--prompt", "-p", help="Inline requirement prompt")
-@click.option("--file", "-f", type=click.Path(exists=True), help="Requirements file path")
-@click.option("--interactive", "-i", is_flag=True, help="Interactive requirement gathering")
-@click.option("--plan-only", is_flag=True, help="Only create issues, don't execute agents")
+@click.option("--prompt", "-p", help="Inline mission brief")
+@click.option("--file", "-f", type=click.Path(exists=True), help="Mission brief file path")
+@click.option("--interactive", "-i", is_flag=True, help="Interactive mission briefing")
+@click.option("--plan-only", is_flag=True, help="Only create mission brief, don't deploy to Captain")
 def auto(prompt, file, interactive, plan_only):
     """
-    Autonomous mode - provide requirements and Squad handles EVERYTHING
+    SQUAD MISSION MODE - Deploy autonomous development missions
     
-    This command accepts requirements and automatically:
-    1. Analyzes with PM agent
-    2. Creates GitHub issues (epic + stories)
-    3. Orchestrates ALL agents (PM → Architect → Engineer → UX → Reviewer)
-    4. Tracks progress and updates issues
-    5. Creates PRs and completes the feature
+    Provide your requirements as a "Squad Mission" and AI-Squad:
+    1. PM analyzes mission brief (validates as epic or feature)
+    2. Creates Mission Brief in GitHub issues
+    3. Breaks down into Mission Objectives
+    4. DEPLOYS TO CAPTAIN for orchestration
+    5. Captain coordinates using Battle Plans and Convoys
+    6. Agents execute via handoffs and delegations
+    7. Tracks progress and completes the mission
     
-    By default, FULLY AUTONOMOUS. Use --plan-only to just create issues.
+    By default, FULL DEPLOYMENT. Use --plan-only to create brief only.
     
     Examples:
         squad auto -p "Create a REST API for user management"
-        squad auto -f requirements.txt
+        squad auto -f mission-brief.txt
         squad auto -i
-        squad auto -p "Add authentication" --plan-only  # Just planning
+        squad auto -p "Add authentication" --plan-only  # Create brief only
     """
     print_banner()
     
     # Validate input
     input_count = sum([bool(prompt), bool(file), interactive])
     if input_count == 0:
-        console.print("[bold red]Error: Must provide requirements via --prompt, --file, or --interactive[/bold red]")
+        console.print("[bold red]Error: Must provide mission brief via --prompt, --file, or --interactive[/bold red]")
         console.print("\n[yellow]Examples:[/yellow]")
         console.print("  squad auto -p \"Create user management API\"")
-        console.print("  squad auto -f requirements.txt")
+        console.print("  squad auto -f mission-brief.txt")
         console.print("  squad auto -i")
         sys.exit(1)
     
@@ -535,18 +537,18 @@ def auto(prompt, file, interactive, plan_only):
         console.print("[bold red]Error: Use only ONE input method (--prompt, --file, or --interactive)[/bold red]")
         sys.exit(1)
     
-    # Get requirements
+    # Get mission brief
     requirements = None
     if prompt:
         requirements = prompt
-        console.print(f"[cyan]Requirements:[/cyan] {prompt}\n")
+        console.print(f"[cyan]📋 Mission Brief:[/cyan] {prompt}\n")
     elif file:
         with open(file, 'r', encoding='utf-8') as f:
             requirements = f.read()
-        console.print(f"[cyan]Requirements from:[/cyan] {file}\n")
+        console.print(f"[cyan]📋 Mission Brief from:[/cyan] {file}\n")
     elif interactive:
-        console.print("[bold cyan]Interactive Requirement Gathering[/bold cyan]")
-        console.print("[dim]Enter your requirements (press Ctrl+D or Ctrl+Z when done):[/dim]\n")
+        console.print("[bold cyan]📋 Interactive Mission Briefing[/bold cyan]")
+        console.print("[dim]Enter your mission requirements (press Ctrl+D or Ctrl+Z when done):[/dim]\n")
         lines = []
         try:
             while True:
@@ -557,11 +559,11 @@ def auto(prompt, file, interactive, plan_only):
         console.print()
     
     if not requirements or not requirements.strip():
-        console.print("[bold red]Error: Requirements cannot be empty[/bold red]")
+        console.print("[bold red]Error: Mission brief cannot be empty[/bold red]")
         sys.exit(1)
     
-    console.print("[bold cyan]🤖 AI-Squad Autonomous Mode Activated[/bold cyan]\n")
-    console.print("[dim]Step 1: Analyzing requirements with PM agent...[/dim]")
+    console.print("[bold cyan]🎖️ SQUAD MISSION MODE ACTIVATED[/bold cyan]\n")
+    console.print("[dim]📋 Step 1: PM analyzing mission brief...[/dim]")
     
     try:
         # Import the autonomous orchestration module
@@ -575,23 +577,40 @@ def auto(prompt, file, interactive, plan_only):
         if result["success"]:
             console.print("\n[bold green]✓ Autonomous workflow completed![/bold green]\n")
             
-            # Show created issues
-            if "epic_issue" in result:
-                console.print(f"[bold]Epic Created:[/bold] #{result['epic_issue']}")
-            if "story_issues" in result:
-                console.print(f"[bold]Stories Created:[/bold] {', '.join(['#' + str(i) for i in result['story_issues']])}")
+            # Show created mission
+            console.print(f"\n[bold green]✓ Mission Deployed Successfully![/bold green]\n")
+            console.print(f"[bold]Mission Type:[/bold] {result.get('mission_type', 'feature').upper()}")
+            if "mission_brief" in result:
+                console.print(f"[bold]Mission Brief:[/bold] #{result['mission_brief']}")
+            if "objectives" in result:
+                obj_numbers = [f"#{obj['number']}" for obj in result['objectives']]
+                console.print(f"[bold]Mission Objectives:[/bold] {', '.join(obj_numbers)}")
             
-            # Show execution status
+            # Show Captain deployment status
             if not plan_only:
-                console.print(f"\n[bold]Multi-Agent Execution:[/bold]")
-                for status in result.get("execution_status", []):
-                    console.print(f"  • {status}")
-                console.print("\n[green]✓ All agents completed their work![/green]")
+                console.print(f"\n[bold]🎖️ Captain Deployment:[/bold]")
+                deployment = result.get("captain_deployment", {})
+                if deployment.get("success"):
+                    console.print(f"  ✓ Captain coordinating mission #{deployment.get('issue_number')}")
+                    console.print(f"  • Using Battle Plans for orchestration")
+                    console.print(f"  • Agents will execute via handoffs")
+                    console.print(f"  • Progress tracked in work items")
+                    
+                    console.print("\n[bold cyan]Captain's Summary:[/bold cyan]")
+                    summary = deployment.get("captain_summary", "").strip()
+                    if summary:
+                        console.print(Panel(summary, expand=False, border_style="cyan"))
+                else:
+                    console.print(f"  ✗ Captain deployment failed: {deployment.get('error')}")
+                
+                console.print("\n[green]✓ Mission successfully deployed to Captain![/green]")
+                console.print("[dim]Captain will coordinate agents using Battle Plans and Convoys[/dim]")
             else:
-                console.print("\n[yellow]ℹ Issues created (plan-only mode). Run agents with:[/yellow]")
-                console.print(f"[dim]  squad captain {result.get('epic_issue')}[/dim]")
+                console.print("\n[yellow]📋 PLAN-ONLY: Mission brief created[/yellow]")
+                console.print("[dim]Deploy to Captain with:[/dim]")
+                console.print(f"[cyan]  squad captain {result.get('mission_brief')}[/cyan]")
         else:
-            console.print(f"[bold red]✗ Autonomous workflow failed: {result.get('error')}[/bold red]")
+            console.print(f"[bold red]✗ Squad Mission failed: {result.get('error')}[/bold red]")
             sys.exit(1)
     
     except ImportError:

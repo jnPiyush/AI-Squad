@@ -192,23 +192,25 @@ This creates:
 
 ### 3. Use Your Squad!
 
-**Autonomous Mode (FULLY AUTOMATIC - Recommended):**
+**🎖️ Squad Mission Mode (Recommended - Military-Themed Workflow):**
 ```bash
-# Provide requirements and Squad AUTOMATICALLY:
-# 1. Analyzes requirements with PM
-# 2. Creates epic and user story issues
-# 3. Orchestrates all agents: PM → Architect → Engineer → UX → Reviewer
-# 4. Creates pull requests with complete implementation
+# Provide mission brief and Squad DEPLOYS TO CAPTAIN:
+# 1. PM analyzes mission (validates as epic or feature)
+# 2. Creates Mission Brief in GitHub
+# 3. Breaks down into Mission Objectives
+# 4. 🎖️ DEPLOYS TO CAPTAIN for orchestration
+# 5. Captain uses Battle Plans & Convoys
+# 6. Agents execute via handoffs
 
 squad auto -p "Create a REST API for user management with authentication"
 
 # From a file
-squad auto -f requirements.txt
+squad auto -f mission-brief.txt
 
 # Interactive mode
 squad auto -i
 
-# Planning only (no execution)
+# Create mission brief only (manual Captain deployment)
 squad auto -p "Add payment integration" --plan-only
 ```
 
