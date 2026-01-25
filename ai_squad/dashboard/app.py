@@ -4,6 +4,8 @@ Dashboard Flask Application
 Provides web UI for monitoring AI-Squad orchestration.
 """
 import logging
+import os
+import secrets
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
@@ -35,7 +37,7 @@ def create_app(workspace_root: Optional[Path] = None) -> "FlaskType":
         static_folder=str(Path(__file__).parent / "static"),
     )
     app.config["WORKSPACE_ROOT"] = workspace_root
-    app.config["SECRET_KEY"] = "ai-squad-dashboard-secret"
+    app.config["SECRET_KEY"] = os.getenv("AI_SQUAD_DASHBOARD_SECRET", secrets.token_urlsafe(32))
     
     # Register routes
     register_routes(app)

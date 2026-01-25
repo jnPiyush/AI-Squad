@@ -65,7 +65,6 @@ docs/ux/
 docs/reviews/
 
 # GitHub
-.github/agents/
 .github/skills/
 .github/templates/
 .github/workflows/squad-*.yml

@@ -8,7 +8,7 @@
   <a href="https://badge.fury.io/py/ai-squad"><img src="https://badge.fury.io/py/ai-squad.svg" alt="PyPI version"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="tests/"><img src="https://img.shields.io/badge/coverage-60%25-green.svg" alt="Test Coverage"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/coverage-target%2080%25-yellow.svg" alt="Coverage Target"></a>
   <a href="https://pypi.org/project/ai-squad/"><img src="https://img.shields.io/pypi/dm/ai-squad?label=downloads&color=blue" alt="Downloads"></a>
 </p>
 
