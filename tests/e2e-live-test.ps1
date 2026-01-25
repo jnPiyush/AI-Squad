@@ -211,8 +211,8 @@ if ($AutonomousOnly) {
     $ghAuthStatus = gh auth status 2>&1 | Out-String
     if ($ghAuthStatus -match "Logged in") {
         Write-Host "✅ GitHub CLI authenticated" -ForegroundColor Green
-        $ghUser = ($ghAuthStatus -match "Logged in to github.com account (\S+)" | Out-Null; $Matches[1])
-        if ($ghUser) {
+        if ($ghAuthStatus -match "Logged in to github\.com account (\S+)") {
+            $ghUser = $Matches[1]
             Write-Host "   Account: $ghUser" -ForegroundColor Gray
         }
     } else {
