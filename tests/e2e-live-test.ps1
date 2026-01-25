@@ -197,6 +197,75 @@ if ([string]::IsNullOrWhiteSpace($TestAppRequirement)) {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
+# AUTONOMOUS MODE: INTERACTIVE GITHUB SETUP
+# ════════════════════════════════════════════════════════════════════════════════
+
+if ($AutonomousOnly) {
+    Write-Host "`n════════════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "  🤖 AUTONOMOUS MODE - GITHUB CONFIGURATION" -ForegroundColor Magenta
+    Write-Host "════════════════════════════════════════════════════════════════════════════════" -ForegroundColor Cyan
+    Write-Host "`nThe autonomous lifecycle test will create a real GitHub issue and orchestrate" -ForegroundColor Yellow
+    Write-Host "the complete development workflow. Please provide GitHub details:`n" -ForegroundColor Yellow
+    
+    # Check GitHub CLI authentication
+    $ghAuthStatus = gh auth status 2>&1 | Out-String
+    if ($ghAuthStatus -match "Logged in") {
+        Write-Host "✅ GitHub CLI authenticated" -ForegroundColor Green
+        $ghUser = ($ghAuthStatus -match "Logged in to github.com account (\S+)" | Out-Null; $Matches[1])
+        if ($ghUser) {
+            Write-Host "   Account: $ghUser" -ForegroundColor Gray
+        }
+    } else {
+        Write-Host "❌ GitHub CLI not authenticated" -ForegroundColor Red
+        Write-Host "`n   Please run: gh auth login" -ForegroundColor Yellow
+        Write-Host "   Then re-run this test.`n" -ForegroundColor Yellow
+        exit 1
+    }
+    
+    # Prompt for repository
+    Write-Host "`n📦 GitHub Repository Configuration:" -ForegroundColor Cyan
+    Write-Host "   Current: $Repo" -ForegroundColor Gray
+    Write-Host "`n   Press ENTER to use current, or type new repo (format: owner/repo):" -ForegroundColor White
+    $userRepo = Read-Host "   Repository"
+    
+    if (-not [string]::IsNullOrWhiteSpace($userRepo)) {
+        if ($userRepo -match '^[\w-]+/[\w-]+$') {
+            $Repo = $userRepo
+            Write-Host "   ✓ Using repository: $Repo" -ForegroundColor Green
+        } else {
+            Write-Host "   ❌ Invalid format. Expected: owner/repo" -ForegroundColor Red
+            Write-Host "   Using default: $Repo" -ForegroundColor Yellow
+        }
+    } else {
+        Write-Host "   ✓ Using default: $Repo" -ForegroundColor Green
+    }
+    
+    # Verify repository access
+    Write-Host "`n🔍 Verifying repository access..." -ForegroundColor Cyan
+    $repoCheck = gh repo view $Repo 2>&1 | Out-String
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "   ✓ Repository accessible" -ForegroundColor Green
+    } else {
+        Write-Host "   ❌ Cannot access repository: $Repo" -ForegroundColor Red
+        Write-Host "   Error: $repoCheck" -ForegroundColor Gray
+        Write-Host "`n   Please verify:" -ForegroundColor Yellow
+        Write-Host "   • Repository name is correct (owner/repo)" -ForegroundColor Gray
+        Write-Host "   • You have access to this repository" -ForegroundColor Gray
+        Write-Host "   • GitHub CLI is authenticated with correct account`n" -ForegroundColor Gray
+        
+        $continue = Read-Host "   Continue anyway? (y/N)"
+        if ($continue -ne 'y' -and $continue -ne 'Y') {
+            Write-Host "`n   Test cancelled.`n" -ForegroundColor Yellow
+            exit 1
+        }
+    }
+    
+    Write-Host "`n✅ GitHub configuration complete" -ForegroundColor Green
+    Write-Host "   Repository: $Repo" -ForegroundColor Gray
+    Write-Host "   Test will create issue and run full autonomous workflow`n" -ForegroundColor Gray
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
 # START TESTING
 # ════════════════════════════════════════════════════════════════════════════════
 

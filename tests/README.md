@@ -174,6 +174,7 @@ This E2E test validates **two critical dimensions**:
 # ═══════════════════════════════════════════════════════════════
 # Use for validating end-to-end orchestration
 # Skips component tests, runs only full lifecycle workflow
+# 🔔 INTERACTIVE: Prompts for GitHub repository and verifies access
 .\tests\e2e-live-test.ps1 -AutonomousOnly
 
 # ═══════════════════════════════════════════════════════════════
@@ -217,6 +218,32 @@ This E2E test validates **two critical dimensions**:
 | **Full Suite** | `.\tests\e2e-live-test.ps1` | 35 (all) | ~15-20 min | Complete validation before release |
 | **Component Only** | `-SkipAutonomousTest` | 34 (fast) | ~5-8 min | Quick CLI command validation, CI/CD |
 | **Integration Only** | `-AutonomousOnly` | 1 (workflow) | ~10-12 min | End-to-end orchestration validation |
+
+**Note**: `-AutonomousOnly` mode is **interactive** - it will prompt for GitHub repository and verify access before running.
+
+### Autonomous Mode - Interactive Setup
+
+When using `-AutonomousOnly`, the script will:
+
+1. **Verify GitHub CLI Authentication**
+   - Checks if `gh auth status` shows logged in
+   - Displays authenticated account
+   - Exits if not authenticated (run `gh auth login` first)
+
+2. **Prompt for Repository**
+   - Shows current repository setting
+   - Allows you to confirm or enter new repo (format: `owner/repo`)
+   - Validates repository format
+
+3. **Verify Repository Access**
+   - Tests if you can access the specified repository
+   - Provides clear error messages if access fails
+   - Allows you to continue or cancel
+
+4. **Run Autonomous Workflow**
+   - Creates real GitHub issue
+   - Orchestrates PM → Architect → UX → Engineer
+   - Validates complete lifecycle
 
 ### Default Test Application: Idea Management System
 - Centralized platform for capturing innovative ideas
