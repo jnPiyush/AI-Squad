@@ -285,8 +285,8 @@ class TestCaptainOrchestration:
         
         return Captain(config, sdk=None, orchestration=orchestration)
     
-    def test_captain_creates_work_items(self, captain_with_managers):
-        """Test Captain can create work items through manager"""
+    def test_captain_creates_operations(self, captain_with_managers):
+        """Test Captain can create operations through manager"""
         workstate = captain_with_managers.work_state_manager
         
         work_item = workstate.create_work_item(
@@ -352,7 +352,7 @@ class TestCaptainWithMockedMethods:
         with patch.object(captain.ai_provider, 'generate') as mock_generate:
             mock_generate.return_value = """
             {
-                "work_items": [
+                "operations": [
                     {"title": "Create PRD", "agent": "pm"},
                     {"title": "Design architecture", "agent": "architect"}
                 ],

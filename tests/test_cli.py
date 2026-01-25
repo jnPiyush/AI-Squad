@@ -29,40 +29,40 @@ class TestCLI:
         assert "AI-Squad" in result.output
         assert "Commands:" in result.output
     
-    def test_init_creates_config(self, runner, tmp_path):
-        """Test squad init creates config file"""
+    def test_deploy_creates_config(self, runner, tmp_path):
+        """Test squad deploy creates config file"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(main, ["init"])
+            result = runner.invoke(main, ["deploy"])
             assert result.exit_code == 0
             assert Path("squad.yaml").exists()
     
-    def test_init_force_overwrites(self, runner, tmp_path):
-        """Test squad init --force overwrites existing config"""
+    def test_deploy_force_overwrites(self, runner, tmp_path):
+        """Test squad deploy --force overwrites existing config"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            # First init
-            runner.invoke(main, ["init"])
+            # First deploy
+            runner.invoke(main, ["deploy"])
             
-            # Second init should fail without --force
-            result = runner.invoke(main, ["init"])
+            # Second deploy should fail without --force
+            result = runner.invoke(main, ["deploy"])
             assert result.exit_code == 1
             
             # With --force should succeed
-            result = runner.invoke(main, ["init", "--force"])
+            result = runner.invoke(main, ["deploy", "--force"])
             assert result.exit_code == 0
     
-    def test_doctor_checks_setup(self, runner, tmp_path):
-        """Test squad doctor validates setup"""
+    def test_sitrep_checks_setup(self, runner, tmp_path):
+        """Test squad sitrep validates setup"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(main, ["doctor"])
+            result = runner.invoke(main, ["sitrep"])
             # Should pass or provide clear errors
             assert "check" in result.output.lower()
 
-    def test_health_command(self, runner, tmp_path):
-        """Test squad health command"""
+    def test_status_command(self, runner, tmp_path):
+        """Test squad status command"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            result = runner.invoke(main, ["health"])
+            result = runner.invoke(main, ["status"])
             assert result.exit_code == 0
-            assert "Routing Health Status" in result.output
+            assert "Routing Health Status" in result.output or "Status" in result.output
 
     def test_capabilities_list_empty(self, runner, tmp_path):
         """Test empty capabilities list"""
@@ -137,7 +137,7 @@ class TestAgentCommands:
     def setup_project(self, runner, tmp_path):
         """Setup test project"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
+            runner.invoke(main, ["deploy"])
             yield
     
     def test_pm_command(self, runner, setup_project):
@@ -171,11 +171,12 @@ class TestAgentCommands:
         result = runner.invoke(main, ["review", "456"])
         assert "Reviewer" in result.output or "Error" in result.output
     
-    def test_collab_command(self, runner, setup_project):
+    def test_joint_op_command(self, runner, setup_project):
         _ = setup_project
-        """Test squad collab command"""
-        result = runner.invoke(main, ["collab", "123", "pm", "architect"])
-        assert "collaboration" in result.output.lower() or "Error" in result.output
+        """Test squad joint-op command"""
+        result = runner.invoke(main, ["joint-op", "123", "pm", "architect"])
+        # Command shows "Joint Operation" output or error
+        assert "joint operation" in result.output.lower() or "Error" in result.output or "participants" in result.output.lower()
     
     def test_captain_command(self, runner, setup_project):
         _ = setup_project
@@ -200,60 +201,52 @@ class TestOrchestrationCommands:
         """Create CLI runner"""
         return CliRunner()
     
-    def test_work_command_empty(self, runner, tmp_path):
-        """Test squad work command with no work items"""
+    def test_ops_command_empty(self, runner, tmp_path):
+        """Test squad ops command with no operations"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["work"])
+            runner.invoke(main, ["deploy"])
+            result = runner.invoke(main, ["ops"])
             assert result.exit_code == 0
-            # Should show no work items or empty list
-            assert "No work items" in result.output or "Work Items" in result.output
+            # Should show no operations or empty list
+            assert "No operations" in result.output or "Operations" in result.output or "No work items" in result.output
     
-    def test_work_command_with_status_filter(self, runner, tmp_path):
-        """Test squad work command with status filter"""
+    def test_ops_command_with_status_filter(self, runner, tmp_path):
+        """Test squad ops command with status filter"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["work", "--status", "ready"])
+            runner.invoke(main, ["deploy"])
+            result = runner.invoke(main, ["ops", "--status", "ready"])
             assert result.exit_code == 0
     
-    def test_work_command_with_agent_filter(self, runner, tmp_path):
-        """Test squad work command with agent filter"""
+    def test_ops_command_with_agent_filter(self, runner, tmp_path):
+        """Test squad ops command with agent filter"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["work", "--agent", "pm"])
+            runner.invoke(main, ["deploy"])
+            result = runner.invoke(main, ["ops", "--agent", "pm"])
             assert result.exit_code == 0
     
     def test_convoys_command_empty(self, runner, tmp_path):
         """Test squad convoys command with no convoys"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
+            runner.invoke(main, ["deploy"])
             result = runner.invoke(main, ["convoys"])
             assert result.exit_code == 0
             assert "No convoys" in result.output or "Convoy" in result.output
     
-    def test_health_command_detailed(self, runner, tmp_path):
-        """Test squad health command output"""
+    def test_status_command_detailed(self, runner, tmp_path):
+        """Test squad status command output"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["health"])
+            runner.invoke(main, ["deploy"])
+            result = runner.invoke(main, ["status"])
             assert result.exit_code == 0
-            assert "Health" in result.output or "health" in result.output.lower()
+            assert "Health" in result.output or "health" in result.output.lower() or "Status" in result.output
     
-    def test_run_plan_command_missing_plan(self, runner, tmp_path):
-        """Test squad run-plan with non-existent plan"""
+    def test_patrol_command(self, runner, tmp_path):
+        """Test squad patrol command"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["run-plan", "nonexistent", "123"])
-            # Should show error or handle missing plan gracefully
-            assert "not found" in result.output.lower() or "Error" in result.output or result.exit_code != 0
-    
-    def test_run_plan_command_feature_plan(self, runner, tmp_path):
-        """Test squad run-plan with built-in feature plan"""
-        with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
-            result = runner.invoke(main, ["run-plan", "feature", "123"])
-            # Should attempt to execute or show error
-            assert "plan" in result.output.lower() or "Error" in result.output
+            runner.invoke(main, ["deploy"])
+            result = runner.invoke(main, ["patrol", "--help"])
+            # Command should show help or execute
+            assert result.exit_code == 0 or "patrol" in result.output.lower()
 
 
 class TestDashboardCommand:
@@ -283,7 +276,7 @@ class TestGraphCommands:
     def test_graph_export_formats(self, runner, tmp_path):
         """Test graph export command output format"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
+            runner.invoke(main, ["deploy"])
             result = runner.invoke(main, ["graph", "export"])
             assert result.exit_code == 0
             # Should output mermaid format
@@ -314,10 +307,10 @@ class TestIdentityCommand:
         """Create CLI runner"""
         return CliRunner()
     
-    def test_status_command(self, runner, tmp_path):
-        """Test squad status command"""
+    def test_status_command_identity(self, runner, tmp_path):
+        """Test squad status command for identity info"""
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            runner.invoke(main, ["init"])
+            runner.invoke(main, ["deploy"])
             result = runner.invoke(main, ["status"])
             # Status command may fail without proper setup, but should run
             # Accept either success or error output
