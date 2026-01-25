@@ -9,6 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.table import Table
+from rich import box
 from pathlib import Path
 import sys
 
@@ -438,8 +439,24 @@ def captain(issue_number):
     console.print(f"[bold cyan]🎖️  Captain coordinating issue #{issue_number}...[/bold cyan]\n")
     
     try:
-        from ai_squad.core.agent_executor import AgentExecutor
-        
+        from ai_squad.core.preflight import run_preflight_checks
+
+        preflight = run_preflight_checks(issue_number=issue_number)
+        if not preflight.get("all_passed"):
+            console.print("[bold red]❌ Preflight checks failed. Fix issues before running Captain.[/bold red]\n")
+
+            table = Table(title="Preflight Checks", box=box.SIMPLE)
+            table.add_column("Check", style="cyan")
+            table.add_column("Status", style="yellow")
+            table.add_column("Message")
+
+            for check in preflight.get("checks", []):
+                status_icon = "✅" if check.get("passed") else "❌"
+                table.add_row(check.get("name", ""), status_icon, check.get("message", ""))
+
+            console.print(table)
+            sys.exit(1)
+
         executor = AgentExecutor()
         result = executor.execute('captain', issue_number)
         

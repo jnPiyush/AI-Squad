@@ -1196,8 +1196,6 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         return "partial success"
     }
 }
-}
-}
 
 # End of PART 6 (Autonomous Lifecycle Test)
 } # End if (-not $SkipAutonomousTest)
