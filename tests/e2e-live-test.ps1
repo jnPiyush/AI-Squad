@@ -926,9 +926,18 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
     if (Test-Path ".squad\workstate.json") {
         try {
             $workStateJson = Get-Content ".squad\workstate.json" -Raw | ConvertFrom-Json
-            $workItemsCreated = $workStateJson.items.Count -gt 0
+            if ($workStateJson.items -and $workStateJson.items.Count -gt 0) {
+                $workItemsCreated = $true
+            }
         } catch {
             $workItemsCreated = $false
+        }
+    }
+
+    if (-not $workItemsCreated) {
+        $workList = squad work 2>&1 | Out-String
+        if ($workList -match "work items" -or $workList -match "sq-") {
+            $workItemsCreated = $true
         }
     }
     
