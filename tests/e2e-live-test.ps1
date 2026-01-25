@@ -2,25 +2,46 @@
 # AI-Squad End-to-End Live Test Script
 # ════════════════════════════════════════════════════════════════════════════════
 # Purpose: Comprehensive production simulation with custom or default test app
-# Coverage: All 28 features with real execution (no mocks)
-# Usage: .\tests\e2e-live-test.ps1 [-TestAppRequirement "Your custom requirements"]
+# Coverage: 35 tests (34 component + 1 autonomous lifecycle)
+# Usage: .\tests\e2e-live-test.ps1 [options]
 # ════════════════════════════════════════════════════════════════════════════════
 
 param(
     [switch]$SkipCleanup = $false,
     [switch]$Verbose = $false,
     [string]$Repo = "jnPiyush/AI-Squad",
-    [string]$TestAppRequirement = ""
+    [string]$TestAppRequirement = "",
+    [switch]$SkipAutonomousTest = $false,
+    [switch]$AutonomousOnly = $false
 )
 
 # Set UTF-8 encoding
 chcp 65001 > $null
 $ErrorActionPreference = "Continue"
 
+# Validate mutually exclusive parameters
+if ($SkipAutonomousTest -and $AutonomousOnly) {
+    Write-Host "`n❌ ERROR: Cannot use -SkipAutonomousTest and -AutonomousOnly together" -ForegroundColor Red
+    Write-Host "   Choose one mode:" -ForegroundColor Yellow
+    Write-Host "   • No flags: Run all tests (component + autonomous)" -ForegroundColor Gray
+    Write-Host "   • -SkipAutonomousTest: Run only component tests (faster)" -ForegroundColor Gray
+    Write-Host "   • -AutonomousOnly: Run only autonomous test (integration)`n" -ForegroundColor Gray
+    exit 1
+}
+
+# Determine test mode and counts
+$TestMode = if ($AutonomousOnly) { 
+    "Autonomous Only" 
+} elseif ($SkipAutonomousTest) { 
+    "Component Tests Only" 
+} else { 
+    "Full Suite" 
+}
+
 # Test counters
 $script:TestsPassed = 0
 $script:TestsFailed = 0
-$script:TotalTests = 35
+$script:TotalTests = if ($AutonomousOnly) { 1 } elseif ($SkipAutonomousTest) { 34 } else { 35 }
 
 # Colors
 $ColorPass = "Green"
@@ -183,6 +204,13 @@ Write-TestHeader "AI-Squad End-to-End Live Test"
 Write-Host "Example Application: $AppName" -ForegroundColor White
 Write-Host "Test Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host "Repository: $Repo" -ForegroundColor Gray
+Write-Host "Test Mode: $TestMode ($script:TotalTests tests)" -ForegroundColor $(if ($AutonomousOnly) { "Magenta" } elseif ($SkipAutonomousTest) { "Yellow" } else { "Cyan" })
+
+# ════════════════════════════════════════════════════════════════════════════════
+# PART 1-5: COMPONENT TESTS (Skip if AutonomousOnly mode)
+# ════════════════════════════════════════════════════════════════════════════════
+
+if (-not $AutonomousOnly) {
 
 # ════════════════════════════════════════════════════════════════════════════════
 # PART 1: BASIC SETUP & AGENT EXECUTION (7 tests)
@@ -612,9 +640,14 @@ Test-Feature "GitHub Integration" {
     return "error: GitHub integration issue"
 }
 
+# End of PART 1-5 (Component Tests)
+} # End if (-not $AutonomousOnly)
+
 # ════════════════════════════════════════════════════════════════════════════════
-# PART 6: FULL AUTONOMOUS LIFECYCLE TEST (1 test)
+# PART 6: FULL AUTONOMOUS LIFECYCLE TEST (Skip if SkipAutonomousTest mode)
 # ════════════════════════════════════════════════════════════════════════════════
+
+if (-not $SkipAutonomousTest) {
 
 Write-TestSection "PART 6: Full Autonomous Lifecycle - End-to-End Orchestration"
 
@@ -813,6 +846,9 @@ Test-Feature "Full Autonomous Lifecycle (squad captain $script:LifecycleIssueNum
         return "partial success"
     }
 }
+
+# End of PART 6 (Autonomous Lifecycle Test)
+} # End if (-not $SkipAutonomousTest)
 
 # ════════════════════════════════════════════════════════════════════════════════
 # CLEANUP

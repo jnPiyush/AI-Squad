@@ -157,11 +157,31 @@ This E2E test validates **two critical dimensions**:
 ### Usage
 
 ```powershell
-# Run with default test app (Idea Management System)
+# ═══════════════════════════════════════════════════════════════
+# MODE 1: Full Suite (All 35 tests) - DEFAULT
+# ═══════════════════════════════════════════════════════════════
 .\tests\e2e-live-test.ps1
 
-# Run with custom test application requirements
-.\tests\e2e-live-test.ps1 -TestAppRequirement "Build an e-commerce platform with shopping cart, payment processing, and order tracking..."
+# ═══════════════════════════════════════════════════════════════
+# MODE 2: Component Tests Only (Tests 1-34) - FAST
+# ═══════════════════════════════════════════════════════════════
+# Use for quick validation of individual CLI commands
+# Skips the long-running autonomous lifecycle test
+.\tests\e2e-live-test.ps1 -SkipAutonomousTest
+
+# ═══════════════════════════════════════════════════════════════
+# MODE 3: Autonomous Test Only (Test 35) - INTEGRATION
+# ═══════════════════════════════════════════════════════════════
+# Use for validating end-to-end orchestration
+# Skips component tests, runs only full lifecycle workflow
+.\tests\e2e-live-test.ps1 -AutonomousOnly
+
+# ═══════════════════════════════════════════════════════════════
+# Additional Options
+# ═══════════════════════════════════════════════════════════════
+
+# Custom test application requirements
+.\tests\e2e-live-test.ps1 -TestAppRequirement "Build an e-commerce platform..."
 
 # With verbose output
 .\tests\e2e-live-test.ps1 -Verbose
@@ -172,8 +192,11 @@ This E2E test validates **two critical dimensions**:
 # Custom repository
 .\tests\e2e-live-test.ps1 -Repo "your-org/your-repo"
 
-# Combined options
-.\tests\e2e-live-test.ps1 -TestAppRequirement "Your custom requirements" -Verbose -SkipCleanup
+# Combined: Component tests only + verbose + skip cleanup
+.\tests\e2e-live-test.ps1 -SkipAutonomousTest -Verbose -SkipCleanup
+
+# Combined: Autonomous only + custom app + verbose
+.\tests\e2e-live-test.ps1 -AutonomousOnly -TestAppRequirement "Your app" -Verbose
 ```
 
 ### Parameters
@@ -181,9 +204,19 @@ This E2E test validates **two critical dimensions**:
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `-TestAppRequirement` | String | Custom application requirements for testing | Idea Management System |
+| `-SkipAutonomousTest` | Switch | **Run only component tests (1-34)** - Fast mode | False |
+| `-AutonomousOnly` | Switch | **Run only autonomous test (35)** - Integration mode | False |
 | `-Verbose` | Switch | Show detailed output during test execution | False |
 | `-SkipCleanup` | Switch | Keep generated artifacts for inspection | False |
 | `-Repo` | String | GitHub repository for issue creation | "jnPiyush/AI-Squad" |
+
+### Test Modes
+
+| Mode | Command | Tests Run | Duration | Use Case |
+|------|---------|-----------|----------|----------|
+| **Full Suite** | `.\tests\e2e-live-test.ps1` | 35 (all) | ~15-20 min | Complete validation before release |
+| **Component Only** | `-SkipAutonomousTest` | 34 (fast) | ~5-8 min | Quick CLI command validation, CI/CD |
+| **Integration Only** | `-AutonomousOnly` | 1 (workflow) | ~10-12 min | End-to-end orchestration validation |
 
 ### Default Test Application: Idea Management System
 - Centralized platform for capturing innovative ideas
