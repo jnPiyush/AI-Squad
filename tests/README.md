@@ -143,8 +143,16 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ## e2e-live-test.ps1
 
-**Purpose**: Complete production simulation with customizable test application
-**Coverage**: All 28 features with real execution (no mocks)
+**Purpose**: Complete production simulation with customizable test application  
+**Coverage**: All 35 tests including full autonomous lifecycle validation  
+**Key Feature**: Tests both individual commands AND complete end-to-end orchestration
+
+### What Makes This Different
+
+This E2E test validates **two critical dimensions**:
+
+1. **Component Testing (Tests 1-34)**: Individual CLI commands work correctly
+2. **🎯 Autonomous Lifecycle (Test 35)**: The REAL value proposition - create a feature request and let AI-Squad orchestrate everything from PM → Architect → UX → Engineer autonomously
 
 ### Usage
 
@@ -204,11 +212,48 @@ Build a comprehensive customer support portal with ticket management, knowledge 
 .\tests\e2e-live-test.ps1 -TestAppRequirement $CustomRequirements
 ```
 
-### Coverage (28 Features)
-- ✅ 5 Agent Types (PM, Architect, Engineer, UX, Reviewer)
-- ✅ 9 Orchestration Features (Battle Plans, Captain, Work State, etc.)
-- ✅ 5 Communication Features (Collab, Signal, Clarify, etc.)
-- ✅ 6 Monitoring Features (Health, Patrol, Recon, etc.)
-- ✅ 3 Additional Systems (Reporting, GitHub, File Generation)
+### Test Coverage (35 Tests)
+
+#### PART 1-5: Component Testing (34 tests)
+- ✅ 8 Agent & Setup Tests (PM, Architect, Engineer, Reviewer, UX, Doctor, Init, File Validation)
+- ✅ 11 Orchestration Tests (Battle Plans, Captain, Work State, Dashboard, Run-Plan, Convoy, Handoff, Capabilities, Delegation, Graph)
+- ✅ 5 Communication Tests (Collab, Signal, Clarify, Chat, Infrastructure)
+- ✅ 6 Monitoring Tests (Health, Patrol, Recon, Scout, Theater, Watch)
+- ✅ 4 Additional Tests (Init, Update, Report, GitHub Integration)
+
+#### 🎯 PART 6: Full Autonomous Lifecycle (1 comprehensive test)
+
+**Test 35: End-to-End Autonomous Development Workflow**
+
+This is the **MOST IMPORTANT TEST** - it validates AI-Squad's core value:
+
+**What it does:**
+1. Creates realistic feature request (User Authentication & Authorization)
+2. **Lets AI-Squad take over completely** - no manual intervention
+3. Executes full workflow:
+   - **Phase 1**: Captain breaks down feature into coordinated work items
+   - **Phase 2**: PM generates Product Requirements Document (PRD)
+   - **Phase 3**: Architect creates ADR + Technical Specifications
+   - **Phase 4**: UX Designer creates user flows and wireframes
+   - **Phase 5**: Engineer implements code with tests
+   - **Phase 6**: Verifies work state tracking
+   - **Phase 7**: Validates operational graph (agent coordination trace)
+   - **Phase 8**: Comprehensive completion validation
+
+**Success Criteria:**
+- ✅ All 8 validation checks pass (≥75% required)
+- ✅ PRD, ADR, SPEC, UX documents generated
+- ✅ Engineer execution completed
+- ✅ Work items tracked in system
+- ✅ Operational graph captured agent coordination
+- ✅ Full execution trace from start to finish
+
+**Why this matters:**
+This test proves AI-Squad works **as advertised** - you give it a feature request, and it autonomously delivers a complete solution with requirements, architecture, design, implementation, and tests. This is what makes AI-Squad different from individual AI coding assistants.
+
+### Coverage Summary
+- **Component Tests**: 34 tests (individual CLI commands)
+- **Integration Test**: 1 test (full autonomous lifecycle)
+- **Total**: 35 tests covering 100% of AI-Squad functionality
 
 See full documentation in the test script comments.

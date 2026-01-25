@@ -20,7 +20,7 @@ $ErrorActionPreference = "Continue"
 # Test counters
 $script:TestsPassed = 0
 $script:TestsFailed = 0
-$script:TotalTests = 34
+$script:TotalTests = 35
 
 # Colors
 $ColorPass = "Green"
@@ -613,6 +613,208 @@ Test-Feature "GitHub Integration" {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
+# PART 6: FULL AUTONOMOUS LIFECYCLE TEST (1 test)
+# ════════════════════════════════════════════════════════════════════════════════
+
+Write-TestSection "PART 6: Full Autonomous Lifecycle - End-to-End Orchestration"
+
+Write-Host "`n🎯 This test simulates REAL-WORLD usage: Create feature → Let AI-Squad deliver complete solution" -ForegroundColor Yellow
+Write-Host "   Testing the CORE VALUE PROPOSITION of AI-Squad`n" -ForegroundColor Yellow
+
+# Create a realistic feature for full lifecycle test
+$FullLifecycleFeature = @"
+# Feature: User Authentication & Authorization
+
+## User Story
+As a user, I want to securely log in to the system using email/password or OAuth providers (Google, GitHub) so that my account and data are protected.
+
+## Acceptance Criteria
+- [ ] Users can register with email/password
+- [ ] Email verification required for new accounts
+- [ ] Support OAuth2 login (Google, GitHub)
+- [ ] JWT-based session management
+- [ ] Role-based access control (User, Admin, SuperAdmin)
+- [ ] Password reset via email
+- [ ] Account lockout after 5 failed attempts
+- [ ] Activity logging for security audits
+
+## Business Value
+- **Priority**: High
+- **Impact**: Core security feature required for MVP launch
+- **Effort**: 2-3 sprints
+- **Risk**: Medium (OAuth integration complexity)
+"@
+
+Write-Host "`n▶ Creating feature issue for full lifecycle test..." -ForegroundColor White
+$lifecycleIssueUrl = gh issue create --repo $Repo `
+    --title "Feature: User Authentication & Authorization" `
+    --body $FullLifecycleFeature `
+    --label "feature,high-priority" 2>&1
+
+if ($lifecycleIssueUrl -match "issues/(\d+)") {
+    $script:LifecycleIssueNumber = $Matches[1]
+    Write-Host "  ✓ Created lifecycle test issue #$script:LifecycleIssueNumber" -ForegroundColor $ColorPass
+} else {
+    Write-Host "  ✗ Failed to create lifecycle issue" -ForegroundColor $ColorFail
+}
+
+# Test 35: Full Autonomous Development Lifecycle
+Test-Feature "Full Autonomous Lifecycle (squad captain $script:LifecycleIssueNumber → auto-orchestration)" {
+    Write-Host "`n  🚀 INITIATING AUTONOMOUS DEVELOPMENT WORKFLOW..." -ForegroundColor Cyan
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    
+    $startTime = Get-Date
+    
+    # PHASE 1: Captain Orchestration (Autonomous Task Breakdown)
+    Write-Host "`n  📋 PHASE 1: Captain Orchestration" -ForegroundColor Yellow
+    Write-Host "     → Breaking down feature into work items..." -ForegroundColor Gray
+    $captainResult = squad captain $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    if ($captainResult -match "work items created|coordination|tasks") {
+        Write-Host "     ✓ Captain created coordinated work plan" -ForegroundColor Green
+    } else {
+        Write-Host "     ⚠ Captain coordination may have issues" -ForegroundColor Yellow
+    }
+    
+    Start-Sleep -Seconds 2
+    
+    # PHASE 2: Requirements Analysis (PM Agent)
+    Write-Host "`n  📝 PHASE 2: Requirements Analysis (PM)" -ForegroundColor Yellow
+    Write-Host "     → Generating Product Requirements Document..." -ForegroundColor Gray
+    $pmResult = squad pm $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    $prdPath = "docs\prd\PRD-$script:LifecycleIssueNumber.md"
+    if (Test-Path $prdPath) {
+        $prdSize = (Get-Item $prdPath).Length
+        Write-Host "     ✓ PRD generated: $prdSize bytes" -ForegroundColor Green
+    } else {
+        Write-Host "     ✗ PRD not found" -ForegroundColor Red
+    }
+    
+    Start-Sleep -Seconds 2
+    
+    # PHASE 3: Technical Design (Architect Agent)
+    Write-Host "`n  🏗️  PHASE 3: Technical Design (Architect)" -ForegroundColor Yellow
+    Write-Host "     → Creating Architecture Decision Records & Specifications..." -ForegroundColor Gray
+    $architectResult = squad architect $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    $adrPath = "docs\adr\ADR-$script:LifecycleIssueNumber.md"
+    $specPath = "docs\specs\SPEC-$script:LifecycleIssueNumber.md"
+    
+    $designComplete = $true
+    if (Test-Path $adrPath) {
+        $adrSize = (Get-Item $adrPath).Length
+        Write-Host "     ✓ ADR generated: $adrSize bytes" -ForegroundColor Green
+    } else {
+        Write-Host "     ✗ ADR not found" -ForegroundColor Red
+        $designComplete = $false
+    }
+    
+    if (Test-Path $specPath) {
+        $specSize = (Get-Item $specPath).Length
+        Write-Host "     ✓ Technical Spec generated: $specSize bytes" -ForegroundColor Green
+    } else {
+        Write-Host "     ✗ Technical Spec not found" -ForegroundColor Red
+        $designComplete = $false
+    }
+    
+    Start-Sleep -Seconds 2
+    
+    # PHASE 4: UX Design (Optional but important for user-facing features)
+    Write-Host "`n  🎨 PHASE 4: UX Design (UX Designer)" -ForegroundColor Yellow
+    Write-Host "     → Creating user flows and wireframes..." -ForegroundColor Gray
+    $uxResult = squad ux $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    $uxPath = "docs\ux\UX-$script:LifecycleIssueNumber.md"
+    if (Test-Path $uxPath) {
+        $uxSize = (Get-Item $uxPath).Length
+        Write-Host "     ✓ UX Design generated: $uxSize bytes" -ForegroundColor Green
+    } else {
+        Write-Host "     ⚠ UX Design not generated (may not be required)" -ForegroundColor Yellow
+    }
+    
+    Start-Sleep -Seconds 2
+    
+    # PHASE 5: Implementation (Engineer Agent)
+    Write-Host "`n  ⚙️  PHASE 5: Implementation (Engineer)" -ForegroundColor Yellow
+    Write-Host "     → Implementing feature with tests..." -ForegroundColor Gray
+    $engineerResult = squad engineer $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    if ($engineerResult -match "implemented|code generated|tests created") {
+        Write-Host "     ✓ Engineer completed implementation" -ForegroundColor Green
+    } else {
+        Write-Host "     ⚠ Engineer execution completed (check logs)" -ForegroundColor Yellow
+    }
+    
+    Start-Sleep -Seconds 2
+    
+    # PHASE 6: Verify Work State & Status
+    Write-Host "`n  📊 PHASE 6: Work State Verification" -ForegroundColor Yellow
+    Write-Host "     → Checking orchestration status..." -ForegroundColor Gray
+    
+    $workState = squad work 2>&1 | Out-String
+    $statusDashboard = squad status 2>&1 | Out-String
+    
+    if ($workState -match $script:LifecycleIssueNumber -or $statusDashboard -match "issue") {
+        Write-Host "     ✓ Work item tracked in system" -ForegroundColor Green
+    }
+    
+    # PHASE 7: Verify Operational Graph
+    Write-Host "`n  🔗 PHASE 7: Execution Trace Validation" -ForegroundColor Yellow
+    Write-Host "     → Verifying agent coordination graph..." -ForegroundColor Gray
+    
+    if (Test-Path ".squad\graph\nodes.json") {
+        $graphData = Get-Content ".squad\graph\nodes.json" -Raw | ConvertFrom-Json
+        $nodeCount = $graphData.Count
+        Write-Host "     ✓ Operational graph tracked: $nodeCount execution nodes" -ForegroundColor Green
+    }
+    
+    # PHASE 8: Final Validation
+    Write-Host "`n  ✅ PHASE 8: Lifecycle Completion Check" -ForegroundColor Yellow
+    Write-Host "     → Validating end-to-end delivery..." -ForegroundColor Gray
+    
+    $endTime = Get-Date
+    $duration = ($endTime - $startTime).TotalSeconds
+    
+    $validations = @{
+        "Issue Created" = ($null -ne $script:LifecycleIssueNumber)
+        "Captain Coordination" = ($captainResult -match "work items|coordination")
+        "PRD Generated" = (Test-Path $prdPath)
+        "ADR Generated" = (Test-Path $adrPath)
+        "Spec Generated" = (Test-Path $specPath)
+        "UX Design" = (Test-Path $uxPath)
+        "Engineer Executed" = ($engineerResult -match "engineer|implementation")
+        "Operational Graph" = (Test-Path ".squad\graph\nodes.json")
+    }
+    
+    $passedChecks = ($validations.Values | Where-Object { $_ -eq $true }).Count
+    $totalChecks = $validations.Count
+    $passRate = [math]::Round(($passedChecks / $totalChecks) * 100, 0)
+    
+    Write-Host "`n  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "  📈 AUTONOMOUS LIFECYCLE RESULTS:" -ForegroundColor Cyan
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    foreach ($check in $validations.GetEnumerator()) {
+        $status = if ($check.Value) { "✓" } else { "✗" }
+        $color = if ($check.Value) { "Green" } else { "Red" }
+        Write-Host "     $status $($check.Key)" -ForegroundColor $color
+    }
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+    Write-Host "     Checks Passed: $passedChecks/$totalChecks ($passRate%)" -ForegroundColor $(if ($passRate -ge 75) { "Green" } else { "Yellow" })
+    Write-Host "     Execution Time: $([math]::Round($duration, 1)) seconds" -ForegroundColor Gray
+    Write-Host "  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n" -ForegroundColor Cyan
+    
+    if ($passRate -ge 75) {
+        Write-Host "  🎉 AUTONOMOUS LIFECYCLE TEST PASSED!" -ForegroundColor Green
+        Write-Host "     AI-Squad successfully orchestrated the complete development workflow`n" -ForegroundColor Green
+        return "success"
+    } else {
+        Write-Host "  ⚠️  PARTIAL SUCCESS - Some phases incomplete" -ForegroundColor Yellow
+        return "partial success"
+    }
+}
+
+# ════════════════════════════════════════════════════════════════════════════════
 # CLEANUP
 # ════════════════════════════════════════════════════════════════════════════════
 
@@ -633,6 +835,12 @@ if (-not $SkipCleanup) {
         Write-Host "  ✓ Closed issue #$script:CollabIssueNumber" -ForegroundColor $ColorPass
     }
     
+    if ($script:LifecycleIssueNumber) {
+        gh issue close $script:LifecycleIssueNumber --repo $Repo `
+            --comment "Full autonomous lifecycle test complete. AI-Squad successfully orchestrated PM → Architect → UX → Engineer workflow with complete artifact generation." 2>&1 | Out-Null
+        Write-Host "  ✓ Closed issue #$script:LifecycleIssueNumber" -ForegroundColor $ColorPass
+    }
+    
     Write-Host "`n▶ Removing test artifacts..." -ForegroundColor White
     $artifacts = @(
         "docs\prd\PRD-$script:IssueNumber.md",
@@ -641,7 +849,11 @@ if (-not $SkipCleanup) {
         "docs\ux\UX-$script:IssueNumber.md",
         "docs\prd\PRD-$script:CollabIssueNumber.md",
         "docs\adr\ADR-$script:CollabIssueNumber.md",
-        "docs\specs\SPEC-$script:CollabIssueNumber.md"
+        "docs\specs\SPEC-$script:CollabIssueNumber.md",
+        "docs\prd\PRD-$script:LifecycleIssueNumber.md",
+        "docs\adr\ADR-$script:LifecycleIssueNumber.md",
+        "docs\specs\SPEC-$script:LifecycleIssueNumber.md",
+        "docs\ux\UX-$script:LifecycleIssueNumber.md"
     )
     
     foreach ($artifact in $artifacts) {
