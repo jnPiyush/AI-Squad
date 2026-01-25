@@ -5,6 +5,87 @@ All notable changes to AI-Squad will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-25
+
+### Added - Squad Mission Mode 🎖️
+
+**TRUE AUTONOMOUS DEVELOPMENT** - The game changer for AI-Squad!
+
+- **Squad Mission Mode (`squad auto`)**: Revolutionary autonomous workflow
+  - Provide mission brief via `--prompt`, `--file`, or `--interactive`
+  - PM validates mission as **EPIC** or **FEATURE**
+  - Automatically creates **Mission Brief** and **Mission Objectives** in GitHub
+  - 🎖️ **DEPLOYS TO CAPTAIN** for full orchestration
+  - **Captain executes multi-agent collaboration** using Battle Plans
+  - Complete agent sequence: PM → Architect → Engineer → UX → Reviewer
+  - Multi-agent team works together to complete missions end-to-end
+  - Respects military theme: Captain, Battle Plans, Convoys, Work Items
+  - Optional `--plan-only` to create brief without execution
+  
+- **Captain Agent Enhancements**:
+  - Captain now **EXECUTES agents** (not just planning!)
+  - Uses `run_collaboration()` for multi-agent orchestration
+  - Follows Battle Plan sequences
+  - Tracks execution progress and results
+  - Handles errors gracefully with detailed summaries
+
+- **Complete Workflow**:
+  ```
+  Mission Brief → PM Analysis → GitHub Issues → Captain Deployment
+       ↓
+  Captain selects Battle Plan → Creates Work Items → Organizes Convoys
+       ↓
+  Executes Agents: PM → Architect → Engineer → UX → Reviewer
+       ↓
+  Complete Feature with PRs!
+  ```
+
+### Fixed
+
+- **Import Issue**: Fixed incorrect import of GitHub Copilot SDK
+  - Changed `from github_copilot_sdk` to `from copilot`
+  - Resolves "ModuleNotFoundError: No module named 'github_copilot_sdk'"
+
+- **Package Distribution**: All necessary files now included in package
+  - Added MANIFEST.in with complete file list
+  - Agent definitions, prompts, templates, skills all packaged
+  - Copilot instructions included
+  - Dashboard templates and static files included
+
+- **Setup Experience**: Interactive GitHub configuration
+  - Auto-detects `gh` CLI authentication
+  - Clear OAuth setup instructions
+  - Platform-specific commands
+
+- **OAuth-Only Authentication**: Simplified to one auth method
+  - **BREAKING**: GITHUB_TOKEN no longer supported
+  - Use `gh auth login` only
+  - More secure with automatic rotation
+
+### Changed
+
+- **Architectural Improvements**:
+  - Autonomous mode now respects orchestration architecture
+  - Captain is the central coordinator (not bypassed)
+  - Battle Plans drive agent sequences
+  - Work Items track all activities
+  - Convoys enable parallel execution
+
+- **Military Theme Consistency**:
+  - Requirements → Mission Brief
+  - Features/Epics → Mission Type
+  - Stories → Mission Objectives  
+  - Execution → Captain Deployment
+  - All terminology aligned with military theme
+
+### Documentation
+
+- Updated README with Squad Mission Mode
+- Enhanced AGENTS.md with autonomous workflow
+- Created docs/AUTONOMOUS.md with complete guide
+- Updated QUICK-START with OAuth setup
+- All examples updated to reflect new workflow
+
 ## [Unreleased]
 
 ### Added

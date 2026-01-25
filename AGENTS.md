@@ -16,6 +16,66 @@ AI-Squad includes five expert agents that work together to deliver complete feat
 
 ---
 
+## 🎖️ Squad Mission Mode (NEW in v0.5.0!)
+
+**The fastest way to build features** - Provide requirements and let Squad handle EVERYTHING!
+
+### Quick Start
+
+```bash
+# Provide mission brief - Captain orchestrates the entire team!
+squad auto -p "Create a REST API for task management with CRUD operations"
+```
+
+### What Happens:
+
+1. **📋 PM Validates Mission**
+   - Analyzes requirements
+   - Classifies as EPIC or FEATURE
+   - Extracts objectives
+
+2. **📝 GitHub Issues Created**
+   - Mission Brief issue (#123)
+   - Mission Objective issues (#124, #125, #126)
+
+3. **🎖️ Captain Takes Command**
+   - Analyzes mission complexity
+   - Selects Battle Plan (feature/epic workflow)
+   - Creates Work Items for tracking
+   - Organizes into Convoys (parallel execution)
+
+4. **🤝 Multi-Agent Collaboration Executes**
+   - **PM**: Creates comprehensive PRD
+   - **Architect**: Designs solution with ADR and specs
+   - **Engineer**: Implements with comprehensive tests (≥80% coverage)
+   - **UX**: Creates wireframes and prototypes (if UI)
+   - **Reviewer**: Reviews code and creates PR
+
+5. **✅ Complete Feature Delivered!**
+
+### Example Mission
+
+```bash
+squad auto -p "
+Create an Idea Management System with:
+- User authentication and authorization
+- CRUD operations for ideas
+- Voting and commenting system
+- Search and filtering
+- Real-time notifications
+"
+```
+
+**Result:**
+- Mission Brief (Epic) created in GitHub
+- 5 Mission Objectives (stories) created
+- Captain coordinates all agents
+- Complete implementation with tests
+- Pull request ready for review
+- All in one command! 🚀
+
+---
+
 ## 🎨 Product Manager Agent
 
 ### Role

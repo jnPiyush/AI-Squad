@@ -31,7 +31,9 @@ AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agent
 | 🎭 **UX Designer** | User Experience | Creates wireframes, HTML prototypes, accessibility guidelines |
 | 🛡️ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
 
-**New in v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), web dashboard, retry logic, rate limiting, persistent storage!
+**New in v0.5.0**: 🎖️ Squad Mission Mode - True autonomous development! Provide requirements, Captain orchestrates multi-agent collaboration to complete entire features end-to-end!
+
+**From v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), web dashboard, retry logic, rate limiting, persistent storage
 
 **Install once. Use everywhere. No hosting required.**
 
@@ -245,6 +247,75 @@ Your agents work naturally in Copilot Chat - just mention them by name:
 ```
 
 See `.github/copilot-instructions.md` and `.github/agents/` for agent definitions.
+
+---
+
+## 🎖️ Complete Squad Mission Workflow
+
+Here's how Squad Mission Mode orchestrates your entire development lifecycle:
+
+```mermaid
+graph TB
+    subgraph "1️⃣ Mission Submission"
+        User["👤 Developer"] -->|"squad auto -p 'requirements'"| Auto["🎖️ Squad Mission Mode"]
+    end
+    
+    subgraph "2️⃣ Mission Analysis"
+        Auto --> PM["🎨 PM Agent"]
+        PM -->|Validates| Type{Mission Type?}
+        Type -->|Complex| Epic["📋 EPIC"]
+        Type -->|Simple| Feature["📋 FEATURE"]
+    end
+    
+    subgraph "3️⃣ GitHub Integration"
+        Epic --> Brief1["📝 Mission Brief #123<br/>(Epic Issue)"]
+        Feature --> Brief2["📝 Mission Brief #123<br/>(Feature Issue)"]
+        Brief1 --> Obj["🎯 Mission Objectives<br/>#124, #125, #126"]
+        Brief2 --> Obj
+    end
+    
+    subgraph "4️⃣ Captain Deployment"
+        Obj -->|Deploys to| Captain["🎖️ Captain"]
+        Captain --> Analyze["Analyze Mission"]
+        Analyze --> BP["Select Battle Plan"]
+        BP --> WI["Create Work Items"]
+        WI --> Convoy["Organize Convoys"]
+    end
+    
+    subgraph "5️⃣ Multi-Agent Execution"
+        Convoy --> Collab["🤝 run_collaboration()"]
+        Collab --> PM2["🎨 PM: Create PRD"]
+        PM2 --> Arch["🧩 Architect: Design ADR"]
+        Arch --> Eng["🔧 Engineer: Implement + Tests"]
+        Eng --> UX["🎭 UX: Design Prototype"]
+        UX --> Rev["🛡️ Reviewer: Review + PR"]
+    end
+    
+    subgraph "6️⃣ Monitoring & Completion"
+        Rev --> Monitor["📊 Monitoring"]
+        Monitor --> Patrol["🔍 Patrol: Check stale work"]
+        Monitor --> Recon["🔍 Recon: Status reports"]
+        Monitor --> Scout["🔍 Scout: Pattern discovery"]
+        Monitor --> Done["✅ Mission Complete!"]
+    end
+    
+    style Captain fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Collab fill:#50C878,stroke:#2E7D4E,color:#fff
+    style Done fill:#28A745,stroke:#1E7E34,color:#fff
+```
+
+### Key Components
+
+| Component | Role | Output |
+|-----------|------|--------|
+| **🎖️ Captain** | Meta-coordinator | Analyzes, plans, and orchestrates |
+| **📜 Battle Plan** | Workflow template | Defines agent sequence |
+| **💼 Work Items** | Task tracking | Tracks status per issue |
+| **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
+| **🤝 Collaboration** | Multi-agent coordinator | Executes agents in sequence |
+| **🔍 Patrol** | Monitoring | Detects stale/stuck work |
+| **🔍 Recon** | Intelligence | System status reports |
+| **🔍 Scout** | Discovery | Pattern detection |
 
 ---
 

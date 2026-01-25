@@ -44,6 +44,8 @@ def print_banner():
             "[bold]Product Manager[/bold] • [bold]Architect[/bold] • "
             "[bold]Engineer[/bold] • [bold]UX Designer[/bold] • "
             "[bold]Reviewer[/bold]\n\n"
+            "[yellow]🎖️ NEW: Squad Mission Mode - True Autonomous Development![/yellow]\n"
+            "[dim]Provide requirements → Captain orchestrates multi-agent collaboration[/dim]\n\n"
             f"[dim]Version {__version__}[/dim]",
             style="cyan",
             border_style="bright_cyan"
