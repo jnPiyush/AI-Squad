@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Autonomous Mode**: New `squad auto` command for TRUE autonomous app development
+  - Accept requirements via `--prompt`, `--file`, or `--interactive`
+  - **FULLY AUTONOMOUS BY DEFAULT** - executes all agents automatically
+  - Multi-agent orchestration: PM → Architect → Engineer → UX → Reviewer
+  - Automatically creates GitHub epic and story issues
+  - Implements complete features end-to-end
+  - Creates PRs automatically
+  - Optional `--plan-only` flag to just create issues without execution
+  - Examples:
+    - `squad auto -p \"Create REST API\"` (full automation!)
+    - `squad auto -f requirements.txt` (complete feature development)
+    - `squad auto -i` (interactive + automatic execution)
+    - `squad auto -p \"...\" --plan-only` (just planning)
+
 ### Fixed
 - **Import Issue**: Fixed incorrect import of GitHub Copilot SDK
   - Changed `from github_copilot_sdk import CopilotSDK` to `from copilot import CopilotSDK`

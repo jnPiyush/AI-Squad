@@ -496,6 +496,122 @@ def clarify(issue_number):
 # ============================================================
 
 @main.command()
+@click.option("--prompt", "-p", help="Inline requirement prompt")
+@click.option("--file", "-f", type=click.Path(exists=True), help="Requirements file path")
+@click.option("--interactive", "-i", is_flag=True, help="Interactive requirement gathering")
+@click.option("--plan-only", is_flag=True, help="Only create issues, don't execute agents")
+def auto(prompt, file, interactive, plan_only):
+    """
+    Autonomous mode - provide requirements and Squad handles EVERYTHING
+    
+    This command accepts requirements and automatically:
+    1. Analyzes with PM agent
+    2. Creates GitHub issues (epic + stories)
+    3. Orchestrates ALL agents (PM → Architect → Engineer → UX → Reviewer)
+    4. Tracks progress and updates issues
+    5. Creates PRs and completes the feature
+    
+    By default, FULLY AUTONOMOUS. Use --plan-only to just create issues.
+    
+    Examples:
+        squad auto -p "Create a REST API for user management"
+        squad auto -f requirements.txt
+        squad auto -i
+        squad auto -p "Add authentication" --plan-only  # Just planning
+    """
+    print_banner()
+    
+    # Validate input
+    input_count = sum([bool(prompt), bool(file), interactive])
+    if input_count == 0:
+        console.print("[bold red]Error: Must provide requirements via --prompt, --file, or --interactive[/bold red]")
+        console.print("\n[yellow]Examples:[/yellow]")
+        console.print("  squad auto -p \"Create user management API\"")
+        console.print("  squad auto -f requirements.txt")
+        console.print("  squad auto -i")
+        sys.exit(1)
+    
+    if input_count > 1:
+        console.print("[bold red]Error: Use only ONE input method (--prompt, --file, or --interactive)[/bold red]")
+        sys.exit(1)
+    
+    # Get requirements
+    requirements = None
+    if prompt:
+        requirements = prompt
+        console.print(f"[cyan]Requirements:[/cyan] {prompt}\n")
+    elif file:
+        with open(file, 'r', encoding='utf-8') as f:
+            requirements = f.read()
+        console.print(f"[cyan]Requirements from:[/cyan] {file}\n")
+    elif interactive:
+        console.print("[bold cyan]Interactive Requirement Gathering[/bold cyan]")
+        console.print("[dim]Enter your requirements (press Ctrl+D or Ctrl+Z when done):[/dim]\n")
+        lines = []
+        try:
+            while True:
+                line = input()
+                lines.append(line)
+        except EOFError:
+            requirements = "\n".join(lines)
+        console.print()
+    
+    if not requirements or not requirements.strip():
+        console.print("[bold red]Error: Requirements cannot be empty[/bold red]")
+        sys.exit(1)
+    
+    console.print("[bold cyan]🤖 AI-Squad Autonomous Mode Activated[/bold cyan]\n")
+    console.print("[dim]Step 1: Analyzing requirements with PM agent...[/dim]")
+    
+    try:
+        # Import the autonomous orchestration module
+        from ai_squad.core.autonomous import run_autonomous_workflow
+        
+        result = run_autonomous_workflow(
+            requirements=requirements,
+            plan_only=plan_only
+        )
+        
+        if result["success"]:
+            console.print("\n[bold green]✓ Autonomous workflow completed![/bold green]\n")
+            
+            # Show created issues
+            if "epic_issue" in result:
+                console.print(f"[bold]Epic Created:[/bold] #{result['epic_issue']}")
+            if "story_issues" in result:
+                console.print(f"[bold]Stories Created:[/bold] {', '.join(['#' + str(i) for i in result['story_issues']])}")
+            
+            # Show execution status
+            if not plan_only:
+                console.print(f"\n[bold]Multi-Agent Execution:[/bold]")
+                for status in result.get("execution_status", []):
+                    console.print(f"  • {status}")
+                console.print("\n[green]✓ All agents completed their work![/green]")
+            else:
+                console.print("\n[yellow]ℹ Issues created (plan-only mode). Run agents with:[/yellow]")
+                console.print(f"[dim]  squad captain {result.get('epic_issue')}[/dim]")
+        else:
+            console.print(f"[bold red]✗ Autonomous workflow failed: {result.get('error')}[/bold red]")
+            sys.exit(1)
+    
+    except ImportError:
+        console.print("[bold red]✗ Autonomous mode not yet implemented[/bold red]")
+        console.print("\n[yellow]Creating autonomous orchestration module...[/yellow]")
+        console.print("[dim]This feature will:[/dim]")
+        console.print("  1. Use PM agent to analyze requirements")
+        console.print("  2. Create epic and story issues in GitHub")
+        console.print("  3. Use Captain to orchestrate agents")
+        console.print("  4. Track progress and update issues")
+        console.print("\n[cyan]For now, you can:[/cyan]")
+        console.print("  1. Manually create an issue in GitHub")
+        console.print("  2. Run: squad captain <issue-number>")
+        sys.exit(1)
+    except (RuntimeError, OSError, ValueError) as e:
+        console.print(f"[bold red]✗ Error: {e}[/bold red]")
+        sys.exit(1)
+
+
+@main.command()
 @click.argument("issue_number", type=int)
 def captain(issue_number):
     """

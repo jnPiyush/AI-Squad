@@ -192,8 +192,29 @@ This creates:
 
 ### 3. Use Your Squad!
 
+**Autonomous Mode (FULLY AUTOMATIC - Recommended):**
 ```bash
-# Single agent commands
+# Provide requirements and Squad AUTOMATICALLY:
+# 1. Analyzes requirements with PM
+# 2. Creates epic and user story issues
+# 3. Orchestrates all agents: PM → Architect → Engineer → UX → Reviewer
+# 4. Creates pull requests with complete implementation
+
+squad auto -p "Create a REST API for user management with authentication"
+
+# From a file
+squad auto -f requirements.txt
+
+# Interactive mode
+squad auto -i
+
+# Planning only (no execution)
+squad auto -p "Add payment integration" --plan-only
+```
+
+**Individual Agent Commands:**
+```bash
+# Single agent commands (requires existing GitHub issue)
 squad pm 123           # Product Manager creates PRD
 squad architect 123    # Architect designs solution
 squad engineer 123     # Engineer implements feature
@@ -684,6 +705,7 @@ Team of 10 developers, 100 agent runs/week:
 ## 📚 Documentation
 
 - **[Quick Start Guide](docs/quickstart.md)** - Get started in 5 minutes
+- **[Autonomous Mode Guide](docs/AUTONOMOUS.md)** - ⚡ NEW: Fully automatic development workflow
 - **[CLI Commands Guide](docs/CLI-GUIDE.md)** - All commands with examples
 - **[Configuration](docs/configuration.md)** - Customize `squad.yaml`
 - **[Agents Guide](AGENTS.md)** - How each agent works
