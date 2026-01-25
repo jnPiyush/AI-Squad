@@ -54,14 +54,29 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
 {skills}
 
 **Process:**
-1. Understand user requirements from PRD
-2. Research existing UI patterns in codebase
-3. Create user flow diagrams
-4. Design wireframes for key screens
-5. Create professional HTML click-through prototype
-6. Document interaction patterns
-7. Ensure accessibility compliance
-8. Specify responsive behavior
+1. **Research & Analysis Phase:**
+   - Understand user requirements from PRD
+   - Research existing UI patterns in codebase
+   - Analyze existing UX designs in docs/ux/ for consistency
+   - Review existing prototypes for interaction patterns
+   - Study user personas and use cases from PRD
+   - Identify accessibility requirements (WCAG {wcag_ver} {wcag_lvl})
+   - Research design systems and component libraries in use
+   - Analyze user flows for similar features
+   - Evaluate responsive design considerations
+
+2. **Design Phase:**
+   - Create user flow diagrams (Mermaid format)
+   - Design wireframes for key screens
+   - Plan interaction patterns and animations
+   - Define accessibility features and ARIA labels
+
+3. **Prototyping & Documentation:**
+   - Create professional HTML click-through prototype
+   - Document interaction patterns and behaviors
+   - Specify responsive behavior for all breakpoints
+   - Create accessibility checklist and validation
+   - Ensure design is ready for Engineer implementation
 
 **Design Principles:**
 - User-centered design

@@ -51,13 +51,28 @@ class EngineerAgent(BaseAgent, ClarificationMixin):
 {skills}
 
 **Process:**
-1. Read technical specification from Architect
-2. Research existing code patterns
-3. Implement feature following spec
-4. Write tests (TDD approach preferred)
-5. Document code
-6. Run tests and ensure coverage ≥{coverage}%
-7. Create pull request with detailed description
+1. **Research & Analysis Phase:**
+   - Read technical specification from Architect
+   - Review ADR and architecture documentation for context
+   - Research existing code patterns and project structure
+   - Analyze similar implementations in codebase
+   - Identify reusable components and libraries
+   - Review existing tests for patterns and utilities
+   - Understand dependencies and integration points
+   - Assess security and performance requirements
+   - Plan implementation approach and identify risks
+
+2. **Implementation Phase (TDD approach preferred):**
+   - Write failing tests first (Red)
+   - Implement feature following spec (Green)
+   - Refactor for quality and maintainability (Refactor)
+   - Document code with XML docs/docstrings
+
+3. **Validation & Submission:**
+   - Run all tests and ensure coverage ≥{coverage}%
+   - Perform self-review using checklist
+   - Update relevant documentation
+   - Create pull request with detailed description
 
 **Code Quality Standards:**
 - SOLID principles

@@ -48,6 +48,30 @@ class ReviewerAgent(BaseAgent, ClarificationMixin):
 **Skills Available:**
 {skills}
 
+**Process:**
+1. **Research & Analysis Phase:**
+   - Fetch and review the pull request changes
+   - Read related PRD, ADR, and spec documents for context
+   - Understand the feature requirements and acceptance criteria
+   - Review existing code in affected areas
+   - Analyze test coverage reports
+   - Check for security vulnerabilities in dependencies
+   - Review CI/CD pipeline results and logs
+   - Identify code smells and architectural concerns
+
+2. **Comprehensive Review:**
+   - Evaluate code quality against checklist
+   - Assess security vulnerabilities and risks
+   - Verify test coverage (≥{coverage}%)
+   - Check performance and scalability implications
+   - Validate documentation completeness
+
+3. **Feedback & Decision:**
+   - Create review document with findings
+   - Provide actionable, constructive feedback
+   - Make approval decision (Approve/Request Changes/Comment)
+   - Ensure feedback is balanced and helpful
+
 **Review Checklist:**
 
 **Code Quality:**
