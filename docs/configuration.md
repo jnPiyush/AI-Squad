@@ -40,6 +40,7 @@ output:
   prd_dir: docs/prd
   adr_dir: docs/adr
   specs_dir: docs/specs
+  architecture_dir: docs/architecture
   ux_dir: docs/ux
   reviews_dir: docs/reviews
 
@@ -154,8 +155,40 @@ output:
   prd_dir: docs/requirements  # PRDs
   adr_dir: architecture/decisions  # ADRs
   specs_dir: architecture/specs  # Specs
+  architecture_dir: architecture/overview  # Architecture docs
   ux_dir: design/ux  # UX designs
   reviews_dir: reviews  # Code reviews
+```
+
+### Quality Settings
+
+```yaml
+quality:
+  test_coverage_threshold: 80
+  test_pyramid:
+    unit: 70
+    integration: 20
+    e2e: 10
+```
+
+### Routing Settings
+
+```yaml
+routing:
+  enforce_cli_routing: false
+  trust_level: high
+  data_sensitivity: internal
+  max_data_sensitivity: restricted
+  min_events: 5
+```
+
+### Accessibility Settings
+
+```yaml
+accessibility:
+  wcag_version: "2.1"
+  wcag_level: "AA"
+  contrast_ratio: 4.5
 ```
 
 **Relative Paths:** All paths are relative to project root.

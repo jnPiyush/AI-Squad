@@ -85,6 +85,7 @@ squad architect <issue-number>
 **Output:**
 - `docs/adr/ADR-<issue>.md` - Architecture Decision Record
 - `docs/specs/SPEC-<issue>.md` - Technical Specification
+- `docs/architecture/ARCH-<issue>.md` - Architecture Document
 
 **Example:**
 ```bash
@@ -182,6 +183,33 @@ squad review 202
 - After implementation
 - Before merging PR
 - Code quality checks
+
+---
+
+### `squad captain <issue#>`
+
+Run Captain coordinator - analyzes the issue and creates a coordination plan.
+
+**Usage:**
+```bash
+squad captain <issue-number>
+```
+
+**Arguments:**
+- `issue-number` - GitHub issue number
+
+**Output:**
+- Coordination plan and work items in `.squad/`
+
+**Example:**
+```bash
+squad captain 123
+```
+
+**When to use:**
+- Orchestrating multi-agent workflows
+- Planning execution order and dependencies
+- Creating battle-plan recommendations
 
 ---
 

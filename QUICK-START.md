@@ -10,7 +10,7 @@ The package has been successfully installed and tested:
 
 ```bash
 $ squad --version
-AI-Squad version 0.1.0
+AI-Squad version 0.2.0
 
 $ squad --help
 Usage: squad [OPTIONS] COMMAND [ARGS]...
@@ -100,7 +100,7 @@ squad pm 123
 **2. Architect** - Design Solution
 ```bash
 squad architect 123
-# Creates: docs/adr/ADR-123.md, docs/specs/SPEC-123.md
+# Creates: docs/adr/ADR-123.md, docs/specs/SPEC-123.md, docs/architecture/ARCH-123.md
 # Contains: Technical decisions, architecture, implementation plan
 ```
 
