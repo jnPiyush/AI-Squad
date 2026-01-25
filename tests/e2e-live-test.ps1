@@ -757,13 +757,17 @@ Write-Host "`n▶ Creating feature issue for full lifecycle test..." -Foreground
 $lifecycleIssueUrl = gh issue create --repo $Repo `
     --title "Feature: User Authentication & Authorization" `
     --body $FullLifecycleFeature `
-    --label "feature,high-priority" 2>&1
+    --label "feature,high-priority" 2>&1 | Out-String
 
 if ($lifecycleIssueUrl -match "issues/(\d+)") {
     $script:LifecycleIssueNumber = $Matches[1]
     Write-Host "  ✓ Created lifecycle test issue #$script:LifecycleIssueNumber" -ForegroundColor $ColorPass
 } else {
     Write-Host "  ✗ Failed to create lifecycle issue" -ForegroundColor $ColorFail
+    if ($lifecycleIssueUrl) {
+        Write-Host "  Error: $lifecycleIssueUrl" -ForegroundColor Gray
+    }
+    exit 1
 }
 
 # Test 35: Autonomous Workflow Validation (Captain's Autonomous Behavior)
@@ -917,9 +921,16 @@ Test-Feature "Autonomous Workflow (validate Captain's output and validation enfo
         Write-Host "     • No convoy created (may not be required for single issue)" -ForegroundColor Gray
     }
     
-    # Check if Captain created work items / battle plan
-    $statusOutput = squad status 2>&1 | Out-String
-    $workItemsCreated = $statusOutput -match "work item|battle plan|coordination"
+    # Check if Captain created work items
+    $workItemsCreated = $false
+    if (Test-Path ".squad\workstate.json") {
+        try {
+            $workStateJson = Get-Content ".squad\workstate.json" -Raw | ConvertFrom-Json
+            $workItemsCreated = $workStateJson.items.Count -gt 0
+        } catch {
+            $workItemsCreated = $false
+        }
+    }
     
     if ($workItemsCreated) {
         Write-Host "     ✓ Work items/battle plan created" -ForegroundColor Green

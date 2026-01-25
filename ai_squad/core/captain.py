@@ -703,9 +703,37 @@ Always provide clear, structured coordination plans.
         for plan in convoys:
             summary += f"- **{plan.id}**: {len(plan.work_items)} items, agents: {', '.join(plan.agents)}\n"
         
+        # Dependencies and sequence
+        summary += "\n### Dependencies & Sequence\n"
+        dependency_lines = []
+        for item in breakdown.work_items:
+            if item.depends_on:
+                dependency_lines.append(f"- {item.id} depends on {', '.join(item.depends_on)}")
+
+        if dependency_lines:
+            summary += "\n".join(dependency_lines) + "\n"
+        else:
+            summary += "- No explicit dependencies detected\n"
+
+        sequence = []
+        if breakdown.suggested_strategy:
+            strategy = self.strategy_manager.get_strategy(breakdown.suggested_strategy)
+            if strategy:
+                sequence = [phase.agent for phase in strategy.phases]
+
+        if not sequence:
+            sequence = [self._detect_agent(item) or "unknown" for item in breakdown.work_items]
+
+        summary += f"- Recommended sequence: {' -> '.join(sequence)}\n"
+
         summary += "\n### Recommended Next Actions\n"
         for rec in recommendations[:3]:
             summary += f"- {rec['action']}: {rec.get('work_item_title', rec.get('work_item_id'))}\n"
+
+        summary += "\n### Routing & Collaboration\n"
+        routing_source = "OrgRouter" if self.org_router else "default routing"
+        summary += f"- Routing: {routing_source}\n"
+        summary += "- Collaboration: coordinate via handoff and delegation\n"
         
         return summary
     
