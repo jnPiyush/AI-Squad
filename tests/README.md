@@ -137,3 +137,39 @@ When adding features:
 4. Update documentation
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
+
+
+# End-to-End Live Testing
+
+## e2e-live-test.ps1
+
+**Purpose**: Complete production simulation using "Idea Management" system
+**Coverage**: All 28 features with real execution (no mocks)
+
+### Usage
+
+```powershell
+# Run complete test suite
+.\tests\e2e-live-test.ps1
+
+# With verbose output
+.\tests\e2e-live-test.ps1 -Verbose
+
+# Skip cleanup
+.\tests\e2e-live-test.ps1 -SkipCleanup
+```
+
+### Test Application: Idea Management System
+- Centralized platform for capturing innovative ideas
+- Business case with ROI, effort, and risk assessment
+- Multi-stage approval workflow (Submitted → In Review → Approved → In Dev → In Production)
+- Impact measurement and analytics
+
+### Coverage (28 Features)
+- ✅ 5 Agent Types (PM, Architect, Engineer, UX, Reviewer)
+- ✅ 9 Orchestration Features (Battle Plans, Captain, Work State, etc.)
+- ✅ 5 Communication Features (Collab, Signal, Clarify, etc.)
+- ✅ 6 Monitoring Features (Health, Patrol, Recon, etc.)
+- ✅ 3 Additional Systems (Reporting, GitHub, File Generation)
+
+See full documentation in the test script comments.
