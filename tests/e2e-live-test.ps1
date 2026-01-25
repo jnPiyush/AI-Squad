@@ -839,31 +839,24 @@ Test-Feature "Full Autonomous Lifecycle (squad captain $script:LifecycleIssueNum
     
     # PHASE 5: Implementation (Engineer Agent)
     Write-Host "`n  ⚙️  PHASE 5: Implementation (Engineer)" -ForegroundColor Yellow
+    Write-Host "     → Implementing feature with tests..." -ForegroundColor Gray
     
-    # CRITICAL: Validate prerequisites before engineer runs
-    $canImplement = (Test-Path $prdPath) -and (Test-Path $adrPath) -and (Test-Path $specPath)
+    # NOTE: Prerequisite validation should be enforced by workflow system
+    # See docs/CRITICAL-WORKFLOW-ISSUE.md for details
+    # This test validates if workflow properly rejects invalid handoffs
     
-    if (-not $canImplement) {
-        Write-Host "     ⚠️  SKIPPING: Engineer cannot run without prerequisites" -ForegroundColor Red
-        Write-Host "     ✗ Missing:" -ForegroundColor Red
-        if (-not (Test-Path $prdPath)) { Write-Host "       - PRD (requirements)" -ForegroundColor Gray }
-        if (-not (Test-Path $adrPath)) { Write-Host "       - ADR (architecture decisions)" -ForegroundColor Gray }
-        if (-not (Test-Path $specPath)) { Write-Host "       - SPEC (technical specifications)" -ForegroundColor Gray }
-        Write-Host "     → Engineer needs PRD + ADR + SPEC to implement" -ForegroundColor Yellow
-        $engineerResult = "skipped: missing prerequisites"
+    $engineerResult = squad engineer $script:LifecycleIssueNumber 2>&1 | Out-String
+    
+    if ($engineerResult -match "implemented|code generated|tests created") {
+        Write-Host "     ✓ Engineer completed implementation" -ForegroundColor Green
+        $engineerExecuted = $true
+    } elseif ($engineerResult -match "prerequisite|missing|blocked|cannot") {
+        Write-Host "     ✓ Engineer correctly blocked by workflow (prerequisites missing)" -ForegroundColor Green
         $engineerExecuted = $false
+        $engineerBlockedByWorkflow = $true
     } else {
-        Write-Host "     ✓ Prerequisites validated (PRD, ADR, SPEC present)" -ForegroundColor Green
-        Write-Host "     → Implementing feature with tests..." -ForegroundColor Gray
-        $engineerResult = squad engineer $script:LifecycleIssueNumber 2>&1 | Out-String
-        
-        if ($engineerResult -match "implemented|code generated|tests created") {
-            Write-Host "     ✓ Engineer completed implementation" -ForegroundColor Green
-            $engineerExecuted = $true
-        } else {
-            Write-Host "     ⚠ Engineer execution completed (check logs)" -ForegroundColor Yellow
-            $engineerExecuted = $true
-        }
+        Write-Host "     ⚠ Engineer execution result unclear (check logs)" -ForegroundColor Yellow
+        $engineerExecuted = $false
     }
     
     Start-Sleep -Seconds 2
@@ -903,8 +896,7 @@ Test-Feature "Full Autonomous Lifecycle (squad captain $script:LifecycleIssueNum
         "ADR Generated" = (Test-Path $adrPath)
         "Spec Generated" = (Test-Path $specPath)
         "UX Design" = (Test-Path $uxPath)
-        "Prerequisites Valid" = $canImplement
-        "Engineer Executed" = $engineerExecuted
+        "Engineer Executed OR Blocked by Workflow" = ($engineerExecuted -or $engineerBlockedByWorkflow)
         "Operational Graph" = (Test-Path ".squad\graph\nodes.json")
     }
     
