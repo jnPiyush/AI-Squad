@@ -312,7 +312,7 @@ graph TB
 | **📜 Battle Plan** | Workflow template | Defines agent sequence |
 | **💼 Operations** | Task tracking | Tracks status per issue |
 | **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
-| **🤝 Collaboration** | Multi-agent coordinator | Executes agents in sequence |
+| **🤝 Collaboration** | Multi-agent coordinator | Sequential execution or iterative dialogue |
 | **🔍 Patrol** | Monitoring | Detects stale/stuck work |
 | **🔍 Recon** | Intelligence | System status reports |
 | **🔍 Scout** | Discovery | Pattern detection |
@@ -388,16 +388,34 @@ squad dashboard
 
 ### 🗣️👥 Multi-Agent Collaboration
 
+Agents can work together in two modes:
+
+**Sequential Mode (Default):**
 ```bash
-# PM and Architect collaborate on Epic planning
-squad joint-op 100 pm architect
+# Agents execute in dependency order without interaction
+squad joint-op 100 pm architect engineer
+# Flow: PM → Architect → Engineer (one-way execution)
+```
+
+**Iterative Mode (Back-and-Forth Dialogue):**
+```bash
+# Two agents engage in iterative dialogue with feedback
+squad joint-op 100 pm architect --iterative
 
 # Flow:
-# 1. PM drafts PRD
-# 2. Architect reviews for feasibility
-# 3. They iterate together
-# 4. Both finalize documents
+# 1. PM creates PRD
+# 2. Architect reviews and provides feedback
+# 3. PM iterates based on feedback
+# 4. Repeat until approved or max iterations (default: 3)
+# 5. Collaboration complete with conversation history
 ```
+
+**Features:**
+- **Feedback Loops**: Reviewer provides constructive feedback via Signals
+- **Iteration Tracking**: Full conversation history preserved
+- **Approval Detection**: Automatic approval when reviewer satisfied
+- **Max Iterations**: Prevents infinite loops (configurable)
+- **Thread Tracking**: All messages linked in conversation thread
 
 ### 🗡️ 18 Production Skills
 

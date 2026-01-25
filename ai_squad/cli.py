@@ -16,7 +16,7 @@ from ai_squad.__version__ import __version__
 from ai_squad.core.init_project import initialize_project
 from ai_squad.core.agent_executor import AgentExecutor
 from ai_squad.core.doctor import run_doctor_checks
-from ai_squad.core.collaboration import run_collaboration
+from ai_squad.core.collaboration import run_collaboration, CollaborationMode
 import yaml
 import os
 
@@ -282,29 +282,53 @@ def review(pr_number):
 @main.command(name="joint-op")
 @click.argument("issue_number", type=int)
 @click.argument("agents", nargs=-1, required=True)
-def joint_op(issue_number, agents):
+@click.option("--iterative", "-i", is_flag=True, help="Enable iterative dialogue mode (2 agents only)")
+@click.option("--max-iterations", "-m", default=3, type=int, help="Max iteration rounds for iterative mode")
+def joint_op(issue_number, agents, iterative, max_iterations):
     """Multi-agent joint operation
     
-    Example: squad joint-op 123 pm architect
+    Sequential Mode (default):
+      Agents execute in dependency order without interaction
+      Example: squad joint-op 123 pm architect engineer
+    
+    Iterative Mode (--iterative):
+      Two agents engage in back-and-forth dialogue with feedback
+      Example: squad joint-op 123 pm architect --iterative
     """
+    mode = CollaborationMode.ITERATIVE if iterative else CollaborationMode.SEQUENTIAL
+    
+    if iterative and len(agents) != 2:
+        console.print("[bold red]FAIL: Iterative mode requires exactly 2 agents[/bold red]")
+        console.print("[yellow]Example: squad joint-op 123 pm architect --iterative[/yellow]")
+        sys.exit(1)
+    
     console.print(
         f"[bold cyan]Launching Joint Operation for issue #{issue_number}...[/bold cyan]\n"
+        f"[cyan]Mode: {mode.value}[/cyan]\n"
         f"[cyan]Participants: {', '.join(agents)}[/cyan]\n"
     )
     
     try:
-        result = run_collaboration(issue_number, list(agents))
+        result = run_collaboration(issue_number, list(agents), mode=mode, max_iterations=max_iterations)
         
         if result["success"]:
-            console.print("[bold green]OK Joint Operation complete![/bold green]")
+            console.print(f"[bold green]✓ Joint Operation complete![/bold green]")
+            console.print(f"[dim]Mode: {result.get('mode', 'sequential')}[/dim]")
+            
+            if mode == CollaborationMode.ITERATIVE:
+                console.print(f"[dim]Iterations: {result.get('iterations', 0)}[/dim]")
+                console.print(f"[dim]Approved: {result.get('approved', False)}[/dim]")
+                console.print(f"[dim]Thread: {result.get('thread_id', 'N/A')}[/dim]")
+            
+            console.print("\n[bold]Output Files:[/bold]")
             for file in result.get("files", []):
-                console.print(f"  - {file}")
+                console.print(f"  📄 {file}")
         else:
-            console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
+            console.print(f"[bold red]✗ FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
     except (RuntimeError, OSError, ValueError, click.ClickException) as e:
-        console.print(f"[bold red]FAIL Error: {e}[/bold red]")
+        console.print(f"[bold red]✗ FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
