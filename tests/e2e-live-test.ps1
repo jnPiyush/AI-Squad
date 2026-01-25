@@ -1,15 +1,16 @@
 # ════════════════════════════════════════════════════════════════════════════════
 # AI-Squad End-to-End Live Test Script
 # ════════════════════════════════════════════════════════════════════════════════
-# Purpose: Comprehensive production simulation using "Idea Management" system
+# Purpose: Comprehensive production simulation with custom or default test app
 # Coverage: All 28 features with real execution (no mocks)
-# Usage: .\tests\e2e-live-test.ps1
+# Usage: .\tests\e2e-live-test.ps1 [-TestAppRequirement "Your custom requirements"]
 # ════════════════════════════════════════════════════════════════════════════════
 
 param(
     [switch]$SkipCleanup = $false,
     [switch]$Verbose = $false,
-    [string]$Repo = "jnPiyush/AI-Squad"
+    [string]$Repo = "jnPiyush/AI-Squad",
+    [string]$TestAppRequirement = ""
 )
 
 # Set UTF-8 encoding
@@ -93,10 +94,10 @@ function Write-Summary {
 }
 
 # ════════════════════════════════════════════════════════════════════════════════
-# Test Data: Idea Management System
+# Test Data: Idea Management System (Default Fallback)
 # ════════════════════════════════════════════════════════════════════════════════
 
-$IdeaManagementFeature = @"
+$DefaultIdeaManagementFeature = @"
 # Feature: Idea Management System
 
 ## Overview
@@ -156,12 +157,30 @@ Workflow States:
 - Security: OAuth2, encryption at rest and in transit
 "@
 
+# Use custom requirement if provided, otherwise fallback to Idea Management
+if ([string]::IsNullOrWhiteSpace($TestAppRequirement)) {
+    $FeatureRequirement = $DefaultIdeaManagementFeature
+    $AppName = "Idea Management System"
+    Write-Host "`n💡 Using DEFAULT test application: Idea Management System" -ForegroundColor $ColorInfo
+} else {
+    $FeatureRequirement = $TestAppRequirement
+    $AppName = "Custom Application"
+    Write-Host "`n✨ Using CUSTOM test application requirements" -ForegroundColor $ColorInfo
+    if ($Verbose) {
+        Write-Host "`nCustom Requirements Preview:" -ForegroundColor Gray
+        Write-Host ($TestAppRequirement.Substring(0, [Math]::Min(300, $TestAppRequirement.Length))) -ForegroundColor Gray
+        if ($TestAppRequirement.Length -gt 300) {
+            Write-Host "... (truncated)" -ForegroundColor Gray
+        }
+    }
+}
+
 # ════════════════════════════════════════════════════════════════════════════════
 # START TESTING
 # ════════════════════════════════════════════════════════════════════════════════
 
 Write-TestHeader "AI-Squad End-to-End Live Test"
-Write-Host "Example Application: Idea Management System" -ForegroundColor White
+Write-Host "Example Application: $AppName" -ForegroundColor White
 Write-Host "Test Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
 Write-Host "Repository: $Repo" -ForegroundColor Gray
 
@@ -178,10 +197,10 @@ Test-Feature "System Health Check (squad doctor)" {
 }
 
 # Create GitHub Issue for testing
-Write-Host "`n▶ Creating GitHub issue for 'Idea Management System'..." -ForegroundColor White
+Write-Host "`n▶ Creating GitHub issue for test application..." -ForegroundColor White
 $issueUrl = gh issue create --repo $Repo `
-    --title "Feature: Idea Management System" `
-    --body $IdeaManagementFeature 2>&1
+    --title "Feature: $AppName" `
+    --body $FeatureRequirement 2>&1
 
 if ($issueUrl -match "issues/(\d+)") {
     $script:IssueNumber = $Matches[1]

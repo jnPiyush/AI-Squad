@@ -143,27 +143,66 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
 
 ## e2e-live-test.ps1
 
-**Purpose**: Complete production simulation using "Idea Management" system
+**Purpose**: Complete production simulation with customizable test application
 **Coverage**: All 28 features with real execution (no mocks)
 
 ### Usage
 
 ```powershell
-# Run complete test suite
+# Run with default test app (Idea Management System)
 .\tests\e2e-live-test.ps1
+
+# Run with custom test application requirements
+.\tests\e2e-live-test.ps1 -TestAppRequirement "Build an e-commerce platform with shopping cart, payment processing, and order tracking..."
 
 # With verbose output
 .\tests\e2e-live-test.ps1 -Verbose
 
-# Skip cleanup
+# Skip cleanup (keep generated artifacts)
 .\tests\e2e-live-test.ps1 -SkipCleanup
+
+# Custom repository
+.\tests\e2e-live-test.ps1 -Repo "your-org/your-repo"
+
+# Combined options
+.\tests\e2e-live-test.ps1 -TestAppRequirement "Your custom requirements" -Verbose -SkipCleanup
 ```
 
-### Test Application: Idea Management System
+### Parameters
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `-TestAppRequirement` | String | Custom application requirements for testing | Idea Management System |
+| `-Verbose` | Switch | Show detailed output during test execution | False |
+| `-SkipCleanup` | Switch | Keep generated artifacts for inspection | False |
+| `-Repo` | String | GitHub repository for issue creation | "jnPiyush/AI-Squad" |
+
+### Default Test Application: Idea Management System
 - Centralized platform for capturing innovative ideas
 - Business case with ROI, effort, and risk assessment
 - Multi-stage approval workflow (Submitted → In Review → Approved → In Dev → In Production)
 - Impact measurement and analytics
+
+### Custom Test Applications
+You can test AI-Squad with any application by providing custom requirements:
+
+```powershell
+$CustomRequirements = @"
+# Feature: Customer Support Portal
+
+## Overview
+Build a comprehensive customer support portal with ticket management, knowledge base, and live chat.
+
+## Core Features
+- Ticket creation and tracking
+- Knowledge base search
+- Live chat with agent routing
+- Customer satisfaction surveys
+- Analytics dashboard
+"@
+
+.\tests\e2e-live-test.ps1 -TestAppRequirement $CustomRequirements
+```
 
 ### Coverage (28 Features)
 - ✅ 5 Agent Types (PM, Architect, Engineer, UX, Reviewer)
