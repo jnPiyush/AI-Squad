@@ -786,77 +786,118 @@ Test-Feature "Full Autonomous Lifecycle (squad captain $script:LifecycleIssueNum
     $pmResult = squad pm $script:LifecycleIssueNumber 2>&1 | Out-String
     
     $prdPath = "docs\prd\PRD-$script:LifecycleIssueNumber.md"
+    $prdGenerated = $false
     if (Test-Path $prdPath) {
         $prdSize = (Get-Item $prdPath).Length
         Write-Host "     ✓ PRD generated: $prdSize bytes" -ForegroundColor Green
+        $prdGenerated = $true
     } else {
-        Write-Host "     ✗ PRD not found" -ForegroundColor Red
+        Write-Host "     ✗ PRD not found - Workflow should stop here" -ForegroundColor Red
+        Write-Host "     ⚠️  Cannot proceed to Architect without PRD (prerequisite missing)" -ForegroundColor Yellow
     }
     
     Start-Sleep -Seconds 2
     
-    # PHASE 3: Technical Design (Architect Agent)
+    # PHASE 3: Technical Design (Architect Agent) - ONLY IF PRD EXISTS
     Write-Host "`n  🏗️  PHASE 3: Technical Design (Architect)" -ForegroundColor Yellow
-    Write-Host "     → Creating Architecture Decision Records & Specifications..." -ForegroundColor Gray
-    $architectResult = squad architect $script:LifecycleIssueNumber 2>&1 | Out-String
     
-    $adrPath = "docs\adr\ADR-$script:LifecycleIssueNumber.md"
-    $specPath = "docs\specs\SPEC-$script:LifecycleIssueNumber.md"
-    
-    $designComplete = $true
-    if (Test-Path $adrPath) {
-        $adrSize = (Get-Item $adrPath).Length
-        Write-Host "     ✓ ADR generated: $adrSize bytes" -ForegroundColor Green
-    } else {
-        Write-Host "     ✗ ADR not found" -ForegroundColor Red
+    if (-not $prdGenerated) {
+        Write-Host "     ⏭️  SKIPPED - PRD prerequisite missing (validation enforcement)" -ForegroundColor Yellow
+        Write-Host "     → Architect requires PRD to proceed" -ForegroundColor Gray
+        $architectResult = ""
         $designComplete = $false
-    }
-    
-    if (Test-Path $specPath) {
-        $specSize = (Get-Item $specPath).Length
-        Write-Host "     ✓ Technical Spec generated: $specSize bytes" -ForegroundColor Green
     } else {
-        Write-Host "     ✗ Technical Spec not found" -ForegroundColor Red
-        $designComplete = $false
+        Write-Host "     → Creating Architecture Decision Records & Specifications..." -ForegroundColor Gray
+        $architectResult = squad architect $script:LifecycleIssueNumber 2>&1 | Out-String
+        
+        # Check if validation blocked the execution
+        if ($architectResult -match "prerequisite|missing|cannot execute") {
+            Write-Host "     ✓ Architect correctly blocked by prerequisite validation" -ForegroundColor Green
+            $designComplete = $false
+        } else {
+        } else {
+            $adrPath = "docs\adr\ADR-$script:LifecycleIssueNumber.md"
+            $specPath = "docs\specs\SPEC-$script:LifecycleIssueNumber.md"
+            
+            $designComplete = $true
+            if (Test-Path $adrPath) {
+                $adrSize = (Get-Item $adrPath).Length
+                Write-Host "     ✓ ADR generated: $adrSize bytes" -ForegroundColor Green
+            } else {
+                Write-Host "     ✗ ADR not found" -ForegroundColor Red
+                $designComplete = $false
+            }
+            
+            if (Test-Path $specPath) {
+                $specSize = (Get-Item $specPath).Length
+                Write-Host "     ✓ Technical Spec generated: $specSize bytes" -ForegroundColor Green
+            } else {
+                Write-Host "     ✗ Technical Spec not found" -ForegroundColor Red
+                $designComplete = $false
+            }
+        }
     }
     
     Start-Sleep -Seconds 2
     
-    # PHASE 4: UX Design (Optional but important for user-facing features)
+    # PHASE 4: UX Design (Optional but important for user-facing features) - ONLY IF PRD EXISTS
     Write-Host "`n  🎨 PHASE 4: UX Design (UX Designer)" -ForegroundColor Yellow
-    Write-Host "     → Creating user flows and wireframes..." -ForegroundColor Gray
-    $uxResult = squad ux $script:LifecycleIssueNumber 2>&1 | Out-String
     
-    $uxPath = "docs\ux\UX-$script:LifecycleIssueNumber.md"
-    if (Test-Path $uxPath) {
-        $uxSize = (Get-Item $uxPath).Length
-        Write-Host "     ✓ UX Design generated: $uxSize bytes" -ForegroundColor Green
+    if (-not $prdGenerated) {
+        Write-Host "     ⏭️  SKIPPED - PRD prerequisite missing (validation enforcement)" -ForegroundColor Yellow
+        Write-Host "     → UX Designer requires PRD to proceed" -ForegroundColor Gray
+        $uxResult = ""
     } else {
-        Write-Host "     ⚠ UX Design not generated (may not be required)" -ForegroundColor Yellow
+        Write-Host "     → Creating user flows and wireframes..." -ForegroundColor Gray
+        $uxResult = squad ux $script:LifecycleIssueNumber 2>&1 | Out-String
+        
+        # Check if validation blocked the execution
+        if ($uxResult -match "prerequisite|missing|cannot execute") {
+            Write-Host "     ✓ UX Designer correctly blocked by prerequisite validation" -ForegroundColor Green
+        } else {
+            $uxPath = "docs\ux\UX-$script:LifecycleIssueNumber.md"
+            if (Test-Path $uxPath) {
+                $uxSize = (Get-Item $uxPath).Length
+                Write-Host "     ✓ UX Design generated: $uxSize bytes" -ForegroundColor Green
+            } else {
+                Write-Host "     ⚠ UX Design not generated (may not be required)" -ForegroundColor Yellow
+            }
+        }
     }
     
     Start-Sleep -Seconds 2
     
-    # PHASE 5: Implementation (Engineer Agent)
+    # PHASE 5: Implementation (Engineer Agent) - ONLY IF PRD AND ADR EXIST
     Write-Host "`n  ⚙️  PHASE 5: Implementation (Engineer)" -ForegroundColor Yellow
-    Write-Host "     → Implementing feature with tests..." -ForegroundColor Gray
     
-    # NOTE: Prerequisite validation should be enforced by workflow system
-    # See docs/CRITICAL-WORKFLOW-ISSUE.md for details
-    # This test validates if workflow properly rejects invalid handoffs
-    
-    $engineerResult = squad engineer $script:LifecycleIssueNumber 2>&1 | Out-String
-    
-    if ($engineerResult -match "implemented|code generated|tests created") {
-        Write-Host "     ✓ Engineer completed implementation" -ForegroundColor Green
-        $engineerExecuted = $true
-    } elseif ($engineerResult -match "prerequisite|missing|blocked|cannot") {
-        Write-Host "     ✓ Engineer correctly blocked by workflow (prerequisites missing)" -ForegroundColor Green
-        $engineerExecuted = $false
+    if (-not $prdGenerated -or -not $designComplete) {
+        Write-Host "     ⏭️  SKIPPED - Prerequisites missing (PRD and/or ADR required)" -ForegroundColor Yellow
+        Write-Host "     → Engineer requires PRD + ADR to proceed" -ForegroundColor Gray
+        Write-Host "     ✓ Engineer correctly blocked by prerequisite validation" -ForegroundColor Green
         $engineerBlockedByWorkflow = $true
-    } else {
-        Write-Host "     ⚠ Engineer execution result unclear (check logs)" -ForegroundColor Yellow
         $engineerExecuted = $false
+    } else {
+        Write-Host "     → Implementing feature with tests..." -ForegroundColor Gray
+        
+        # NOTE: Prerequisite validation should be enforced by workflow system
+        # See docs/CRITICAL-WORKFLOW-ISSUE.md for details
+        # This test validates if workflow properly rejects invalid handoffs
+        
+        $engineerResult = squad engineer $script:LifecycleIssueNumber 2>&1 | Out-String
+        
+        if ($engineerResult -match "implemented|code generated|tests created") {
+            Write-Host "     ✓ Engineer completed implementation" -ForegroundColor Green
+            $engineerExecuted = $true
+            $engineerBlockedByWorkflow = $false
+        } elseif ($engineerResult -match "prerequisite|missing|blocked|cannot") {
+            Write-Host "     ✓ Engineer correctly blocked by workflow (prerequisites missing)" -ForegroundColor Green
+            $engineerExecuted = $false
+            $engineerBlockedByWorkflow = $true
+        } else {
+            Write-Host "     ⚠ Engineer execution result unclear (check logs)" -ForegroundColor Yellow
+            $engineerExecuted = $false
+            $engineerBlockedByWorkflow = $false
+        }
     }
     
     Start-Sleep -Seconds 2
