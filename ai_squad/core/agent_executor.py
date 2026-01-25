@@ -11,14 +11,6 @@ from typing import Dict, Any, Optional
 
 from ai_squad.agents.base import InvalidIssueNumberError, SDKExecutionError
 
-# GitHub Copilot SDK - Primary choice for AI-powered agent execution
-try:
-    from github_copilot_sdk import CopilotSDK
-    SDK_AVAILABLE = True
-except ImportError:
-    CopilotSDK = None
-    SDK_AVAILABLE = False
-
 from ai_squad.core.config import Config
 from ai_squad.agents.product_manager import ProductManagerAgent
 from ai_squad.agents.architect import ArchitectAgent
@@ -38,7 +30,7 @@ from ai_squad.core.handoff import HandoffManager
 from ai_squad.core.delegation import DelegationManager
 from ai_squad.core.router import OrgRouter, PolicyRule, HealthConfig
 from ai_squad.core.reporting import ReportManager
-from ai_squad.core.validation import validate_agent_execution, PrerequisiteError, ValidationResult
+from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
 
 logger = logging.getLogger(__name__)
 
@@ -223,27 +215,27 @@ class AgentExecutor:
                 from pathlib import Path
                 workspace_root = Path(getattr(self.config, "workspace_root", Path.cwd()))
                 
-                logger.info(f"Validating prerequisites for {agent_type} (issue={issue_number})")
+                logger.info("Validating prerequisites for %s (issue=%s)", agent_type, issue_number)
                 validate_agent_execution(
                     agent_type=agent_type,
                     issue_number=issue_number,
                     workspace_root=workspace_root,
                     strict=True  # Raise exception if validation fails
                 )
-                logger.info(f"Prerequisites validated successfully for {agent_type}")
+                logger.info("Prerequisites validated successfully for %s", agent_type)
                 
             except PrerequisiteError as e:
                 # Prerequisite validation failed - return detailed error
-                logger.error(f"Prerequisite validation failed: {e}")
+                logger.error("Prerequisite validation failed: %s", e)
                 return {
                     "success": False,
                     "error": str(e),
                     "error_type": "prerequisite_validation",
                     "using_sdk": self.using_sdk
                 }
-            except Exception as e:
+            except (RuntimeError, OSError, ValueError) as e:
                 # Unexpected validation error - log but don't block
-                logger.warning(f"Prerequisite validation encountered error (non-blocking): {e}")
+                logger.warning("Prerequisite validation encountered error (non-blocking): %s", e)
         
         if self.org_router and agent_type != "captain":
             enforce_cli = self.orchestration.get("routing_config", {}).get("enforce_cli_routing", False)

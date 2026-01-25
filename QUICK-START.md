@@ -10,7 +10,7 @@ The package has been successfully installed and tested:
 
 ```bash
 $ squad --version
-AI-Squad version 0.2.0
+AI-Squad version 0.4.0
 
 $ squad --help
 Usage: squad [OPTIONS] COMMAND [ARGS]...
@@ -381,4 +381,4 @@ squad pm 123
 ---
 
 **Last Updated**: January 22, 2026  
-**AI-Squad Version**: 0.1.0
+**AI-Squad Version**: 0.4.0

@@ -347,33 +347,34 @@ class GitHubTool:
         except (GitHubCommandError, subprocess.CalledProcessError, TimeoutError) as e:
             print(f"Error fetching diff: {e}")
             return ""
+
+    def get_pr_files(self, pr_number: int) -> List[Dict[str, Any]]:
+        """
+        Get PR changed files
+
+        Args:
+            pr_number: PR number
+
+        Returns:
+            List of file metadata dictionaries
+        """
+        if not self._is_configured():
+            return []
+
         try:
             result = self._run_gh_command([
                 "pr", "view", str(pr_number),
                 "--json", "files"
             ])
-            
+
             if result:
                 data = json.loads(result)
                 return data.get("files", [])
-            
+
         except (GitHubCommandError, json.JSONDecodeError, subprocess.CalledProcessError, TimeoutError) as e:
             print(f"Error fetching PR files: {e}")
             return []
-        
-        try:
-            result = self._run_gh_command([
-                "pr", "view", str(pr_number),
-                "--json", "files"
-            ])
-            
-            if result:
-                data = json.loads(result)
-                return data.get("files", [])
-            
-        except Exception as e:
-            print(f"Error fetching files: {e}")
-        
+
         return []
     
     def _run_gh_command(self, args: List[str]) -> Optional[str]:

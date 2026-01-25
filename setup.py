@@ -1,13 +1,20 @@
 """Setup script for AI-Squad"""
-from setuptools import setup, find_packages
-from setuptools.command.install import install
-from setuptools.command.develop import develop
 from pathlib import Path
+import re
+
+try:
+    from setuptools import setup, find_packages
+    from setuptools.command.install import install
+    from setuptools.command.develop import develop
+except ImportError as exc:
+    raise RuntimeError("setuptools is required to install AI-Squad") from exc
 
 # Read version
-version = {}
-with open("ai_squad/__version__.py") as f:
-    exec(f.read(), version)
+version_text = Path("ai_squad/__version__.py").read_text(encoding="utf-8")
+match = re.search(r"__version__\s*=\s*[\"']([^\"']+)[\"']", version_text)
+if not match:
+    raise RuntimeError("Unable to determine AI-Squad version")
+version = {"__version__": match.group(1)}
 
 # Read README for long description
 readme = Path("README.md").read_text(encoding="utf-8")
@@ -27,7 +34,7 @@ class PostInstallCommand(install):
             result = ensure_copilot_sdk_compat(auto_fix=True, allow_network=True)
             if not result.ok:
                 print(f"WARN Copilot SDK compatibility check failed: {result.message}")
-        except Exception as exc:
+        except (ImportError, RuntimeError, OSError, ValueError) as exc:
             print(f"WARN Copilot SDK compatibility check skipped: {exc}")
 
 
@@ -46,7 +53,7 @@ class PostDevelopCommand(develop):
             result = ensure_copilot_sdk_compat(auto_fix=True, allow_network=True)
             if not result.ok:
                 print(f"WARN Copilot SDK compatibility check failed: {result.message}")
-        except Exception as exc:
+        except (ImportError, RuntimeError, OSError, ValueError) as exc:
             print(f"WARN Copilot SDK compatibility check skipped: {exc}")
 
 

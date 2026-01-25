@@ -133,6 +133,7 @@ Always provide clear, structured coordination plans.
     def _execute_agent(self, issue: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Synchronous execution hook required by BaseAgent."""
         issue_number = issue.get("number") or issue.get("id") or "unknown"
+        summary = f"Captain coordination initialized for issue #{issue_number}"
         try:
             import asyncio
 
@@ -144,7 +145,6 @@ Always provide clear, structured coordination plans.
                 summary = asyncio.run(self.run(issue_number))
         except (RuntimeError, ValueError, OSError) as e:
             logger.warning("Captain run failed, falling back to minimal summary: %s", e)
-            summary = f"Captain coordination initialized for issue #{issue_number}"
         return {
             "success": True,
             "output": summary,

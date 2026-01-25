@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import urllib.request
+import urllib.error
 from importlib import metadata
 
 PACKAGE_NAME = "github-copilot-sdk"
@@ -41,7 +42,7 @@ def main() -> int:
 
     try:
         latest = _get_latest_version()
-    except Exception as exc:
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
         print(f"WARN Unable to check latest {PACKAGE_NAME} version: {exc}")
         return 0
 

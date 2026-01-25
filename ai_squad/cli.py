@@ -3,7 +3,6 @@ AI-Squad CLI
 
 Main command-line interface for AI-Squad.
 """
-import asyncio
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -105,7 +104,7 @@ def init(force):
             console.print(f"[bold red]FAIL Initialization failed: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -126,7 +125,7 @@ def pm(issue_number):
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -147,7 +146,7 @@ def architect(issue_number):
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -163,14 +162,14 @@ def engineer(issue_number):
         result = executor.execute("engineer", issue_number)
         
         if result["success"]:
-            console.print(f"[bold green]OK Implementation complete[/bold green]")
+            console.print("[bold green]OK Implementation complete[/bold green]")
             for file in result.get("files", []):
                 console.print(f"  - {file}")
         else:
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -191,7 +190,7 @@ def ux(issue_number):
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -212,7 +211,7 @@ def review(pr_number):
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -241,7 +240,7 @@ def collab(issue_number, agents):
             console.print(f"[bold red]FAIL: {result['error']}[/bold red]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -256,7 +255,6 @@ def chat(agent_type):
     console.print(f"[bold cyan]Starting chat with {agent_type}...[/bold cyan]")
     console.print("[yellow]Type 'exit' or 'quit' to end conversation[/yellow]\n")
     
-    # TODO: Implement interactive chat
     console.print("[yellow]Interactive chat coming soon![/yellow]")
 
 
@@ -272,8 +270,8 @@ def doctor():
         
         console.print("[bold]Check Results:[/bold]")
         for check in result["checks"]:
-            status = "OK" if check["passed"] else "FAIL"
-            console.print(f"  {status} {check['name']}: {check['message']}")
+            check_status = "OK" if check["passed"] else "FAIL"
+            console.print(f"  {check_status} {check['name']}: {check['message']}")
         
         console.print()
         
@@ -283,7 +281,7 @@ def doctor():
             console.print("[bold yellow]WARN Some checks failed. See messages above.[/bold yellow]")
             sys.exit(1)
             
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -321,7 +319,7 @@ def watch(interval, repo):
     # Load config
     try:
         config = Config.load()
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error loading config: {e}[/bold red]")
         console.print("[yellow]TIP Run 'squad init' first[/yellow]")
         sys.exit(1)
@@ -346,7 +344,7 @@ def watch(interval, repo):
         daemon.run()
     except KeyboardInterrupt:
         console.print("\n[yellow]Watch mode stopped[/yellow]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"\n[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -383,7 +381,7 @@ def clarify(issue_number):
     from ai_squad.core.agent_comm import AgentCommunicator
     
     try:
-        config = Config.load()
+        Config.load()
         communicator = AgentCommunicator()
         
         # Get conversation for issue
@@ -415,7 +413,7 @@ def clarify(issue_number):
         
         console.print("\n[dim]TIP To respond, use GitHub Copilot Chat in VS Code[/dim]")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -467,18 +465,17 @@ def captain(issue_number):
             console.print(f"[bold red]Error: {result.get('error')}[/bold red]")
             sys.exit(1)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]Error: {e}[/bold red]")
-        logger.exception("Captain command failed")
         sys.exit(1)
 
 
 @main.command()
-@click.option("--status", type=click.Choice(["ready", "in-progress", "blocked", "done"]),
+@click.option("--status", "status_filter", type=click.Choice(["ready", "in-progress", "blocked", "done"]),
               help="Filter by status")
 @click.option("--agent", type=click.Choice(["pm", "architect", "engineer", "ux", "reviewer"]),
               help="Filter by assigned agent")
-def work(status, agent):
+def work(status_filter, agent):
     """
     List work items (persistent work state)
     
@@ -496,14 +493,14 @@ def work(status, agent):
         
         # Map CLI status to enum
         status_filter = None
-        if status:
+        if status_filter:
             status_map = {
                 "ready": WorkStatus.READY,
                 "in-progress": WorkStatus.IN_PROGRESS,
                 "blocked": WorkStatus.BLOCKED,
                 "done": WorkStatus.DONE,
             }
-            status_filter = status_map.get(status)
+            status_filter = status_map.get(status_filter)
         
         items = manager.list_work_items(status=status_filter, agent=agent)
         
@@ -548,7 +545,7 @@ def work(status, agent):
                      f"Blocked: {stats['blocked']} | "
                      f"Completed: {stats['completed']}[/dim]")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -590,7 +587,7 @@ def plans(label):
                 border_style="cyan"
             ))
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -598,8 +595,8 @@ def plans(label):
 @main.command()
 @click.argument("plan_name")
 @click.argument("issue_number", type=int)
-@click.option("--var", "vars", multiple=True, help="Variable override (key=value)")
-def run_plan(plan_name, issue_number, vars):
+@click.option("--var", "variables", multiple=True, help="Variable override (key=value)")
+def run_plan(plan_name, issue_number, variables):
     """
     Execute a battle plan on an issue
     
@@ -620,7 +617,7 @@ def run_plan(plan_name, issue_number, vars):
         plan_manager = BattlePlanManager()
         executor = BattlePlanExecutor(plan_manager, work_manager)
         
-        variables = _parse_variables(vars)
+        variables = _parse_variables(variables)
 
         # Start execution
         execution = executor.start_execution(plan_name, issue_number, variables)
@@ -641,7 +638,7 @@ def run_plan(plan_name, issue_number, vars):
         
         console.print("\n[dim]TIP Run 'squad work' to see created work items[/dim]")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -715,7 +712,7 @@ def convoys(convoy_id, issue):
         
         console.print(table)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -779,7 +776,7 @@ def signal(agent, unread):
                      f"Unread: {signal_stats.get('unread', 0)} | "
                      f"Sent: {signal_stats.get('outbox', 0)}[/dim]")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -840,14 +837,15 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
         )
         
         if handoff_obj:
+            status_value = getattr(handoff_obj.status, "value", str(handoff_obj.status))
             console.print(f"[green]OK Handoff initiated: {handoff_obj.id}[/green]")
-            console.print(f"[dim]Status: {handoff_obj.status.value}[/dim]")
+            console.print(f"[dim]Status: {status_value}[/dim]")
             console.print(f"\n[dim]TIP {to_agent.upper()} agent will receive notification[/dim]")
         else:
             console.print("[bold red]FAIL Failed to initiate handoff[/bold red]")
             sys.exit(1)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -863,10 +861,10 @@ def status():
     print_banner()
     
     try:
-        from ai_squad.core.workstate import WorkStateManager, WorkStatus
+        from ai_squad.core.workstate import WorkStateManager
         from ai_squad.core.convoy import ConvoyManager, ConvoyStatus
         from ai_squad.core.signal import SignalManager
-        from ai_squad.core.handoff import HandoffManager, HandoffStatus
+        from ai_squad.core.handoff import HandoffManager
         
         work_manager = WorkStateManager()
         convoy_manager = ConvoyManager(work_manager)
@@ -931,7 +929,7 @@ def status():
         console.print("[dim]  • squad capabilities    - Manage capability packages[/dim]")
         console.print("[dim]  • squad scout           - View scout runs[/dim]")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -989,7 +987,7 @@ def health():
             for priority, stats in summary["by_priority"].items():
                 console.print(f"  {priority}: {stats['routed']}/{stats['total']} routed")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -997,7 +995,6 @@ def health():
 @main.group()
 def capabilities():
     """Manage capability packages"""
-    pass
 
 
 @capabilities.command("list")
@@ -1029,7 +1026,7 @@ def capabilities_list():
         
         console.print(table)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1048,7 +1045,7 @@ def capabilities_install(package_path):
         console.print(f"   Scope: {pkg.scope}")
         console.print(f"   Tags: {', '.join(pkg.capability_tags)}")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1076,7 +1073,7 @@ def capabilities_key(set_key, show_key):
 
         console.print("[yellow]Provide --set or --show[/yellow]")
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1084,7 +1081,6 @@ def capabilities_key(set_key, show_key):
 @main.group()
 def delegation():
     """Manage delegation links"""
-    pass
 
 
 @delegation.command("list")
@@ -1120,7 +1116,7 @@ def delegation_list():
         
         console.print(table)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1128,13 +1124,11 @@ def delegation_list():
 @main.group()
 def graph():
     """Manage operational graph"""
-    pass
 
 
 @main.group()
 def scout():
     """Manage scout worker runs"""
-    pass
 
 
 @scout.command("list")
@@ -1163,7 +1157,7 @@ def scout_list():
 
         console.print(table)
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1193,7 +1187,7 @@ def scout_show(run_id):
 
         console.print(table)
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1206,10 +1200,19 @@ def scout_run(tasks):
         from ai_squad.core.scout_worker import ScoutWorker
 
         selected = list(tasks) or ["noop"]
+        def _noop():
+            return "ok"
+
+        def _list_squad_files():
+            return [p.name for p in (Path.cwd() / ".squad").glob("*")]
+
+        def _check_routing_events():
+            return (Path.cwd() / ".squad" / "events" / "routing.jsonl").exists()
+
         task_map = {
-            "noop": lambda: "ok",
-            "list_squad_files": lambda: [p.name for p in (Path.cwd() / ".squad").glob("*")],
-            "check_routing_events": lambda: (Path.cwd() / ".squad" / "events" / "routing.jsonl").exists(),
+            "noop": _noop,
+            "list_squad_files": _list_squad_files,
+            "check_routing_events": _check_routing_events,
         }
         run_tasks = {name: task_map[name] for name in selected if name in task_map}
         if not run_tasks:
@@ -1220,25 +1223,25 @@ def scout_run(tasks):
         run = worker.run(run_tasks, metadata={"tasks": selected})
         console.print(f"[bold green]OK Scout run completed[/bold green] {run.run_id}")
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
 @graph.command("export")
-@click.option("--format", type=click.Choice(["mermaid"]), default="mermaid", help="Export format")
-def graph_export(format):
+@click.option("--format", "export_format", type=click.Choice(["mermaid"]), default="mermaid", help="Export format")
+def graph_export(export_format):
     """Export operational graph"""
     try:
         from ai_squad.core.operational_graph import OperationalGraph
         
         op_graph = OperationalGraph()
         
-        if format == "mermaid":
+        if export_format == "mermaid":
             diagram = op_graph.export_mermaid()
             console.print(diagram)
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1262,18 +1265,18 @@ def graph_impact(node_id):
         console.print(f"[bold]Total Affected:[/bold] {impact['total_affected']}")
         
         if impact['owners']:
-            console.print(f"\n[bold]Owners:[/bold]")
+            console.print("\n[bold]Owners:[/bold]")
             for owner in impact['owners']:
                 console.print(f"  • {owner}")
         
         if impact['affected_nodes']:
-            console.print(f"\n[bold]Affected Nodes:[/bold]")
+            console.print("\n[bold]Affected Nodes:[/bold]")
             for node in impact['affected_nodes'][:10]:  # Limit to first 10
                 console.print(f"  • {node}")
             if len(impact['affected_nodes']) > 10:
                 console.print(f"  ... and {len(impact['affected_nodes']) - 10} more")
         
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1308,11 +1311,11 @@ def dashboard(host, port, debug):
         
         run_dashboard(host=host, port=port, debug=debug)
         
-    except ImportError as e:
+    except ImportError:
         console.print("[bold red]FAIL Flask is not installed[/bold red]")
         console.print("[yellow]Install with: pip install flask[/yellow]")
         sys.exit(1)
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1320,7 +1323,6 @@ def dashboard(host, port, debug):
 @main.group()
 def theater():
     """Manage theaters, sectors, and routing"""
-    pass
 
 
 @theater.command("list")
@@ -1340,7 +1342,7 @@ def theater_list():
             console.print(f"[bold cyan]{t.name}[/bold cyan]")
             for sector in t.sectors.values():
                 console.print(f"  • {sector.name} -> {sector.repo_path}")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1360,7 +1362,7 @@ def theater_add_sector(theater_name, sector_name, repo_path, staging_path):
         registry = TheaterRegistry(config=config.data)
         sector = registry.add_sector(theater_name, sector_name, repo_path, staging_path)
         console.print(f"[bold green]OK Added sector {sector.name}[/bold green]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1379,7 +1381,7 @@ def theater_route(theater_name, prefix, sector_name):
         registry = TheaterRegistry(config=config.data)
         registry.set_route(theater_name, prefix, sector_name)
         console.print(f"[bold green]OK Routed {prefix} -> {sector_name}[/bold green]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1396,7 +1398,7 @@ def theater_staging(theater_name):
         registry = TheaterRegistry(config=config.data)
         paths = registry.ensure_staging_areas(theater_name)
         console.print(f"[bold green]OK Staging areas ready ({len(paths)})[/bold green]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1413,7 +1415,7 @@ def recon():
         summary = recon_manager.build_summary()
         path = recon_manager.save_summary(summary)
         console.print(f"[bold green]OK Recon summary saved to {path}[/bold green]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1433,7 +1435,7 @@ def patrol():
         )
         events = manager.run()
         console.print(f"[bold green]OK Patrol complete ({len(events)} stale items)[/bold green]")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1441,7 +1443,6 @@ def patrol():
 @main.group()
 def report():
     """View after-operation reports"""
-    pass
 
 
 @report.command("list")
@@ -1456,7 +1457,7 @@ def report_list():
             return
         for path in sorted(mgr.reports_dir.glob("after-operation-*.md")):
             console.print(f"• {path.name}")
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
@@ -1474,13 +1475,13 @@ def report_show(report_name):
             console.print(f"[bold red]FAIL Report not found: {report_name}[/bold red]")
             return
         console.print(path.read_text(encoding="utf-8"))
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError, click.ClickException) as e:
         console.print(f"[bold red]FAIL Error: {e}[/bold red]")
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    main.main()
 
 
 

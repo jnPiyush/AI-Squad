@@ -192,7 +192,12 @@ class PrerequisiteValidator:
         Raises:
             PrerequisiteError: If validation fails and strict=True
         """
-        self.logger.info(f"Validating prerequisites for {agent_type.value} (issue={issue_number}, pr={pr_number})")
+        self.logger.info(
+            "Validating prerequisites for %s (issue=%s, pr=%s)",
+            agent_type.value,
+            issue_number,
+            pr_number,
+        )
 
         # Get required prerequisites for this agent
         required_types = self.DEPENDENCIES.get(agent_type, [])
@@ -206,8 +211,9 @@ class PrerequisiteValidator:
             if not self._check_prerequisite_exists(prerequisite, issue_number, pr_number):
                 missing_prerequisites.append(prerequisite)
                 self.logger.warning(
-                    f"Missing prerequisite: {prerequisite.description} "
-                    f"({prerequisite.path_pattern.format(issue=issue_number)})"
+                    "Missing prerequisite: %s (%s)",
+                    prerequisite.description,
+                    prerequisite.path_pattern.format(issue=issue_number),
                 )
 
         # Build result
@@ -225,7 +231,7 @@ class PrerequisiteValidator:
             return result
 
         # All prerequisites satisfied
-        self.logger.info(f"All prerequisites satisfied for {agent_type.value}")
+        self.logger.info("All prerequisites satisfied for %s", agent_type.value)
         return ValidationResult(
             valid=True,
             missing_prerequisites=[]
@@ -262,9 +268,9 @@ class PrerequisiteValidator:
 
         exists = file_path.exists()
         if exists:
-            self.logger.debug(f"Found prerequisite: {file_path}")
+            self.logger.debug("Found prerequisite: %s", file_path)
         else:
-            self.logger.debug(f"Missing prerequisite: {file_path}")
+            self.logger.debug("Missing prerequisite: %s", file_path)
 
         return exists
 
@@ -308,7 +314,10 @@ This enforces the AI-Squad workflow: PM → Architect → Engineer → Reviewer
         elif PrerequisiteType.IMPLEMENTATION in missing_types:
             return "Run: squad engineer <issue-number>"
 
-        return "Follow the AI-Squad workflow order: PM → Architect → Engineer → Reviewer"
+        return (
+            f"Follow the AI-Squad workflow order for {agent_type.value}: "
+            "PM → Architect → Engineer → Reviewer"
+        )
 
     def get_ready_agents(
         self,
@@ -366,7 +375,6 @@ This enforces the AI-Squad workflow: PM → Architect → Engineer → Reviewer
 
             # Find which agents provide these prerequisites
             for prereq_type in required_prereqs:
-                prereq = self.PREREQUISITE_REGISTRY[prereq_type]
                 # Find agents that produce this prerequisite
                 if prereq_type == PrerequisiteType.PRD:
                     dependents[AgentType.PM].append(agent_type)
@@ -432,8 +440,10 @@ def validate_agent_execution(
     # Convert string to enum
     try:
         agent_enum = AgentType(agent_type.lower())
-    except ValueError:
-        raise ValueError(f"Invalid agent type: {agent_type}. Valid types: {[a.value for a in AgentType]}")
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid agent type: {agent_type}. Valid types: {[a.value for a in AgentType]}"
+        ) from exc
 
     # Create validator and validate
     validator = PrerequisiteValidator(workspace_root)

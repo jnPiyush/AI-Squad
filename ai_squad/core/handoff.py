@@ -304,18 +304,23 @@ class HandoffManager:
             try:
                 from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
                 
-                logger.info(f"Validating handoff prerequisites: {from_agent} → {to_agent} (issue={work_item.issue_number})")
+                logger.info(
+                    "Validating handoff prerequisites: %s → %s (issue=%s)",
+                    from_agent,
+                    to_agent,
+                    work_item.issue_number,
+                )
                 validate_agent_execution(
                     agent_type=to_agent,
                     issue_number=work_item.issue_number,
                     workspace_root=self.workspace_root,
                     strict=True
                 )
-                logger.info(f"Handoff prerequisites validated: {to_agent} ready to receive work")
+                logger.info("Handoff prerequisites validated: %s ready to receive work", to_agent)
                 
             except PrerequisiteError as e:
                 # Prerequisite validation failed - cannot hand off
-                logger.error(f"Handoff blocked due to missing prerequisites: {e}")
+                logger.error("Handoff blocked due to missing prerequisites: %s", e)
                 
                 # Create failed handoff record for audit trail
                 handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"
@@ -340,8 +345,8 @@ class HandoffManager:
                 self._save_state()
                 
                 return None
-            except Exception as e:
-                logger.warning(f"Handoff validation encountered error (non-blocking): {e}")
+            except (RuntimeError, OSError, ValueError) as e:
+                logger.warning("Handoff validation encountered error (non-blocking): %s", e)
 
         # Create handoff
         handoff_id = f"handoff-{uuid.uuid4().hex[:8]}"

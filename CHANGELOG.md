@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-25
+- Version bump to 0.4.0.
+
 ### Planned
 - Interactive chat mode (`squad chat`)
 - GitHub Actions workflow templates

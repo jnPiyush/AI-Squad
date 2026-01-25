@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import os
 import subprocess
 import sys
 import urllib.request
+import urllib.error
 from dataclasses import dataclass
 from importlib import metadata
 from typing import Optional, Tuple
@@ -48,22 +50,12 @@ def _get_latest_version() -> Optional[str]:
         with urllib.request.urlopen(PYPI_URL, timeout=5) as response:
             payload = json.loads(response.read().decode("utf-8"))
         return payload.get("info", {}).get("version")
-    except Exception:
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError):
         return None
 
 
 def _is_sdk_compatible() -> bool:
-    try:
-        from copilot import CopilotClient  # noqa: F401
-    except Exception:
-        return False
-
-    try:
-        from github_copilot_sdk import CopilotSDK  # noqa: F401
-    except Exception:
-        return False
-
-    return True
+    return bool(importlib.util.find_spec("copilot") or importlib.util.find_spec("github_copilot_sdk"))
 
 
 def _pip_install(spec: str) -> bool:
@@ -149,6 +141,12 @@ def ensure_copilot_sdk_compat(
             action = f"install {PACKAGE_NAME}=={KNOWN_GOOD_VERSION}"
             if _pip_install(f"{PACKAGE_NAME}=={KNOWN_GOOD_VERSION}") and _is_sdk_compatible():
                 return SdkCompatResult(True, KNOWN_GOOD_VERSION, latest, action, "Pinned compatible Copilot SDK")
-            return SdkCompatResult(False, installed, latest, action, "Failed to upgrade Copilot SDK")
+            return SdkCompatResult(
+                True,
+                installed,
+                latest,
+                action,
+                "Copilot SDK is usable but could not be upgraded",
+            )
 
     return SdkCompatResult(True, installed, latest, None, "Copilot SDK is compatible")

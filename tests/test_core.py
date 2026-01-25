@@ -1,7 +1,6 @@
 """
 Tests for core modules
 """
-import pytest
 from pathlib import Path
 import yaml
 
@@ -35,7 +34,7 @@ class TestConfig:
             }
         }
         
-        with open(config_path, "w") as f:
+        with open(config_path, "w", encoding="utf-8") as f:
             yaml.dump(custom_config, f)
         
         config = Config.load(config_path)
@@ -111,7 +110,7 @@ class TestInitProject:
         
         # Modify config
         config_path = tmp_path / "squad.yaml"
-        with open(config_path, "a") as f:
+        with open(config_path, "a", encoding="utf-8") as f:
             f.write("\n# Modified")
         
         # Second init with force
@@ -119,6 +118,6 @@ class TestInitProject:
         assert result["success"] == True
         
         # Config should be reset
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             content = f.read()
             assert "# Modified" not in content

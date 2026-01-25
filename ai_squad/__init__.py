@@ -1,6 +1,6 @@
 """AI-Squad: Your AI Development Squad"""
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 __author__ = "Piyush Jain"
 __description__ = "Your AI Development Squad - Five expert AI agents, one command away"
 

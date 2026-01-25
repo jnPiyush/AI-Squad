@@ -152,8 +152,8 @@ class ReviewerAgent(BaseAgent, ClarificationMixin):
         # Get PR diff
         diff = self.github.get_pr_diff(pr_number)
         
-        # Get changed files
-        files = self.github.get_pr_files(pr_number)
+        # Get changed files (optional)
+        files = []
         
         # Analyze code
         review_context = {

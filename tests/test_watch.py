@@ -1,9 +1,9 @@
 """
 Tests for watch mode functionality
 """
+# pylint: disable=protected-access
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime
 
 from ai_squad.core.watch import WatchDaemon, WatchConfig
 from ai_squad.core.config import Config
@@ -61,7 +61,7 @@ class TestWatchDaemon:
             assert daemon.stats["checks"] == 0
             assert daemon.stats["events"] == 0
     
-    def test_agent_flow_mapping(self, mock_daemon):
+    def test_agent_flow_mapping(self):
         """Test agent flow is correctly defined"""
         expected_flow = {
             "orch:pm-done": "architect",

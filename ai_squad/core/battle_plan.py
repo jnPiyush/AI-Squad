@@ -417,7 +417,6 @@ class BattlePlanExecutor:
         # Check that each step's prerequisites are satisfied before execution
         try:
             from ai_squad.core.validation import validate_agent_execution, PrerequisiteError
-            from pathlib import Path
 
             validation_cfg = {}
             if hasattr(self.work_state_manager, "config") and isinstance(self.work_state_manager.config, dict):
@@ -425,7 +424,7 @@ class BattlePlanExecutor:
             enforce_prereqs = validation_cfg.get("enforce_battle_plan_prerequisites", False)
 
             workspace_root = Path.cwd()
-            logger.info(f"Validating battle plan prerequisites for {strategy_name}")
+            logger.info("Validating battle plan prerequisites for %s", strategy_name)
 
             # Validate each step's agent has prerequisites
             for phase in strategy.phases:
@@ -440,7 +439,11 @@ class BattlePlanExecutor:
                     strict=enforce_prereqs,
                 )
                 if enforce_prereqs and not result.valid:
-                    logger.error(f"Battle plan validation failed at phase '{phase.name}': {result.error_message}")
+                    logger.error(
+                        "Battle plan validation failed at phase '%s': %s",
+                        phase.name,
+                        result.error_message,
+                    )
                     execution.status = "failed"
                     execution.error = f"Prerequisite validation failed: {result.error_message}"
                     raise ValueError(f"Battle plan validation failed: {result.error_message}")
@@ -448,10 +451,10 @@ class BattlePlanExecutor:
             logger.info("Battle plan prerequisites validated successfully")
         except PrerequisiteError as e:
             if enforce_prereqs:
-                raise ValueError(f"Battle plan validation failed: {str(e)}")
-            logger.warning(f"Battle plan validation failed (non-blocking): {e}")
+                raise ValueError(f"Battle plan validation failed: {str(e)}") from e
+            logger.warning("Battle plan validation failed (non-blocking): %s", e)
         except (ImportError, AttributeError) as e:
-            logger.warning(f"Battle plan validation encountered error (non-blocking): {e}")
+            logger.warning("Battle plan validation encountered error (non-blocking): %s", e)
 
         while True:
             ready_steps = self.get_next_steps(execution.id)

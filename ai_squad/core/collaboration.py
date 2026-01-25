@@ -6,7 +6,7 @@ Ensures agents execute in correct order respecting dependencies.
 from typing import Dict, Any, List
 import logging
 from ai_squad.core.agent_executor import AgentExecutor
-from ai_squad.core.validation import PrerequisiteValidator, AgentType, PrerequisiteError
+from ai_squad.core.validation import PrerequisiteValidator
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def run_collaboration(issue_number: int, agents: List[str]) -> Dict[str, Any]:
         agent_order_map = {agent.value: idx for idx, agent in enumerate(correct_order)}
         
         # Validate that user-provided agents are in correct order
-        logger.info(f"Validating collaboration agent order: {agents}")
+        logger.info("Validating collaboration agent order: %s", agents)
         prev_order = -1
         for agent_type in agents:
             if agent_type not in agent_order_map:
@@ -62,8 +62,8 @@ def run_collaboration(issue_number: int, agents: List[str]) -> Dict[str, Any]:
             prev_order = curr_order
         
         logger.info("Agent order validation passed")
-    except Exception as e:
-        logger.warning(f"Agent order validation encountered error (non-blocking): {e}")
+    except (RuntimeError, OSError, ValueError) as e:
+        logger.warning("Agent order validation encountered error (non-blocking): %s", e)
     
     executor = AgentExecutor()
     results = []
