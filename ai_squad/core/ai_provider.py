@@ -481,7 +481,7 @@ class AIProviderChain:
                 self._provider_order = [provider, "openai", "azure_openai"]
     
     def _initialize_providers(self):
-        """Initialize provider chain in priority order"""
+        """Initialize provider chain in priority order (with timeout protection)"""
         if self._initialized:
             return
         
@@ -500,10 +500,39 @@ class AIProviderChain:
                 continue
             try:
                 provider = provider_class()
-                if provider.is_available():
+                # Wrap is_available() check with timeout to prevent hangs
+                import signal
+                def timeout_handler(signum, frame):
+                    raise TimeoutError(f"Provider {name} check timed out")
+                
+                # Set 3 second timeout for provider checks (Windows doesn't support signal.SIGALRM)
+                # Use threading timeout instead
+                import threading
+                available = [False]
+                exception = [None]
+                
+                def check_provider():
+                    try:
+                        available[0] = provider.is_available()
+                    except Exception as e:
+                        exception[0] = e
+                
+                thread = threading.Thread(target=check_provider, daemon=True)
+                thread.start()
+                thread.join(timeout=3.0)  # 3 second timeout
+                
+                if thread.is_alive():
+                    # Timeout - provider check is hanging
+                    logger.debug("AI Provider %s check timed out (hanging)", name)
+                    continue
+                
+                if exception[0]:
+                    raise exception[0]
+                
+                if available[0]:
                     self._providers.append(provider)
                     logger.info("AI Provider available: %s", name)
-            except (OSError, RuntimeError, ValueError) as e:
+            except (OSError, RuntimeError, ValueError, TimeoutError) as e:
                 logger.debug("AI Provider %s initialization error: %s", name, e)
         
         if self._providers:
