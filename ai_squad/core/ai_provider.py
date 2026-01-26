@@ -333,7 +333,8 @@ class CopilotProvider(AIProvider):
         session.on(on_event)
         await session.send({"prompt": user_prompt})
 
-        await asyncio.wait_for(done.wait(), timeout=120)
+        # Wait for response with generous timeout for complex prompts
+        await asyncio.wait_for(done.wait(), timeout=300)
 
         await session.destroy()
         await client.stop()
