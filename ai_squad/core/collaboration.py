@@ -17,6 +17,7 @@ from ai_squad.core.validation import PrerequisiteValidator
 from ai_squad.core.signal import SignalManager, MessagePriority
 from ai_squad.core.handoff import HandoffManager, HandoffReason
 from ai_squad.core.config import Config
+from ai_squad.tools.github import GitHubTool
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -297,6 +298,16 @@ def _run_iterative_collaboration(
                 "[Iteration %d] Max iterations reached without approval. Ending collaboration.",
                 iteration
             )
+            # Post summary to GitHub issue
+            _post_incomplete_collaboration_summary(
+                issue_number=issue_number,
+                primary_agent=primary_agent,
+                reviewer_agent=reviewer_agent,
+                iteration=iteration,
+                last_feedback=feedback,
+                thread_id=thread_id,
+                files=files
+            )
             break
         
         # Primary agent iterates based on feedback
@@ -417,3 +428,100 @@ def run_iterative_collaboration(
 ) -> Dict[str, Any]:
     """Convenience function for iterative collaboration."""
     return run_collaboration(issue_number, agents, mode=CollaborationMode.ITERATIVE, max_iterations=max_iterations)
+
+
+def _post_incomplete_collaboration_summary(
+    issue_number: int,
+    primary_agent: str,
+    reviewer_agent: str,
+    iteration: int,
+    last_feedback: Dict[str, Any],
+    thread_id: str,
+    files: List[str]
+) -> None:
+    """
+    Post a summary comment to GitHub issue when collaboration ends without approval.
+    
+    This helps users understand:
+    - What happened (max iterations reached)
+    - What feedback was given
+    - What actions to take next
+    
+    Args:
+        issue_number: GitHub issue number
+        primary_agent: Primary agent name
+        reviewer_agent: Reviewer agent name
+        iteration: Final iteration count
+        last_feedback: Last feedback from reviewer
+        thread_id: Collaboration thread ID
+        files: List of generated files
+    """
+    try:
+        config = Config.load()
+        github = GitHubTool(config)
+        
+        # Build summary comment
+        severity_emoji = {
+            "info": "[INFO]",
+            "warning": "[!]",
+            "critical": "[!!]"
+        }
+        severity_indicator = severity_emoji.get(last_feedback.get("severity", "info"), "[INFO]")
+        
+        comment = f"""## {severity_indicator} Collaboration Incomplete
+
+**Agents:** `{primary_agent}` <-> `{reviewer_agent}`  
+**Iterations:** {iteration} (max reached)  
+**Thread:** `{thread_id}`  
+**Status:** Not approved
+
+### Last Feedback from {reviewer_agent}:
+
+{last_feedback.get('comments', 'No feedback provided')}
+
+### Generated Files:
+
+"""
+        if files:
+            for file in files:
+                comment += f"- `{file}`\n"
+        else:
+            comment += "_No files generated_\n"
+        
+        comment += """
+### Next Steps:
+
+1. **Review the feedback above** - Address the concerns raised by the reviewer
+2. **Increase max iterations** - If more rounds are needed: `--max-iterations N` or update `squad.yaml`
+3. **Manual review** - Check generated files and make corrections
+4. **Re-run collaboration** - After fixes: `squad joint-op {issue} {agents} --max-iterations N`
+5. **Different agent pairing** - Try alternative reviewer if appropriate
+
+### Configuration:
+
+Edit `squad.yaml` to change default iteration limit:
+
+```yaml
+collaboration:
+  max_iterations: 5  # Increase if needed
+  default_mode: iterative
+```
+
+---
+_This collaboration ended without reviewer approval. Human review recommended._
+"""
+        
+        # Add comment to issue
+        github.add_comment(issue_number, comment)
+        
+        # Add label to flag for human review
+        try:
+            github.add_labels(issue_number, ["needs-review"])
+        except Exception as label_error:
+            logger.debug("Could not add needs-review label: %s", label_error)
+        
+        logger.info("Posted incomplete collaboration summary to issue #%d", issue_number)
+        
+    except Exception as e:
+        logger.error("Failed to post collaboration summary: %s", e)
+        # Non-blocking - don't fail the collaboration if comment posting fails
