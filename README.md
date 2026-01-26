@@ -68,6 +68,9 @@ graph TB
 | **👋➡️ Handoff** | Work Transfer | Automatic context transfer between agents |
 | **📡 Signal** | Messaging | Inter-agent communication system |
 | **🧭 Router** | Health Monitor | Policy enforcement and circuit breaker logic |
+| **🔍 Patrol** | Monitoring | Detects stale/stuck work (`squad patrol`) |
+| **🔍 Recon** | Intelligence | Status reports and reconnaissance (`squad status`) |
+| **🔍 Scout** | Discovery | Background pattern detection and workspace scanning |
 
 ---
 
