@@ -20,9 +20,9 @@ print("-" * 70)
 from ai_squad.core.ai_provider import CopilotProvider
 provider = CopilotProvider()
 if provider.is_available():
-    print("✓ PASS: Copilot provider is available")
+    print("[PASS] Copilot provider is available")
 else:
-    print("✗ FAIL: Copilot provider not available")
+    print("[FAIL] Copilot provider not available")
 
 # Test 2: Verify simple generation works
 print("\n[Test 2] Simple AI Generation")
@@ -35,10 +35,10 @@ response = provider.generate(
     50
 )
 if response and response.content:
-    print(f"✓ PASS: Generation works (got {len(response.content)} chars)")
+    print(f"[PASS] Generation works (got {len(response.content)} chars)")
     print(f"  Response: {response.content[:50]}...")
 else:
-    print("✗ FAIL: No response from generation")
+    print("[FAIL] No response from generation")
 
 # Test 3: Verify error when no providers
 print("\n[Test 3] Error Handling (No Providers)")
@@ -52,7 +52,7 @@ pm.ai_provider._providers = []  # Simulate no providers
 
 try:
     result = pm.execute(21)
-    print("✗ FAIL: Should have raised RuntimeError but didn't")
+    print("[FAIL] Should have raised RuntimeError but didn't")
 except RuntimeError as e:
     error_msg = str(e)
     checks = [
@@ -66,13 +66,13 @@ except RuntimeError as e:
     
     all_passed = all(check[1] for check in checks)
     if all_passed:
-        print("✓ PASS: Proper error with all required information")
+        print("[PASS] Proper error with all required information")
         for check_name, passed in checks:
-            print(f"  ✓ {check_name}")
+            print(f"  [OK] {check_name}")
     else:
-        print("✗ FAIL: Error message missing some information")
+        print("[FAIL] Error message missing some information")
         for check_name, passed in checks:
-            status = "✓" if passed else "✗"
+            status = "[OK]" if passed else "[X]"
             print(f"  {status} {check_name}")
 
 # Test 4: Verify no template fallback exists
@@ -92,13 +92,13 @@ found_template_fallback = False
 for agent_name, agent_class in agents_to_check:
     source = inspect.getsource(agent_class)
     if "templates.render" in source and "fallback" in source.lower():
-        print(f"✗ {agent_name} still has template fallback")
+        print(f"[X] {agent_name} still has template fallback")
         found_template_fallback = True
 
 if not found_template_fallback:
-    print("✓ PASS: No template fallback code found in agents")
+    print("[PASS] No template fallback code found in agents")
 else:
-    print("✗ FAIL: Template fallback still exists")
+    print("[FAIL] Template fallback still exists")
 
 # Final Summary
 print("\n" + "="*70)

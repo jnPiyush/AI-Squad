@@ -32,10 +32,10 @@ async def test():
         
         await session.destroy()
         await client.stop()
-        print("✓ Test successful!")
+        print("[SUCCESS] Test successful!")
         return True
     except Exception as e:
-        print(f"✗ Test failed: {e}")
+        print(f"[FAIL] Test failed: {e}")
         import traceback
         traceback.print_exc()
         return False

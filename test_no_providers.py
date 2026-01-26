@@ -18,12 +18,12 @@ try:
     print("ERROR: Should have failed but didn't!")
     print(result)
 except RuntimeError as e:
-    print("✓ Got expected RuntimeError:")
+    print("[OK] Got expected RuntimeError:")
     print(f"  {e}")
     if "AI generation failed" in str(e):
-        print("\n✓ Error message contains 'AI generation failed'")
+        print("\n[OK] Error message contains 'AI generation failed'")
     if "GitHub Copilot" in str(e) and "OpenAI" in str(e):
-        print("✓ Error message provides setup instructions")
-    print("\n✓ TEST PASSED: Proper error handling works!")
+        print("[OK] Error message provides setup instructions")
+    print("\n[PASS] TEST PASSED: Proper error handling works!")
 except Exception as e:
-    print(f"✗ Got unexpected error: {type(e).__name__}: {e}")
+    print(f"[FAIL] Got unexpected error: {type(e).__name__}: {e}")

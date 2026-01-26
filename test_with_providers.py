@@ -21,7 +21,7 @@ provider = CopilotProvider()
 print(f"\nCopilot available: {provider.is_available()}")
 
 if provider.is_available():
-    print("\n✓ Testing simple generation...")
+    print("\n[OK] Testing simple generation...")
     response = provider.generate(
         "You are a helpful assistant", 
         "Write exactly 2 sentences about what a Product Manager does",
@@ -31,10 +31,10 @@ if provider.is_available():
     )
     
     if response and response.content:
-        print(f"✓ Got response: {response.content[:150]}...")
-        print(f"✓ Provider used: {response.provider.value}")
-        print("\n✓ TEST PASSED: AI generation works!")
+        print(f"[OK] Got response: {response.content[:150]}...")
+        print(f"[OK] Provider used: {response.provider.value}")
+        print("\n[PASS] TEST PASSED: AI generation works!")
     else:
-        print("✗ No response received")
+        print("[FAIL] No response received")
 else:
-    print("✗ Copilot not available")
+    print("[FAIL] Copilot not available")
