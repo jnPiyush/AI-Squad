@@ -45,7 +45,7 @@ def print_banner():
             "[bold]Engineer[/bold] • [bold]UX Designer[/bold] • "
             "[bold]Reviewer[/bold]\n\n"
             "[yellow]🎖️ NEW: Squad Mission Mode - True Autonomous Development![/yellow]\n"
-            "[dim]Provide requirements → Captain orchestrates multi-agent collaboration[/dim]\n\n"
+            "[dim]Provide requirements -> Captain orchestrates multi-agent collaboration[/dim]\n\n"
             f"[dim]Version {__version__}[/dim]",
             style="cyan",
             border_style="bright_cyan"
@@ -73,14 +73,14 @@ def _interactive_setup():
             return
         else:
             # OAuth not configured
-            console.print("[yellow]⚠ GitHub authentication required[/yellow]")
+            console.print("[yellow][!] GitHub authentication required[/yellow]")
             console.print("\n[bold]Authenticate with GitHub CLI:[/bold]")
             console.print("  [cyan]gh auth login[/cyan]")
             console.print("\n[dim]This uses OAuth (secure, no manual tokens)[/dim]")
-            console.print("\n[bold cyan]→ Run 'gh auth login' now to get started[/bold cyan]")
+            console.print("\n[bold cyan]-> Run 'gh auth login' now to get started[/bold cyan]")
     except (subprocess.TimeoutExpired, FileNotFoundError):
         # gh CLI not installed
-        console.print("[yellow]⚠ GitHub CLI (gh) not installed[/yellow]")
+        console.print("[yellow][!] GitHub CLI (gh) not installed[/yellow]")
         console.print("\n[bold]Step 1: Install GitHub CLI[/bold]")
         console.print("  Windows: [cyan]winget install GitHub.cli[/cyan]")
         console.print("  Mac: [cyan]brew install gh[/cyan]")
@@ -100,7 +100,7 @@ def _interactive_setup():
         if repo and owner:
             console.print(f"\n[green][OK] GitHub repo configured: {owner}/{repo}[/green]")
         else:
-            console.print("\n[yellow]⚠ GitHub repo not detected[/yellow]")
+            console.print("\n[yellow][!] GitHub repo not detected[/yellow]")
             console.print("[dim]  You can manually update 'github_repo' and 'github_owner' in squad.yaml[/dim]")
             console.print("[dim]  Or ensure you're in a git repository with a GitHub remote[/dim]")
     
@@ -323,7 +323,7 @@ def joint_op(issue_number, agents, sequential, max_iterations):
             
             console.print("\n[bold]Output Files:[/bold]")
             for file in result.get("files", []):
-                console.print(f"  📄 {file}")
+                console.print(f"  - {file}")
         else:
             console.print(f"[bold red][FAIL] {result['error']}[/bold red]")
             sys.exit(1)
@@ -384,11 +384,11 @@ def patrol(interval, repo):
     Monitors GitHub issues and automatically engages agents when
     orchestration labels are detected:
     
-    • orch:pm-done → Deploys Architect
+    • orch:pm-done -> Deploys Architect
     
-    • orch:architect-done → Deploys Engineer
+    • orch:architect-done -> Deploys Engineer
     
-    • orch:engineer-done → Deploys Reviewer
+    • orch:engineer-done -> Deploys Reviewer
     
     Example:
     
@@ -817,7 +817,7 @@ def plans(label):
                 f"[bold]Phases:[/bold] {len(plan.phases)}\n"
                 f"[bold]Labels:[/bold] {', '.join(plan.labels) if plan.labels else 'none'}\n\n"
                 f"[bold]Variables:[/bold] {', '.join(plan.variables.keys()) if plan.variables else 'none'}\n\n"
-                f"[dim]Phases: {' → '.join(p.name for p in plan.phases)}[/dim]",
+                f"[dim]Phases: {' -> '.join(p.name for p in plan.phases)}[/dim]",
                 title=f"Plan: {plan.name}",
                 border_style="cyan"
             ))
@@ -1033,7 +1033,7 @@ def handoff(work_item_id, from_agent, to_agent, reason, summary):
     Example:
         squad handoff sq-abc12 pm architect --reason workflow --summary "PRD complete"
     """
-    console.print(f"[bold cyan]Initiating handoff: {from_agent} → {to_agent}[/bold cyan]\n")
+    console.print(f"[bold cyan]Initiating handoff: {from_agent} -> {to_agent}[/bold cyan]\n")
     
     try:
         from ai_squad.core.workstate import WorkStateManager

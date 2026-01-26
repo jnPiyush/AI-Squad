@@ -58,7 +58,7 @@ class Benchmark:
             "stdev": statistics.stdev(times) if len(times) > 1 else 0
         }
         
-        print(f"✓ Mean: {result['mean']*1000:.2f}ms")
+        print(f"[OK] Mean: {result['mean']*1000:.2f}ms")
         return result
 
 
@@ -340,7 +340,7 @@ def save_benchmark_results(bench_results: List[Dict[str, Any]], output_file: str
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
     
-    print(f"\n✓ Results saved to {output_file}")
+    print(f"\n[OK] Results saved to {output_file}")
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ def run_autonomous_workflow(
             }
         
         # Step 3: Create Mission Objectives (story issues)
-        logger.info("🎯 Breaking down into Mission Objectives")
+        logger.info("[MISSION] Breaking down into Mission Objectives")
         objective_issues = _create_mission_objectives(
             github=github,
             mission_analysis=mission_analysis,
@@ -228,7 +228,7 @@ def _create_mission_brief(
         labels=labels
     )
     
-    logger.info(f"✅ Mission brief created: #{issue['number'] if issue else 'FAILED'}")
+    logger.info(f"[OK] Mission brief created: #{issue['number'] if issue else 'FAILED'}")
     return issue["number"] if issue else None
 
 
@@ -274,10 +274,10 @@ Part of Mission #{mission_issue}
             # Add comment to mission brief linking this objective
             github.add_comment(
                 mission_issue,
-                f"🎯 Objective created: #{issue['number']} - {objective[:50]}..."
+                f"[OBJECTIVE] Created: #{issue['number']} - {objective[:50]}..."
             )
     
-    logger.info(f"✅ Created {len(objective_issues)} mission objectives")
+    logger.info(f"[OK] Created {len(objective_issues)} mission objectives")
     return objective_issues
 
 
@@ -307,7 +307,7 @@ def _deploy_to_captain(
         # It will analyze task, select battle plan, create convoys, etc.
         summary = asyncio.run(captain.run(issue_number))
         
-        logger.info(f"✅ Captain deployment complete for #{issue_number}")
+        logger.info(f"[OK] Captain deployment complete for #{issue_number}")
         return {
             "success": True,
             "issue_number": issue_number,
