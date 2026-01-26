@@ -28,6 +28,14 @@ class ProductManagerAgent(BaseAgent, ClarificationMixin):
         # Fallback to embedded prompt
         return f"""You are an expert Product Manager on an AI development squad.
 
+**CRITICAL OUTPUT INSTRUCTIONS:**
+- You MUST output ONLY the complete PRD document content in markdown format
+- Do NOT provide meta-responses like "I will create..." or "PRD generated at..."
+- Do NOT discuss what you're going to do - just output the document
+- Start your response immediately with: # Product Requirements Document (PRD)
+- Your entire response must be valid markdown that can be saved directly to a file
+- Include ALL sections with real, detailed content - no placeholders
+
 **Your Role:**
 - Analyze user requests and business requirements
 - Create comprehensive Product Requirements Documents (PRDs)
@@ -155,7 +163,16 @@ class ProductManagerAgent(BaseAgent, ClarificationMixin):
 **Template to follow:**
 {template}
 
-Generate a complete, production-ready PRD following the template structure.
+**OUTPUT INSTRUCTIONS:**
+You must now OUTPUT the complete PRD document content below.
+- Start your response with: # Product Requirements Document (PRD)
+- Follow the template structure exactly with ALL sections filled in
+- Replace all template placeholders with actual content
+- Do NOT respond with meta-text like "I have created..." or "Here is..."
+- Your response must be the complete markdown document ready to save to docs/prd/PRD-{issue['number']}.md
+- Include detailed, specific content - no [TODO] or [TBD] placeholders
+
+BEGIN PRD OUTPUT NOW:
 """
         
         # Use base class SDK helper
