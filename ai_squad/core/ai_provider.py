@@ -134,20 +134,15 @@ class CopilotProvider(AIProvider):
             return None
 
     def _is_copilot_cli_available(self) -> bool:
-        """Check if Copilot CLI is available (optional, fallback to SDK)"""
+        """Check if Copilot CLI is available (fast, non-blocking check)"""
+        # First, check if copilot command exists (fast check)
         copilot_path = shutil.which("copilot")
         if not copilot_path:
+            logger.debug("Copilot CLI not found in PATH")
             return False
 
-        try:
-            # Quick check with short timeout to avoid hanging
-            version = self._run_copilot_cli(copilot_path, ["--version"])
-            if version.returncode != 0:
-                return False
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            # CLI not available or timed out - this is OK, SDK will handle it
-            return False
-
+        # Only check authentication, skip version check to avoid hangs
+        # If gh is authenticated, assume copilot can use it
         return self._is_copilot_cli_authenticated()
 
     @staticmethod
