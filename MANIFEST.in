@@ -27,9 +27,10 @@ recursive-include ai_squad/prompts *.md
 recursive-include ai_squad/dashboard/templates *.html
 recursive-include ai_squad/dashboard/static *
 
-# Include agent definitions from .github
+# Include agent definitions from .github (CRITICAL for installation)
 recursive-include .github/agents *.md
 recursive-include .github/skills *.md
+recursive-include .github/skills *.yaml
 recursive-include .github/templates *.md
 recursive-include .github/templates *.yaml
 include .github/copilot-instructions.md

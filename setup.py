@@ -225,6 +225,10 @@ setup(
             "mkdocs-material>=9.5.0",
             "mkdocstrings[python]>=0.24.0",
         ],
+        "dashboard": [
+            "flask>=3.0.0",
+            "werkzeug>=3.0.0",
+        ],
     },
     entry_points={
         "console_scripts": [

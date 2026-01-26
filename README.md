@@ -78,30 +78,69 @@ graph TB
 
 ### Prerequisites
 
-**Requirements:** Python 3.11+, Git, GitHub CLI, GitHub Account, GitHub Copilot subscription
+**Core Requirements:**
+- Python 3.11+
+- Git
+- GitHub CLI (`gh`)
+- GitHub Account
+- GitHub Copilot subscription (required for AI features)
 
 **Install GitHub CLI:**
 - Windows: `winget install GitHub.cli`
 - macOS: `brew install gh`  
 - Linux: `sudo apt install gh` (Debian/Ubuntu) or [see installation guide](https://github.com/cli/cli#installation)
 
+**Optional (for dashboard):**
+- Flask: `pip install ai-squad[dashboard]`
+
 ### Installation & Setup
 
 ```bash
-# 1. Install
+# 1. Verify Python version (3.11+ required)
+python --version
+
+# 2. Install AI-Squad
 pip install ai-squad
 
-# 2. Initialize project
+# 3. (Optional) Install dashboard support
+pip install ai-squad[dashboard]
+
+# 4. Initialize project
 cd /path/to/your-project
 squad deploy
 
-# 3. Authenticate (if not already)
+# 5. Authenticate with GitHub (if not already)
 gh auth login
+
+# 6. Install GitHub Copilot CLI extension (auto-prompted during install)
+gh extension install github/gh-copilot
 ```
 
 **What `squad deploy` creates:**
 - `.github/agents/` (5 agent definitions), `.github/skills/` (18 production skills), `.github/templates/`
 - `squad.yaml` (configuration), `docs/` folders, `.squad/` (internal state)
+
+### Post-Installation Verification
+
+**Run these commands to verify your setup:**
+
+```bash
+# 1. Check installation
+squad --version
+squad sitrep
+
+# 2. Expected output from 'squad sitrep':
+#    ✓ Python 3.11+
+#    ✓ GitHub CLI installed
+#    ✓ GitHub Copilot CLI extension installed
+#    ✓ GitHub authentication valid
+#    ✓ GitHub Copilot SDK available
+
+# 3. Test a simple agent
+squad pm <issue-number>  # Replace with actual GitHub issue
+```
+
+**If any checks fail, see the [Troubleshooting](#-troubleshooting) section below.**
 
 ### Usage
 
@@ -459,6 +498,57 @@ graph TB
    ```python
    python -c "from copilot import CopilotSDK; print('✓ SDK available')"
    ```
+
+### Dashboard Not Starting
+
+**Issue:** `squad dashboard` fails with "Flask is not installed"
+
+**Solution:**
+1. Install dashboard dependencies:
+   ```bash
+   pip install ai-squad[dashboard]
+   # or
+   pip install flask>=3.0.0 werkzeug>=3.0.0
+   ```
+
+2. Verify installation:
+   ```bash
+   python -c "import flask; print(f'✓ Flask {flask.__version__}')"
+   ```
+
+3. Start dashboard:
+   ```bash
+   squad dashboard
+   # Access at http://127.0.0.1:5050
+   ```
+
+### Installation Verification
+
+**After installing AI-Squad, verify your setup:**
+
+```bash
+# 1. Check AI-Squad version
+squad --version
+
+# 2. Check Python version (must be 3.11+)
+python --version
+
+# 3. Verify GitHub CLI and authentication
+gh auth status
+
+# 4. Check GitHub Copilot CLI extension
+gh extension list | grep copilot
+
+# 5. Run comprehensive health check
+squad sitrep
+```
+
+**Expected output from `squad sitrep`:**
+- ✓ Python version 3.11+
+- ✓ GitHub CLI installed
+- ✓ GitHub Copilot CLI extension installed
+- ✓ GitHub authentication valid
+- ✓ GitHub Copilot SDK available
 
 ### GitHub Authentication Required
 
