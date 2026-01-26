@@ -56,7 +56,7 @@ squad mission -p "Create a REST API for task management with CRUD operations"
 ### Example Mission
 
 ```bash
-squad auto -p "
+squad mission -p "
 Create an Idea Management System with:
 - User authentication and authorization
 - CRUD operations for ideas

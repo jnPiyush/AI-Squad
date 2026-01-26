@@ -74,7 +74,7 @@ graph TB
 | Term | What It Means | Example |
 |------|---------------|--------|
 | **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
-| **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect → Engineer → Reviewer |
+| **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect + UX (parallel) → Engineer → Reviewer |
 | 💼 **Operation** | Single unit of work tracked in system | Issue #123 becomes operation `sq-abc12` |
 | **🚐 Convoy** | Parallel batch of related operations | 5 stories from an epic processed together |
 | **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
@@ -253,6 +253,9 @@ This creates:
 ### 3. Use Your Squad!
 
 **🎖️ Squad Mission Mode (Recommended - Military-Themed Workflow):**
+
+> 💡 **New to Squad Mission Mode?** See the [Complete Autonomous Mode Guide](docs/AUTONOMOUS.md) for detailed workflows, examples, and best practices.
+
 ```bash
 # Provide mission brief and Squad DEPLOYS TO CAPTAIN:
 # 1. PM analyzes mission (validates as epic or feature)
@@ -260,7 +263,7 @@ This creates:
 # 3. Breaks down into Mission Objectives
 # 4. 🎖️ DEPLOYS TO CAPTAIN for orchestration
 # 5. Captain selects Battle Plan (feature/epic workflow)
-# 6. Captain executes agents via collaboration: PM → Architect → Engineer → UX → Reviewer
+# 6. Captain executes agents via collaboration: PM → Architect + UX (parallel) → Engineer → Reviewer
 # 7. Multi-agent team collaborates to complete mission!
 
 squad mission -p "Create a REST API for user management with authentication"

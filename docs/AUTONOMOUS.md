@@ -88,7 +88,7 @@ squad captain <mission-issue-number>
 
 | Option | Description |
 |--------|-------------|
-| `--auto-execute` | Automatically run agents after creating issues |
+| `--plan-only` | Create mission brief without deploying to Captain |
 
 ---
 
@@ -117,7 +117,7 @@ As an admin, I want to manage user roles
 ```
 
 ```bash
-squad mission -f requirements.txt --auto-execute
+squad mission -f requirements.txt
 ```
 
 **Creates:**
@@ -126,7 +126,7 @@ squad mission -f requirements.txt --auto-execute
 - Story 2: `[Story] User login`
 - Story 3: `[Story] Password reset`
 - Story 4: `[Story] Admin role management`
-- **Automatically runs agents to implement!**
+- **Automatically deploys to Captain for orchestration!**
 
 ### Example 3: Interactive Mode
 
@@ -211,13 +211,13 @@ squad review <pr>
 
 ```bash
 # One command does everything!
-squad mission -p "Implement Feature X" --auto-execute
+squad mission -p "Implement Feature X"
 ```
 
 **Benefits:**
 - ✅ Issues created automatically
 - ✅ Epic + Stories organized
-- ✅ Agents orchestrated automatically
+- ✅ Captain deploys agents automatically
 - ✅ True autonomous development
 
 ---
@@ -239,19 +239,19 @@ squad mission -p "Implement Feature X" --auto-execute
 - ❌ Skip important context
 - ❌ Assume technical details
 
-### When to Use Auto-Execute
+### When to Use Plan-Only Mode
 
-**Use `--auto-execute`:**
+**Use `--plan-only`:**
+- ⚠️ Complex/ambiguous requirements
+- ⚠️ Need to review issues before execution
+- ⚠️ Want manual control over Captain deployment
+- ⚠️ Prototype/experiment phase
+
+**Skip `--plan-only` (default behavior):**
 - ✅ Well-defined requirements
 - ✅ Standard features
 - ✅ Trust Squad's decision-making
-- ✅ Want full automation
-
-**Don't use `--auto-execute`:**
-- ⚠️ Complex/ambiguous requirements
-- ⚠️ Need to review issues first
-- ⚠️ Want manual control
-- ⚠️ Prototype/experiment phase
+- ✅ Want full automation with Captain
 
 ---
 
@@ -330,7 +330,8 @@ squad architect 123
 
 **After:**
 ```bash
-squad mission -p "Feature: Description" --auto-execute
+squad mission -p "Feature: Description"
+# By default, deploys to Captain for full orchestration
 ```
 
 ### If you have existing requirements docs:
@@ -338,7 +339,8 @@ squad mission -p "Feature: Description" --auto-execute
 ```bash
 # Convert your docs to requirements.txt format
 # Then run:
-squad mission -f requirements.txt --auto-execute
+squad mission -f requirements.txt
+# Captain automatically orchestrates agents
 ```
 
 ---
@@ -369,7 +371,8 @@ gh issue edit <issue> --add-label "priority:high"
 ## Next Steps
 
 - Try `squad mission -i` for interactive requirements gathering
-- Use `--auto-execute` for full autonomous development
+- Use default mode for full Captain orchestration
+- Use `--plan-only` to review issues before Captain deployment
 - Monitor progress with `squad dashboard`
 - Review output issues in GitHub
 
