@@ -68,7 +68,7 @@ def _interactive_setup():
             check=False
         )
         if result.returncode == 0:
-            console.print("[green]✓ GitHub CLI is authenticated via OAuth[/green]")
+            console.print("[green][OK] GitHub CLI is authenticated via OAuth[/green]")
             console.print("[dim]  AI-Squad is ready to use full AI capabilities[/dim]")
             return
         else:
@@ -98,7 +98,7 @@ def _interactive_setup():
         owner = config.get("project", {}).get("github_owner")
         
         if repo and owner:
-            console.print(f"\n[green]✓ GitHub repo configured: {owner}/{repo}[/green]")
+            console.print(f"\n[green][OK] GitHub repo configured: {owner}/{repo}[/green]")
         else:
             console.print("\n[yellow]⚠ GitHub repo not detected[/yellow]")
             console.print("[dim]  You can manually update 'github_repo' and 'github_owner' in squad.yaml[/dim]")
@@ -313,7 +313,7 @@ def joint_op(issue_number, agents, sequential, max_iterations):
         result = run_collaboration(issue_number, list(agents), mode=mode, max_iterations=max_iterations)
         
         if result["success"]:
-            console.print(f"[bold green]✓ Joint Operation complete![/bold green]")
+            console.print(f"[bold green][OK] Joint Operation complete![/bold green]")
             console.print(f"[dim]Mode: {result.get('mode', 'sequential')}[/dim]")
             
             if mode == CollaborationMode.ITERATIVE:
@@ -325,11 +325,11 @@ def joint_op(issue_number, agents, sequential, max_iterations):
             for file in result.get("files", []):
                 console.print(f"  📄 {file}")
         else:
-            console.print(f"[bold red]✗ FAIL: {result['error']}[/bold red]")
+            console.print(f"[bold red][FAIL] {result['error']}[/bold red]")
             sys.exit(1)
             
     except (RuntimeError, OSError, ValueError, click.ClickException) as e:
-        console.print(f"[bold red]✗ FAIL Error: {e}[/bold red]")
+        console.print(f"[bold red][FAIL] Error: {e}[/bold red]")
         sys.exit(1)
 
 
@@ -602,10 +602,10 @@ def mission(prompt, file, interactive, plan_only):
         )
         
         if result["success"]:
-            console.print("\n[bold green]✓ Autonomous workflow completed![/bold green]\n")
+            console.print("\n[bold green][OK] Autonomous workflow completed![/bold green]\n")
             
             # Show created mission
-            console.print(f"\n[bold green]✓ Mission Deployed Successfully![/bold green]\n")
+            console.print(f"\n[bold green][OK] Mission Deployed Successfully![/bold green]\n")
             console.print(f"[bold]Mission Type:[/bold] {result.get('mission_type', 'feature').upper()}")
             if "mission_brief" in result:
                 console.print(f"[bold]Mission Brief:[/bold] #{result['mission_brief']}")
@@ -618,7 +618,7 @@ def mission(prompt, file, interactive, plan_only):
                 console.print(f"\n[bold]🎖️ Captain Deployment:[/bold]")
                 deployment = result.get("captain_deployment", {})
                 if deployment.get("success"):
-                    console.print(f"  ✓ Captain coordinating mission #{deployment.get('issue_number')}")
+                    console.print(f"  [OK] Captain coordinating mission #{deployment.get('issue_number')}")
                     console.print(f"  • Using Battle Plans for orchestration")
                     console.print(f"  • Agents will execute via handoffs")
                     console.print(f"  • Progress tracked in work items")
@@ -628,20 +628,20 @@ def mission(prompt, file, interactive, plan_only):
                     if summary:
                         console.print(Panel(summary, expand=False, border_style="cyan"))
                 else:
-                    console.print(f"  ✗ Captain deployment failed: {deployment.get('error')}")
+                    console.print(f"  [FAIL] Captain deployment failed: {deployment.get('error')}")
                 
-                console.print("\n[green]✓ Mission successfully deployed to Captain![/green]")
+                console.print("\n[green][OK] Mission successfully deployed to Captain![/green]")
                 console.print("[dim]Captain will coordinate agents using Battle Plans and Convoys[/dim]")
             else:
                 console.print("\n[yellow]📋 PLAN-ONLY: Mission brief created[/yellow]")
                 console.print("[dim]Deploy to Captain with:[/dim]")
                 console.print(f"[cyan]  squad captain {result.get('mission_brief')}[/cyan]")
         else:
-            console.print(f"[bold red]✗ Squad Mission failed: {result.get('error')}[/bold red]")
+            console.print(f"[bold red][FAIL] Squad Mission failed: {result.get('error')}[/bold red]")
             sys.exit(1)
     
     except ImportError:
-        console.print("[bold red]✗ Autonomous mode not yet implemented[/bold red]")
+        console.print("[bold red][FAIL] Autonomous mode not yet implemented[/bold red]")
         console.print("\n[yellow]Creating autonomous orchestration module...[/yellow]")
         console.print("[dim]This feature will:[/dim]")
         console.print("  1. Use PM agent to analyze requirements")
@@ -653,7 +653,7 @@ def mission(prompt, file, interactive, plan_only):
         console.print("  2. Run: squad captain <issue-number>")
         sys.exit(1)
     except (RuntimeError, OSError, ValueError) as e:
-        console.print(f"[bold red]✗ Error: {e}[/bold red]")
+        console.print(f"[bold red][FAIL] Error: {e}[/bold red]")
         sys.exit(1)
 
 
