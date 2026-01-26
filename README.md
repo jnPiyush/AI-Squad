@@ -737,9 +737,10 @@ graph TB
     
     subgraph "⚙️ Core Services"
         WS["📦 WorkState"]
-        Signal["📡 Signals"]
-        Handoff["👋➡️ Handoffs"]
-        Del["👉 Delegations"]
+        Signal["📡 Signal Manager"]
+        Handoff["👋➡️ Handoff Manager"]
+        Del["👉 Delegation Manager"]
+        Hooks["🪝 Hook Manager"]
     end
     
     subgraph "💾 Persistence"
@@ -751,7 +752,7 @@ graph TB
     CLI & Dashboard & GH --> Captain
     Captain --> Router --> PM & Arch & Eng & UX & Rev
     Captain --> BPE
-    PM & Arch & Eng & UX & Rev --> WS & Signal & Handoff
+    PM & Arch & Eng & UX & Rev --> WS & Signal & Handoff & Hooks
     WS --> Graph
     Del --> Graph
     Router --> Events
@@ -766,10 +767,14 @@ graph TB
 ├── events/              # Routing events (JSONL)
 ├── graph/               # Operational graph (nodes + edges)
 ├── handoffs/            # Handoff records
+├── hooks/               # Hook snapshots (if enabled)
 ├── identity/            # Current identity dossier
+├── recon/               # Reconnaissance summaries
 ├── scout_workers/       # Scout run checkpoints
-├── signals/             # Inter-agent messages
-└── operations/          # Operation state tracking
+├── operations/          # Operation state tracking
+├── workstate.json       # Work item state
+├── workers.json         # Worker lifecycle records
+└── theater.json         # Theater state
 ```
 
 ### CLI Tool + GitHub Actions
@@ -806,38 +811,7 @@ graph TB
 
 ---
 
-## 💰 Cost
-
-### AI-Squad: FREE
-
-- ✅ CLI Tool: **$0** (MIT License)
-- ✅ Installation: **$0**
-- ✅ All Features: **$0**
-- ✅ Updates: **$0**
-
-### Usage Costs
-
-| Service | Cost | Notes |
-|---------|------|-------|
-| GitHub Copilot | $10-39/mo per user | Already paying if using Copilot |
-| GitHub Actions | Free tier: 2,000 min/mo | ~400 agent runs/mo |
-| **AI-Squad** | **$0** | **Completely free** |
-
-**No Hidden Costs:**
-- ❌ No hosting fees
-- ❌ No database costs
-- ❌ No infrastructure
-- ❌ No per-seat licensing
-
-**ROI Example:**  
-Team of 10 developers, 100 agent runs/week:
-- Time saved: ~200 hours/month
-- Value: ~$30,000/month
-- **AI-Squad cost: $0**
-
----
-
-## 🚀 Why AI-Squad?
+##  Why AI-Squad?
 
 ### vs Manual Work
 
@@ -857,7 +831,7 @@ Team of 10 developers, 100 agent runs/week:
 | **GitHub integration** | ✅ Native issue/PR workflow | ⚠️ Manual copying |
 | **Template-driven** | ✅ Standardized outputs | ❌ Inconsistent |
 | **Orchestration** | ✅ Captain + Battle Plans | ❌ Manual coordination |
-| **Cost** | ✅ $0 (uses your Copilot) | ⚠️ $20-100+/mo |
+| **Local execution** | ✅ Uses your GitHub Copilot | ⚠️ Requires separate service |
 | **Hosting** | ✅ None needed | ⚠️ Cloud service |
 
 ---
