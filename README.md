@@ -382,112 +382,7 @@ graph TB
 
 ---
 
-## 🚀 Features
-
-### 🏰 Orchestration System
-
-```mermaid
-graph LR
-    subgraph "Command"
-        C1["squad captain 123"]
-        C2["squad run-plan feature 123"]
-    end
-    
-    subgraph "Orchestration"
-        Captain["🎖️ Captain"]
-        BP["📜 Battle Plan"]
-        Conv["🚐 Convoy"]
-    end
-    
-    subgraph "Execution"
-        WI1["📦 PRD"]
-        WI2["📦 ADR"]
-        WI3["📦 Code"]
-        WI4["📦 Review"]
-    end
-    
-    C1 --> Captain
-    C2 --> BP
-    Captain --> BP
-    BP --> Conv
-    Conv --> WI1 --> WI2 --> WI3 --> WI4
-```
-
-| Feature | Description |
-|---------|-------------|
-| **🎖️ Captain** | Intelligent coordinator that analyzes issues and delegates to agents |
-| **📜 Battle Plans** | Pre-defined workflows (feature, bugfix, epic) with phase dependencies |
-| **🚐 Convoys** | Parallel processing of related operations |
-| **👋➡️ Handoffs** | Automatic work transfer between agents with context |
-| **📡 Signals** | Inter-agent messaging system |
-| **👉 Delegations** | Explicit assignments with full audit trails |
-
-### 🤖 Five Expert Agents
-
-| Agent | Command | Output |
-|-------|---------|--------|
-| **🎨 Product Manager** | `squad pm <issue>` | PRD + User Stories + Backlog |
-| **🧩 Architect** | `squad architect <issue>` | ADR + Technical Spec + Diagrams |
-| **🔧 Engineer** | `squad engineer <issue>` | Code + Tests + Documentation |
-| **🎭 UX Designer** | `squad ux <issue>` | Wireframes + User Flows + Prototype |
-| **🛡️ Reviewer** | `squad review <pr>` | Code Review + Security Analysis |
-
-### 📊 Web Dashboard
-
-Launch the monitoring dashboard to visualize your Squad's operations:
-
-```bash
-squad dashboard
-# Opens http://127.0.0.1:5050
-```
-
-**Dashboard Pages:**
-- **Overview** - Stats, health status, recent activity
-- **Health** - Routing health with circuit breakers
-- **Operations** - Track all work across agents
-- **Delegations** - View delegation links and audit trails
-- **Convoys** - Monitor parallel work batches
-- **Graph** - Interactive operational graph visualization
-
-### 🗣️👥 Multi-Agent Collaboration
-
-Agents can work together in two modes:
-
-**Iterative Mode (Default - 2 agents):**
-```bash
-# Two agents engage in back-and-forth dialogue with feedback (DEFAULT)
-squad joint-op 100 pm architect
-
-# Flow:
-# 1. PM creates PRD
-# 2. Architect reviews and provides feedback via Signal
-# 3. PM iterates based on feedback
-# 4. Repeat until approved or max iterations (default: 3)
-# 5. Collaboration complete with conversation history
-```
-
-**Sequential Mode (2+ agents):**
-```bash
-# Agents execute in dependency order without interaction
-squad joint-op 100 pm architect engineer --sequential
-# Flow: PM → Architect → Engineer (one-way execution)
-# Note: UX can run in parallel with Architect when using Battle Plans
-```
-
-**Configuration:**
-- **Max Iterations**: 3 (default) - Configure with `--max-iterations N`
-- **Approval Detection**: Keywords like "approved", "LGTM", "looks good"
-- **Feedback Tracking**: All conversations logged with timestamps
-- **Signal-based Communication**: Uses Signal system for agent messaging
-
-**Features:**
-- **Feedback Loops**: Reviewer provides constructive feedback via Signals
-- **Iteration Tracking**: Full conversation history preserved
-- **Approval Detection**: Automatic approval when reviewer satisfied
-- **Max Iterations**: Prevents infinite loops (configurable with `--max-iterations`)
-- **Thread Tracking**: All messages linked in conversation thread
-
-### 🗡️ 18 Production Skills
+## �️ 18 Production Skills
 
 Every agent follows battle-tested production standards:
 
@@ -515,93 +410,13 @@ mindmap
       Deployment
 ```
 
-[See all skills →](docs/skills.md)
+**All agents have access to:**
+- **Foundation Skills**: Testing strategies, Security practices, Error handling, Core principles (SOLID, DRY, KISS)
+- **Architecture Skills**: Performance optimization, Scalability patterns, Database design, API design
+- **Development Skills**: Configuration management, Documentation standards, Type safety, Logging & monitoring
+- **Operations Skills**: Git workflows, Code review & audit, Deployment strategies
 
-### 🎨 Template-Driven Documents
-
-All outputs use standardized templates:
-- **PRD** - Product Requirements Document
-- **ADR** - Architecture Decision Record
-- **Spec** - Technical Specification
-- **UX** - UX Design Document
-- **Review** - Code Review Report
-
-### 🔄 GitHub Actions Integration
-
-**Automatic agent execution when issues are labeled:**
-
-```yaml
-# .github/workflows/squad-orchestrator.yml (auto-generated)
-on:
-  issues:
-    types: [labeled]
-
-# Label 'type:feature' → PM creates PRD
-# Label 'type:story' → Engineer implements
-# Label 'needs:design' → UX Designer creates wireframes
-```
-
----
-
-## 💡 Usage Examples
-
-### Example 1: Feature Development
-
-```bash
-# You have issue #123: "Add OAuth Login"
-
-# Step 1: PM creates requirements
-squad pm 123
-# ✅ Output: docs/prd/PRD-123.md
-
-# Step 2 & 3: Architect designs solution + UX designs interface (can run in parallel)
-squad architect 123
-# ✅ Output: docs/adr/ADR-123.md + docs/specs/SPEC-123.md
-
-squad ux 123
-# ✅ Output: docs/ux/UX-123.md + docs/ux/prototypes/prototype-123.html
-
-# Step 4: Engineer implements (after both Architect and UX complete)
-squad engineer 123
-# ✅ Output: src/auth/*.py + tests/auth/*.py + PR created
-
-# Step 5: Reviewer checks quality
-squad review 456
-# ✅ Output: docs/reviews/REVIEW-456.md + PR comments
-```
-
-### Example 2: Epic Planning
-
-```bash
-# Issue #100: "User Authentication System" (Epic)
-
-# Multi-agent collaboration
-squad joint-op 100 pm architect
-
-# What happens:
-# - PM drafts initial PRD
-# - Architect reviews for technical feasibility
-# - PM addresses concerns
-# - Architect creates ADR
-# - Both approve final plan
-# - Output: PRD-100.md + ADR-100.md
-```
-
-### Example 3: Bug Fixing
-
-```bash
-# Issue #789: "Login returns 500 error"
-
-# Engineer investigates and fixes
-squad engineer 789
-
-# What happens:
-# - Analyzes codebase
-# - Identifies root cause
-# - Implements fix
-# - Adds regression test
-# - Creates PR with fix
-```
+📚 [See detailed skills documentation →](docs/skills.md)
 
 ---
 
@@ -642,15 +457,6 @@ squad convoys                 # List active convoys
 squad dashboard               # Launch web dashboard
 squad graph export            # Export operational graph
 squad graph impact <node>     # Analyze impact of changes
-```
-
-**Examples:**
-```bash
-squad captain 123                   # Let Captain handle everything
-squad joint-op 123 pm architect       # Epic planning
-squad joint-op 456 architect engineer # Technical design + implementation
-squad status                        # Check system health
-squad dashboard --port 8080         # Custom dashboard port
 ```
 
 ---
@@ -811,57 +617,6 @@ graph TB
 
 ---
 
-##  Why AI-Squad?
-
-### vs Manual Work
-
-| Task | Manual | AI-Squad | Savings |
-|------|--------|----------|---------|
-| **PRD Creation** | 4-8 hours | 2 minutes | 96%+ faster |
-| **Architecture Design** | 6-12 hours | 3 minutes | 97%+ faster |
-| **Feature Implementation** | 2-5 days | 10-30 minutes | 90%+ faster |
-| **Code Review** | 1-2 hours | 2 minutes | 98%+ faster |
-
-### vs Other Tools
-
-| Feature | AI-Squad | Other AI Tools |
-|---------|----------|----------------|
-| **Multi-agent system** | ✅ 5 specialized agents | ❌ Single generic AI |
-| **Production skills** | ✅ 18 battle-tested skills | ❌ Generic advice |
-| **GitHub integration** | ✅ Native issue/PR workflow | ⚠️ Manual copying |
-| **Template-driven** | ✅ Standardized outputs | ❌ Inconsistent |
-| **Orchestration** | ✅ Captain + Battle Plans | ❌ Manual coordination |
-| **Local execution** | ✅ Uses your GitHub Copilot | ⚠️ Requires separate service |
-| **Hosting** | ✅ None needed | ⚠️ Cloud service |
-
----
-
-## 📚 Documentation
-
-- **[Quick Start Guide](docs/quickstart.md)** - Get started in 5 minutes
-- **[Autonomous Mode Guide](docs/AUTONOMOUS.md)** - ⚡ NEW: Fully automatic development workflow
-- **[CLI Commands Guide](docs/CLI-GUIDE.md)** - All commands with examples
-- **[Configuration](docs/configuration.md)** - Customize `squad.yaml`
-- **[Agents Guide](AGENTS.md)** - How each agent works
-- **[Architecture Diagrams](docs/architecture/ARCHITECTURE-DIAGRAMS.md)** - Visual system design
-- **[Skills Reference](docs/skills.md)** - 18 production skills
-- **[GitHub Actions](docs/github-actions.md)** - Automation setup
-- **[Examples](examples/)** - Real-world usage examples
-- **[Contributing](CONTRIBUTING.md)** - Help improve AI-Squad
-
----
-
-## 🧪 Examples
-
-Check out the [`examples/`](examples/) directory:
-
-- **[basic-usage/](examples/basic-usage/)** - Simple single-agent usage
-- **[multi-agent-collab/](examples/multi-agent-collab/)** - PM + Architect collaboration
-- **[github-actions/](examples/github-actions/)** - Full CI/CD integration
-- **[custom-config/](examples/custom-config/)** - Advanced configuration
-
----
-
 ## 🔧 Troubleshooting
 
 ### Import Error: No module named 'github_copilot_sdk'
@@ -956,62 +711,36 @@ squad sitrep
 
 ---
 
-## 🤝 Contributing
+## 📚 Additional Resources
 
-We love contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-
-- How to set up development environment
-- Code style guidelines
-- How to add new agents
-- How to add new skills
-- Testing requirements
+- **[Agents Guide](AGENTS.md)** - Detailed information about each agent
+- **[Autonomous Mode Guide](docs/AUTONOMOUS.md)** - Squad Mission Mode workflows
+- **[Configuration Guide](docs/configuration.md)** - Customize `squad.yaml`
+- **[Examples](examples/)** - Real-world usage examples and patterns
+- **[Contributing](CONTRIBUTING.md)** - Help improve AI-Squad
 
 ---
 
-## 📜 License
+## 🔗 Links & Community
 
-MIT License - see [LICENSE](LICENSE) for details.
+- **GitHub:** https://github.com/jnPiyush/AI-Squad
+- **PyPI:** https://pypi.org/project/ai-squad/
+- **Issues:** https://github.com/jnPiyush/AI-Squad/issues
+- **Discussions:** https://github.com/jnPiyush/AI-Squad/discussions
 
----
-
-## 🙏 Acknowledgments
-
-Built on:
+**Built with:**
 - [GitHub Copilot SDK](https://github.com/github/copilot-sdk) - AI agent framework
 - [Click](https://click.palletsprojects.com/) - CLI framework
 - [Rich](https://rich.readthedocs.io/) - Terminal formatting
 
-Inspired by:
-- [AgentX](https://github.com/jnPiyush/AgentX) - Original multi-agent workflow framework
-- GitHub Copilot - Revolutionizing developer productivity
+**MIT License** - see [LICENSE](LICENSE)
 
 ---
 
-## 🔗 Links
-
-- **GitHub:** https://github.com/jnPiyush/AI-Squad
-- **PyPI:** https://pypi.org/project/ai-squad/
-- **Documentation:** https://github.com/jnPiyush/AI-Squad/tree/main/docs
-- **Issues:** https://github.com/jnPiyush/AI-Squad/issues
-- **Discussions:** https://github.com/jnPiyush/AI-Squad/discussions
-
----
-
-## ⭐ Star Us!
-
-If AI-Squad saves you time, give us a star on GitHub! ⭐
-
-It helps others discover the tool and motivates us to keep improving it.
-
----
-
-**AI-Squad** - Your AI Development Squad, One Command Away 🚀
-
-
-
-
-
-
+<p align="center">
+  <strong>⭐ If AI-Squad saves you time, star us on GitHub!</strong><br/>
+  <em>AI-Squad - Your AI Development Squad, One Command Away 🚀</em>
+</p>
 
 
 
