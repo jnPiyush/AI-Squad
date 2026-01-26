@@ -348,14 +348,15 @@ graph TB
         Arch --> Eng["🔧 Engineer: Implement + Tests"]
         UX --> Eng
         Eng --> Rev["🛡️ Reviewer: Review + PR"]
+        Rev --> Done["✅ Mission Complete!"]
     end
     
-    subgraph "6️⃣ Monitoring & Completion"
-        Rev --> Monitor["📊 Monitoring"]
-        Monitor --> Patrol["🔍 Patrol: Check stale work"]
-        Monitor --> Recon["🔍 Recon: Status reports"]
-        Monitor --> Scout["🔍 Scout: Pattern discovery"]
-        Monitor --> Done["✅ Mission Complete!"]
+    subgraph "🔍 Continuous Monitoring (Available Anytime)"
+        Monitor["📊 Monitoring Tools"]
+        Monitor --> Patrol["squad patrol<br/>Check stale work"]
+        Monitor --> Recon["squad status<br/>System status"]
+        Monitor --> Scout["Background<br/>Pattern discovery"]
+        Monitor --> Dashboard["squad dashboard<br/>Web UI"]
     end
     
     style Captain fill:#4A90E2,stroke:#2E5C8A,color:#fff
@@ -372,9 +373,9 @@ graph TB
 | **💼 Operations** | Task tracking | Tracks status per issue |
 | **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
 | **🤝 Collaboration** | Multi-agent coordinator | Sequential execution or iterative dialogue |
-| **🔍 Patrol** | Monitoring | Detects stale/stuck work |
-| **🔍 Recon** | Intelligence | System status reports |
-| **🔍 Scout** | Discovery | Pattern detection |
+| **🔍 Patrol** | Monitoring command | Detects stale/stuck work (`squad patrol`) |
+| **🔍 Status** | Monitoring command | System status reports (`squad status`) |
+| **📊 Dashboard** | Monitoring UI | Web-based visualization (`squad dashboard`) |
 
 ---
 
