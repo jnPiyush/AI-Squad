@@ -96,9 +96,15 @@ class CopilotProvider(AIProvider):
         
         try:
             from copilot import CopilotClient
-            # CopilotClient uses CLI auth; no token parameter is required.
-            self._sdk = CopilotClient()
-            logger.info("Copilot SDK initialized successfully")
+            # Find copilot CLI executable
+            cli_path = self._find_copilot_cli()
+            if not cli_path:
+                logger.debug("Copilot CLI not found")
+                return False
+            
+            # Initialize with explicit path
+            self._sdk = CopilotClient({"cli_path": cli_path})
+            logger.info("Copilot SDK initialized successfully with CLI at: %s", cli_path)
             return True
         except ImportError:
             logger.debug("Copilot SDK not installed")
@@ -106,6 +112,32 @@ class CopilotProvider(AIProvider):
         except (OSError, RuntimeError, ValueError) as e:
             logger.warning("Copilot SDK initialization failed: %s", e)
             return False
+    
+    @staticmethod
+    def _find_copilot_cli() -> Optional[str]:
+        """Find copilot CLI executable"""
+        # Check environment variable first
+        cli_path = os.getenv("COPILOT_CLI_PATH")
+        if cli_path and os.path.exists(cli_path):
+            return cli_path
+        
+        # Try common locations
+        common_paths = [
+            # VS Code global storage
+            os.path.expanduser(r"~\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli\copilot.bat"),
+            os.path.expanduser(r"~/AppData/Roaming/Code/User/globalStorage/github.copilot-chat/copilotCli/copilot.bat"),
+            # npm global
+            os.path.expanduser(r"~\AppData\Roaming\npm\copilot.cmd"),
+            os.path.expanduser(r"~\AppData\Roaming\npm\copilot"),
+            # PATH
+            shutil.which("copilot"),
+        ]
+        
+        for path in common_paths:
+            if path and os.path.exists(path):
+                return path
+        
+        return None
     
     def generate(
         self,
