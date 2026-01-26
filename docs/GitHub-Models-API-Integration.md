@@ -54,7 +54,38 @@ runtime:
     - github_models  # ← ADD THIS
     - openai
     - azure_openai
+  
+  # GitHub Models Enterprise settings (optional)
+  github_models:
+    endpoint: null  # Custom endpoint (default: https://models.inference.ai.azure.com)
+    org: null       # Enterprise organization name for premium access
 ```
+
+### Enterprise Configuration
+
+If you have a GitHub Enterprise license with premium Models API access:
+
+```yaml
+runtime:
+  github_models:
+    org: "your-enterprise-org"  # Your enterprise organization name
+    # endpoint: "custom-endpoint"  # Optional: custom endpoint if needed
+```
+
+Then set your enterprise token:
+```powershell
+# Use enterprise token with proper scopes
+$env:GITHUB_TOKEN = "your_enterprise_token"
+
+# Or authenticate gh CLI with enterprise account
+gh auth login
+```
+
+**Enterprise Benefits:**
+- Higher token limits (16K+ tokens)
+- Premium model access
+- Organization-level billing
+- Enterprise support
 
 ## Features
 

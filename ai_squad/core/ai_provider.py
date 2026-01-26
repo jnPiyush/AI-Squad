@@ -300,11 +300,14 @@ class CopilotProvider(AIProvider):
 
 
 class GitHubModelsProvider(AIProvider):
-    """GitHub Models API provider (Fallback #1)"""
+    """GitHub Models API provider (Fallback #1) with Enterprise support"""
     
-    def __init__(self, token: Optional[str] = None):
+    def __init__(self, token: Optional[str] = None, endpoint: Optional[str] = None, org: Optional[str] = None):
         self.token = token or os.getenv("GITHUB_TOKEN") or self._get_gh_token()
+        self.endpoint = endpoint or os.getenv("GITHUB_MODELS_ENDPOINT", "https://models.inference.ai.azure.com")
+        self.org = org or os.getenv("GITHUB_MODELS_ORG")  # Enterprise organization
         self._initialized = False
+        self._is_enterprise = False
     
     @staticmethod
     def _get_gh_token() -> Optional[str]:
@@ -338,19 +341,38 @@ class GitHubModelsProvider(AIProvider):
             logger.debug("GitHub Models: No GITHUB_TOKEN set")
             return False
             
-        # Verify token has access
+        # Verify token has access and check for enterprise/premium
         try:
             import requests
             response = requests.get(
                 "https://api.github.com/user",
                 headers={
-                    "Authorization": f"token {self.token}",
+                    "Authorization": f"Bearer {self.token}",
                     "Accept": "application/vnd.github.v3+json"
                 },
                 timeout=5
             )
             if response.status_code == 200:
-                logger.info("GitHub Models API available")
+                user_data = response.json()
+                
+                # Check for enterprise/premium features
+                if self.org:
+                    # Verify org membership for enterprise access
+                    org_response = requests.get(
+                        f"https://api.github.com/orgs/{self.org}/members/{user_data.get('login')}",
+                        headers={
+                            "Authorization": f"Bearer {self.token}",
+                            "Accept": "application/vnd.github.v3+json"
+                        },
+                        timeout=5
+                    )
+                    self._is_enterprise = org_response.status_code == 204
+                    if self._is_enterprise:
+                        logger.info(f"GitHub Models API available (Enterprise: {self.org})")
+                    else:
+                        logger.info("GitHub Models API available (Personal)")
+                else:
+                    logger.info("GitHub Models API available")
                 return True
             else:
                 logger.debug(f"GitHub Models: Token validation failed ({response.status_code})")
@@ -388,13 +410,18 @@ class GitHubModelsProvider(AIProvider):
         try:
             import requests
             
-            # GitHub Models API endpoint
-            url = "https://models.inference.ai.azure.com/chat/completions"
+            # GitHub Models API endpoint (supports enterprise)
+            url = f"{self.endpoint}/chat/completions"
             
             headers = {
                 "Authorization": f"Bearer {self.token}",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/json"
             }
+            
+            # Add enterprise organization context if available
+            if self.org and self._is_enterprise:
+                headers["X-GitHub-Organization"] = self.org
             
             data = {
                 "model": model_name,
@@ -623,6 +650,11 @@ class AIProviderChain:
         
         logger.debug(f"Initializing provider chain with order: {self._provider_order}")
         
+        # Get runtime config for provider-specific settings
+        runtime_cfg = {}
+        if isinstance(self.config, dict):
+            runtime_cfg = self.config.get("runtime", {}) or {}
+        
         # Priority order: Copilot -> GitHub Models -> OpenAI -> Azure OpenAI
         providers_config = {
             "copilot": CopilotProvider,
@@ -636,7 +668,15 @@ class AIProviderChain:
             if not provider_class:
                 continue
             try:
-                provider = provider_class()
+                # Pass enterprise config to GitHub Models provider
+                if name == "github_models":
+                    github_config = runtime_cfg.get("github_models", {}) or {}
+                    provider = provider_class(
+                        endpoint=github_config.get("endpoint"),
+                        org=github_config.get("org")
+                    )
+                else:
+                    provider = provider_class()
                 # Wrap is_available() check with timeout to prevent hangs
                 import signal
                 def timeout_handler(signum, frame):
