@@ -245,34 +245,47 @@ graph TB
 Every agent follows battle-tested production standards:
 
 ```mermaid
-mindmap
-  root((Skills))
-    Foundation
-      Testing
-      Security
-      Error Handling
-      Core Principles
-    Architecture
-      Performance
-      Scalability
-      Database
-      API Design
-    Development
-      Configuration
-      Documentation
-      Type Safety
-      Logging
-    Operations
-      Git Workflows
-      Code Review
-      Deployment
+graph TB
+    subgraph Foundation["🔰 Foundation Skills"]
+        F1[Testing Strategies]
+        F2[Security Practices]
+        F3[Error Handling]
+        F4[Core Principles<br/>SOLID, DRY, KISS]
+    end
+    
+    subgraph Architecture["🏗️ Architecture Skills"]
+        A1[Performance Optimization]
+        A2[Scalability Patterns]
+        A3[Database Design]
+        A4[API Design]
+    end
+    
+    subgraph Development["💻 Development Skills"]
+        D1[Configuration Management]
+        D2[Documentation Standards]
+        D3[Type Safety]
+        D4[Logging & Monitoring]
+    end
+    
+    subgraph Operations["⚙️ Operations Skills"]
+        O1[Version Control]
+        O2[Code Review & Audit]
+        O3[Remote Git Operations]
+        O4[Dependency Management]
+        O5[AI Agent Development]
+    end
+    
+    style Foundation fill:#e1f5ff,stroke:#0288d1
+    style Architecture fill:#fff3e0,stroke:#f57c00
+    style Development fill:#f3e5f5,stroke:#7b1fa2
+    style Operations fill:#e8f5e9,stroke:#388e3c
 ```
 
 **All agents have access to:**
-- **Foundation Skills**: Testing strategies, Security practices, Error handling, Core principles (SOLID, DRY, KISS)
-- **Architecture Skills**: Performance optimization, Scalability patterns, Database design, API design
-- **Development Skills**: Configuration management, Documentation standards, Type safety, Logging & monitoring
-- **Operations Skills**: Git workflows, Code review & audit, Deployment strategies
+- **Foundation (4 skills)**: Testing, Security, Error handling, Core principles
+- **Architecture (4 skills)**: Performance, Scalability, Database, API design
+- **Development (4 skills)**: Configuration, Documentation, Type safety, Logging
+- **Operations (6 skills)**: Version control, Code review, Remote git, Dependencies, AI agents
 
 📚 [See detailed skills documentation →](docs/skills.md)
 
