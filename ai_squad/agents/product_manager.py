@@ -111,12 +111,14 @@ class ProductManagerAgent(BaseAgent, ClarificationMixin):
             "codebase_context": self._format_context(context),
         }
         
-        # Try SDK first, then fallback to template
-        if self.sdk:
-            prd_content = self._generate_with_sdk(issue, context, template)
-        else:
-            # Fallback: Use template with placeholders
-            prd_content = self.templates.render(template, variables)
+        # Generate PRD using AI
+        if not self.sdk:
+            raise RuntimeError(
+                "AI provider required for PRD generation. No AI providers available.\n"
+                "Please configure at least one AI provider (see error message above)."
+            )
+        
+        prd_content = self._generate_with_sdk(issue, context, template)
         
         # Save PRD
         output_path = self.get_output_path(issue["number"])
@@ -155,17 +157,17 @@ Generate a complete, production-ready PRD following the template structure.
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError(
+                "AI generation failed. No AI providers available or all failed. "
+                "Please ensure at least one AI provider is configured:\n"
+                "  - GitHub Copilot: Run 'gh auth login'\n"
+                "  - GitHub Models: Set GITHUB_TOKEN\n"
+                "  - OpenAI: Set OPENAI_API_KEY\n"
+                "  - Azure OpenAI: Configure Azure credentials"
+            )
         
-        # Fallback to template if SDK call failed
-        logger.warning("SDK call returned no result, falling back to template")
-        return self.templates.render(template, {
-            "issue_number": issue["number"],
-            "title": issue["title"],
-            "description": issue["body"] or "",
-            "codebase_context": self._format_context(context),
-        })
+        return result
     
     def _format_context(self, context: Dict[str, Any]) -> str:
         """Format codebase context for prompt"""

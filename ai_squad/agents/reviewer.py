@@ -228,17 +228,10 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError("AI generation failed for code review. All AI providers failed or timed out.")
         
-        # Fallback to template
-        logger.warning("SDK call returned no result for review, falling back to template")
-        template = self.templates.get_template("review")
-        return self.templates.render(template, {
-            "pr_number": pr["number"],
-            "title": pr["title"],
-            "description": pr["body"] or "",
-        })
+        return result
     
     def _generate_review_fallback(self, context: Dict[str, Any]) -> str:
         """Generate basic review without SDK"""

@@ -125,15 +125,16 @@ class ArchitectAgent(BaseAgent, ClarificationMixin):
             "codebase_context": self._format_context(context),
         }
         
-        # Generate ADR, Spec, and Architecture
-        if self.sdk:
-            adr_content = self._generate_adr_with_sdk(issue, context, prd_content, adr_template)
-            spec_content = self._generate_spec_with_sdk(issue, context, prd_content, spec_template)
-            arch_content = self._generate_arch_with_sdk(issue, context, prd_content, arch_template)
-        else:
-            adr_content = self.templates.render(adr_template, variables)
-            spec_content = self.templates.render(spec_template, variables)
-            arch_content = self.templates.render(arch_template, variables)
+        # Generate ADR, Spec, and Architecture using AI
+        if not self.sdk:
+            raise RuntimeError(
+                "AI provider required for architecture design. No AI providers available.\n"
+                "Please configure at least one AI provider (see documentation)."
+            )
+        
+        adr_content = self._generate_adr_with_sdk(issue, context, prd_content, adr_template)
+        spec_content = self._generate_spec_with_sdk(issue, context, prd_content, spec_template)
+        arch_content = self._generate_arch_with_sdk(issue, context, prd_content, arch_template)
         
         # Save outputs
         adr_path = self.get_output_path(issue["number"])
@@ -176,16 +177,10 @@ Generate a comprehensive ADR that documents the architectural decision and its r
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError("AI generation failed for ADR. All AI providers failed or timed out.")
         
-        # Fallback to template
-        logger.warning("SDK call returned no result for ADR, falling back to template")
-        return self.templates.render(template, {
-            "issue_number": issue["number"],
-            "title": issue["title"],
-            "description": issue["body"] or "",
-        })
+        return result
     
     def _generate_spec_with_sdk(self, issue: Dict[str, Any], context: Dict[str, Any],
                                 prd_content: str, template: str) -> str:
@@ -213,16 +208,10 @@ Generate a complete technical specification with architecture diagrams, API cont
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError("AI generation failed for technical specification. All AI providers failed or timed out.")
         
-        # Fallback to template
-        logger.warning("SDK call returned no result for spec, falling back to template")
-        return self.templates.render(template, {
-            "issue_number": issue["number"],
-            "title": issue["title"],
-            "description": issue["body"] or "",
-        })
+        return result
     
     def _generate_arch_with_sdk(self, issue: Dict[str, Any], context: Dict[str, Any],
                                 prd_content: str, template: str) -> str:
@@ -256,16 +245,10 @@ Generate a complete architecture document including:
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError("AI generation failed for architecture document. All AI providers failed or timed out.")
         
-        # Fallback to template
-        logger.warning("SDK call returned no result for architecture doc, falling back to template")
-        return self.templates.render(template, {
-            "issue_number": issue["number"],
-            "title": issue["title"],
-            "description": issue["body"] or "",
-        })
+        return result
     
     def _format_context(self, context: Dict[str, Any]) -> str:
         """Format codebase context"""

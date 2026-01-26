@@ -153,14 +153,16 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
             "ui_context": self._format_ui_context(context),
         }
         
-        # Generate UX design
-        if self.sdk:
-            ux_content = self._generate_with_sdk(issue, context, prd_content, template)
-            # Also generate HTML prototype
-            html_prototype = self._generate_html_prototype(issue, context, prd_content)
-        else:
-            ux_content = self.templates.render(template, variables)
-            html_prototype = None
+        # Generate UX design using AI
+        if not self.sdk:
+            raise RuntimeError(
+                "AI provider required for UX design. No AI providers available.\n"
+                "Please configure at least one AI provider (see documentation)."
+            )
+        
+        ux_content = self._generate_with_sdk(issue, context, prd_content, template)
+        # Also generate HTML prototype
+        html_prototype = self._generate_html_prototype(issue, context, prd_content)
         
         # Save outputs
         output_path = self.get_output_path(issue["number"])
@@ -208,16 +210,10 @@ Use ASCII art or Mermaid diagrams for wireframes.
         # Use base class SDK helper
         result = self._call_sdk(system_prompt, user_prompt)
         
-        if result:
-            return result
+        if not result:
+            raise RuntimeError("AI generation failed for UX design. All AI providers failed or timed out.")
         
-        # Fallback to template
-        logger.warning("SDK call returned no result for UX design, falling back to template")
-        return self.templates.render(template, {
-            "issue_number": issue["number"],
-            "title": issue["title"],
-            "description": issue["body"] or "",
-        })
+        return result
     
     def _generate_html_prototype(self, issue: Dict[str, Any], context: Dict[str, Any],
                                   prd_content: str) -> str:

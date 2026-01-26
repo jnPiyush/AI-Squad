@@ -67,7 +67,7 @@ class AgentExecutor:
         if not self.has_gh_oauth:
             warnings.warn(
                 "GitHub authentication not configured. Run 'gh auth login' to authenticate. "
-                "Falling back to template-based generation (reduced AI capabilities).",
+                "AI providers will not be available without proper authentication.",
                 UserWarning
             )
         
@@ -97,13 +97,13 @@ class AgentExecutor:
             except (ConnectionError, TimeoutError, RuntimeError) as e:
                 warnings.warn(
                     f"Failed to initialize GitHub Copilot SDK: {e}. "
-                    "Run 'gh auth login' to authenticate. Falling back to template-based generation.",
+                    "Run 'gh auth login' to authenticate. AI generation may not be available.",
                     UserWarning
                 )
         else:
             warnings.warn(
-                "GitHub Copilot SDK not installed. Using template-based fallback "
-                "(reduced AI capabilities). Install with: pip install github-copilot-sdk",
+                "GitHub Copilot SDK not installed. "
+                "Install with: pip install github-copilot-sdk or configure another AI provider.",
                 UserWarning
             )
         

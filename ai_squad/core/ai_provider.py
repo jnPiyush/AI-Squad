@@ -829,7 +829,13 @@ class AIProviderChain:
                 logger.warning("Provider %s failed: %s", provider.provider_type.value, e)
                 continue
         
-        logger.warning("All AI providers failed. Falling back to templates.")
+        logger.error(
+            "All AI providers failed. Please configure at least one AI provider:\\n"
+            "  - GitHub Copilot: Run 'gh auth login'\\n"
+            "  - GitHub Models: Set GITHUB_TOKEN\\n"
+            "  - OpenAI: Set OPENAI_API_KEY\\n"
+            "  - Azure OpenAI: Configure Azure credentials"
+        )
         return None
 
 
