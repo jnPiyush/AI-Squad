@@ -117,23 +117,26 @@ sequenceDiagram
 When you run a **Battle Plan**, the system orchestrates multiple agents automatically:
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph "📜 Feature Battle Plan"
-        direction LR
         P1["Phase 1<br/>🎨 PM<br/>Create PRD"]
         P2["Phase 2<br/>🧩 Architect<br/>Design Solution"]
-        P3["Phase 3<br/>🔧 Engineer<br/>Implement"]
-        P4["Phase 4<br/>🛡️ Reviewer<br/>Review Code"]
+        P3["Phase 2 (Parallel)<br/>🎭 UX<br/>Design Interface"]
+        P4["Phase 3<br/>🔧 Engineer<br/>Implement"]
+        P5["Phase 4<br/>🛡️ Reviewer<br/>Review Code"]
         
         P1 -->|handoff| P2
-        P2 -->|handoff| P3
+        P1 -->|handoff| P3
+        P2 -->|handoff| P4
         P3 -->|handoff| P4
+        P4 -->|handoff| P5
     end
     
     style P1 fill:#ec4899,color:#fff
     style P2 fill:#f59e0b,color:#fff
-    style P3 fill:#10b981,color:#fff
-    style P4 fill:#3b82f6,color:#fff
+    style P3 fill:#8b5cf6,color:#fff
+    style P4 fill:#10b981,color:#fff
+    style P5 fill:#3b82f6,color:#fff
 ```
 
 ### Routing & Health
@@ -163,6 +166,61 @@ flowchart TD
 ---
 
 ## ⚡ Quick Start
+
+### Prerequisites
+
+Before installing AI-Squad, ensure you have:
+
+| Requirement | Version | Installation |
+|-------------|---------|-------------|
+| **Python** | 3.11+ | [python.org/downloads](https://www.python.org/downloads/) |
+| **pip** | Latest | Included with Python 3.11+ |
+| **Git** | 2.x+ | [git-scm.com](https://git-scm.com/) |
+| **GitHub CLI** | Latest | See below |
+| **GitHub Account** | Active | With repository access |
+| **GitHub Copilot** | Subscription | Individual ($10/mo) or Business ($39/mo) |
+
+#### Installing GitHub CLI
+
+**Windows:**
+```bash
+winget install GitHub.cli
+# or
+choco install gh
+```
+
+**macOS:**
+```bash
+brew install gh
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install gh
+```
+
+**Linux (Fedora/RHEL):**
+```bash
+sudo dnf install gh
+```
+
+For other platforms, see [GitHub CLI Installation Guide](https://github.com/cli/cli#installation).
+
+#### Verify Prerequisites
+
+```bash
+# Check Python version (should be 3.11+)
+python --version
+
+# Check pip
+pip --version
+
+# Check Git
+git --version
+
+# Check GitHub CLI
+gh --version
+```
 
 ### 1. Install AI-Squad
 
@@ -286,9 +344,10 @@ graph TB
         Convoy --> Collab["🤝 run_collaboration()"]
         Collab --> PM2["🎨 PM: Create PRD"]
         PM2 --> Arch["🧩 Architect: Design ADR"]
+        PM2 --> UX["🎭 UX: Design Prototype (Parallel)"]
         Arch --> Eng["🔧 Engineer: Implement + Tests"]
-        Eng --> UX["🎭 UX: Design Prototype"]
-        UX --> Rev["🛡️ Reviewer: Review + PR"]
+        UX --> Eng
+        Eng --> Rev["🛡️ Reviewer: Review + PR"]
     end
     
     subgraph "6️⃣ Monitoring & Completion"
@@ -408,6 +467,7 @@ squad joint-op 100 pm architect
 # Agents execute in dependency order without interaction
 squad joint-op 100 pm architect engineer --sequential
 # Flow: PM → Architect → Engineer (one-way execution)
+# Note: UX can run in parallel with Architect when using Battle Plans
 ```
 
 **Configuration:**
@@ -490,15 +550,14 @@ on:
 squad pm 123
 # ✅ Output: docs/prd/PRD-123.md
 
-# Step 2: Architect designs solution
+# Step 2 & 3: Architect designs solution + UX designs interface (can run in parallel)
 squad architect 123
 # ✅ Output: docs/adr/ADR-123.md + docs/specs/SPEC-123.md
 
-# Step 3: UX designs interface
 squad ux 123
-# ✅ Output: docs/ux/UX-123.md
+# ✅ Output: docs/ux/UX-123.md + docs/ux/prototypes/prototype-123.html
 
-# Step 4: Engineer implements
+# Step 4: Engineer implements (after both Architect and UX complete)
 squad engineer 123
 # ✅ Output: src/auth/*.py + tests/auth/*.py + PR created
 
@@ -719,27 +778,9 @@ graph TB
 │   ↓                                                      │
 │ AI-Squad CLI (Python)                                   │
 │   ├─ Loads squad.yaml                                   │
-┌─────────────────────────────────────────────────────────┐
-│ High Command                                             │
-│   ↓                                                      │
-│ squad captain 123                                        │
-│   ↓                                                      │
-│ AI-Squad CLI (Python)                                   │
-│   ├─ Loads squad.yaml                                   │
 │   ├─ Fetches issue from GitHub                          │
 │   ├─ Captain analyzes & creates operations              │
 │   └─ Routes to appropriate agents                       │
-│   ↓                                                      │
-│ Agent Execution                                         │
-│   ├─ Production skills loaded                           │
-│   ├─ Tools (GitHub, templates)                          │
-│   ├─ Identity dossier attached                          │
-│   └─ Output generated                                   │
-│   ↓                                                      │
-│ Output: docs/prd/PRD-123.md (with provenance)           │
-│   ↓                                                      │
-│ Git commit + push (if auto_commit: true)                │
-└─────────────────────────────────────────────────────────┘
 │   ↓                                                      │
 │ Agent Execution                                         │
 │   ├─ Production skills loaded                           │
