@@ -208,6 +208,7 @@ setup(
         "github-copilot-sdk>=0.1.16",
         "aiohttp>=3.9.0",
         "python-dotenv>=1.0.0",
+        "requests>=2.31.0",
     ],
     extras_require={
         "dev": [

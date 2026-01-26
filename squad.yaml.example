@@ -16,27 +16,27 @@ agents:
   # Product Manager
   pm:
     enabled: true
-    model: claude-sonnet-4.5  # Options: gpt-4, gpt-3.5-turbo
+    model: gpt-5.2  # Options: gpt-5.2, gpt-4o, gpt-4o-mini
   
   # Architect
   architect:
     enabled: true
-    model: claude-sonnet-4.5
+    model: gpt-5.2
   
   # Engineer
   engineer:
     enabled: true
-    model: claude-sonnet-4.5
+    model: gpt-5.2
   
   # UX Designer
   ux:
     enabled: true
-    model: claude-sonnet-4.5
+    model: gpt-5.2
   
   # Reviewer
   reviewer:
     enabled: true
-    model: claude-sonnet-4.5
+    model: gpt-5.2
 
 # Output directory configuration
 output:

@@ -3,9 +3,10 @@ AI Provider Abstraction
 
 Handles AI generation with fallback chain:
 1. GitHub Copilot SDK (Primary)
-2. OpenAI API (Fallback)
-3. Azure OpenAI (Fallback)
-4. Template-based (Last Resort)
+2. GitHub Models API (Fallback)
+3. OpenAI API (Fallback)
+4. Azure OpenAI (Fallback)
+5. Template-based (Last Resort)
 """
 import os
 import logging
@@ -13,6 +14,7 @@ import asyncio
 import shutil
 import subprocess
 import threading
+import json
 from typing import Dict, Any, Optional, List
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -24,6 +26,7 @@ logger = logging.getLogger(__name__)
 class AIProviderType(Enum):
     """Types of AI providers"""
     COPILOT = "copilot"
+    GITHUB_MODELS = "github_models"
     OPENAI = "openai"
     AZURE_OPENAI = "azure_openai"
     TEMPLATE = "template"
@@ -211,7 +214,7 @@ class CopilotProvider(AIProvider):
         except (AttributeError, ValueError, OSError) as e:
             logger.debug("Copilot model discovery failed: %s", e)
 
-        self._model_cache = os.getenv("COPILOT_MODEL", "claude-sonnet-4.5")
+        self._model_cache = os.getenv("COPILOT_MODEL", "gpt-5.2")
         return self._model_cache
 
     def _run_async(self, coroutine):
@@ -296,8 +299,136 @@ class CopilotProvider(AIProvider):
         return None
 
 
+class GitHubModelsProvider(AIProvider):
+    """GitHub Models API provider (Fallback #1)"""
+    
+    def __init__(self, token: Optional[str] = None):
+        self.token = token or os.getenv("GITHUB_TOKEN") or self._get_gh_token()
+        self._initialized = False
+    
+    @staticmethod
+    def _get_gh_token() -> Optional[str]:
+        """Try to get GitHub token from gh CLI"""
+        try:
+            result = subprocess.run(
+                ["gh", "auth", "token"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            pass
+        return None
+        
+    @property
+    def provider_type(self) -> AIProviderType:
+        return AIProviderType.GITHUB_MODELS
+    
+    def is_available(self) -> bool:
+        """Check if GitHub Models API is available"""
+        if self._initialized:
+            return self.token is not None
+            
+        self._initialized = True
+        
+        if not self.token:
+            logger.debug("GitHub Models: No GITHUB_TOKEN set")
+            return False
+            
+        # Verify token has access
+        try:
+            import requests
+            response = requests.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"token {self.token}",
+                    "Accept": "application/vnd.github.v3+json"
+                },
+                timeout=5
+            )
+            if response.status_code == 200:
+                logger.info("GitHub Models API available")
+                return True
+            else:
+                logger.debug(f"GitHub Models: Token validation failed ({response.status_code})")
+                return False
+        except Exception as e:
+            logger.debug(f"GitHub Models: Token validation error: {e}")
+            return False
+    
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: Optional[str] = None,
+        temperature: float = 0.5,
+        max_tokens: int = 4096
+    ) -> Optional[AIResponse]:
+        """Generate using GitHub Models API"""
+        if not self.is_available():
+            return None
+        
+        # Map common model names to GitHub Models equivalents
+        model_mapping = {
+            "gpt-5.2": "gpt-4o",  # Map gpt-5.2 to best available model
+            "gpt-4": "gpt-4o",
+            "gpt-3.5-turbo": "gpt-4o-mini",
+            "claude-sonnet-4.5": "gpt-4o",  # GitHub Models doesn't have Claude
+            "claude-3-5-sonnet-20241022": "gpt-4o"
+        }
+        
+        # Default to gpt-4o model
+        requested_model = model or "gpt-4o"
+        model_name = model_mapping.get(requested_model, requested_model)
+        
+        try:
+            import requests
+            
+            # GitHub Models API endpoint
+            url = "https://models.inference.ai.azure.com/chat/completions"
+            
+            headers = {
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": model_name,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": temperature,
+                "max_tokens": min(max_tokens, 4000)  # GitHub Models free tier limit
+            }
+            
+            response = requests.post(url, headers=headers, json=data, timeout=60)
+            
+            if response.status_code == 200:
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
+                usage = result.get("usage", {})
+                
+                return AIResponse(
+                    content=content,
+                    provider=AIProviderType.GITHUB_MODELS,
+                    model=model_name,
+                    usage=usage
+                )
+            else:
+                logger.warning(f"GitHub Models API error: {response.status_code} - {response.text[:200]}")
+                return None
+                
+        except Exception as e:
+            logger.warning(f"GitHub Models generation failed: {e}")
+            return None
+
+
 class OpenAIProvider(AIProvider):
-    """OpenAI API provider (Fallback)"""
+    """OpenAI API provider (Fallback #2)"""
     
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv("OPENAI_API_KEY")
@@ -343,7 +474,7 @@ class OpenAIProvider(AIProvider):
         
         try:
             response = self._client.chat.completions.create(
-                model=model or "claude-sonnet-4.5",
+                model=model or "gpt-5.2",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -451,9 +582,10 @@ class AIProviderChain:
     
     Priority order:
     1. GitHub Copilot SDK (requires Copilot CLI installed and authenticated)
-    2. OpenAI API (requires OPENAI_API_KEY)
-    3. Azure OpenAI (requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
-    4. Template-based fallback (always available)
+    2. GitHub Models API (requires GITHUB_TOKEN)
+    3. OpenAI API (requires OPENAI_API_KEY)
+    4. Azure OpenAI (requires AZURE_OPENAI_API_KEY + AZURE_OPENAI_ENDPOINT)
+    5. Template-based fallback (always available)
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -461,7 +593,7 @@ class AIProviderChain:
         self._providers: List[AIProvider] = []
         self._active_provider: Optional[AIProvider] = None
         self._initialized = False
-        self._provider_order: List[str] = ["copilot", "openai", "azure_openai"]
+        self._provider_order: List[str] = ["copilot", "github_models", "openai", "azure_openai"]
         self.configure(self.config)
 
     def configure(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -479,7 +611,7 @@ class AIProviderChain:
         else:
             provider = runtime_cfg.get("provider")
             if isinstance(provider, str):
-                self._provider_order = [provider, "openai", "azure_openai"]
+                self._provider_order = [provider, "github_models", "openai", "azure_openai"]
     
     def _initialize_providers(self):
         """Initialize provider chain in priority order (with timeout protection)"""
@@ -488,9 +620,12 @@ class AIProviderChain:
         
         self._initialized = True
         
-        # Priority order: Copilot -> OpenAI -> Azure OpenAI
+        logger.debug(f"Initializing provider chain with order: {self._provider_order}")
+        
+        # Priority order: Copilot -> GitHub Models -> OpenAI -> Azure OpenAI
         providers_config = {
             "copilot": CopilotProvider,
+            "github_models": GitHubModelsProvider,
             "openai": OpenAIProvider,
             "azure_openai": AzureOpenAIProvider,
         }
@@ -524,7 +659,7 @@ class AIProviderChain:
                 
                 if thread.is_alive():
                     # Timeout - provider check is hanging
-                    logger.debug("AI Provider %s check timed out (hanging)", name)
+                    logger.debug("Provider %s check timed out (hanging)", name)
                     continue
                 
                 if exception[0]:
@@ -583,6 +718,7 @@ class AIProviderChain:
         
         for provider in self._providers:
             try:
+                logger.debug("Trying provider: %s", provider.provider_type.value)
                 response = provider.generate(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
@@ -591,8 +727,10 @@ class AIProviderChain:
                     max_tokens=max_tokens
                 )
                 if response:
-                    logger.info("Generated using %s", provider.provider_type.value)
+                    logger.info("AI generation successful using %s", provider.provider_type.value)
                     return response
+                else:
+                    logger.debug("Provider %s returned None, trying next", provider.provider_type.value)
             except (RuntimeError, ValueError, OSError) as e:
                 logger.warning("Provider %s failed: %s", provider.provider_type.value, e)
                 continue

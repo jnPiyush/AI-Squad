@@ -169,7 +169,7 @@ class BaseAgent(ABC):
         Returns:
             Generated content or None if all providers failed
         """
-        model = model or self.config.get(f"agents.{self.agent_type}.model", "gpt-4")
+        model = model or self.config.get(f"agents.{self.agent_type}.model", "gpt-5.2")
         temperature = self.config.get(f"agents.{self.agent_type}.temperature", 0.5)
         
         response = self.ai_provider.generate(
