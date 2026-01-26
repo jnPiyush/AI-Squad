@@ -19,29 +19,13 @@
 
 ---
 
-## 🎯 What is AI-Squad?
+## ⚔️ AI-Squad: Military-Orchestrated AI Agents
 
-AI-Squad is a **command-line tool** (Beta) that brings five specialized AI agents to your project:
+AI-Squad is a **CLI tool** that brings **five specialized AI agents** orchestrated by a **Captain** using military-inspired workflows. Install once, use everywhere. No hosting required.
 
-| Agent | Role | What They Do |
-|-------|------|--------------|
-| 🎨 **Product Manager** | Requirements | Creates PRDs, breaks down epics into stories |
-| 🧩 **Architect** | Design | Designs solutions, writes ADRs and technical specs |
-| 🔧 **Engineer** | Implementation | Implements features with comprehensive tests |
-| 🎭 **UX Designer** | User Experience | Creates wireframes, HTML prototypes, accessibility guidelines |
-| 🛡️ **Reviewer** | Quality | Reviews code, security analysis, ensures quality |
+**Latest:** v0.6.0 with enhanced monitoring and operational tracking.
 
-**New in v0.6.0**: Complete military terminology alignment, enhanced monitoring, and improved operational tracking!
-
-**From v0.4.0**: Advanced orchestration (Captain, Battle Plans, Convoys), web dashboard, retry logic, rate limiting, persistent storage
-
-**Install once. Use everywhere. No hosting required.**
-
----
-
-## ⚔️ Squad Terminology
-
-AI-Squad uses military-inspired terminology to describe its orchestration system:
+### Squad Components
 
 ```mermaid
 graph TB
@@ -71,97 +55,19 @@ graph TB
     WI --> Convoy
 ```
 
-| Term | What It Means | Example |
-|------|---------------|--------|
-| **🎖️ Captain** | Coordinator that orchestrates agents | `squad captain 123` - analyzes issue and delegates |
-| **📜 Battle Plan** | Predefined workflow template | `feature` plan: PM → Architect + UX (parallel) → Engineer → Reviewer |
-| 💼 **Operation** | Single unit of work tracked in system | Issue #123 becomes operation `sq-abc12` |
-| **🚐 Convoy** | Parallel batch of related operations | 5 stories from an epic processed together |
-| **👋➡️ Handoff** | Transfer of work between agents | PM completes PRD, hands off to Architect |
-| **📡 Signal** | Message sent between agents | "PRD ready for review" notification |
-| **👉 Delegation** | Explicit assignment with audit trail | PM delegates API design to Architect |
-| **🕸️ Graph** | Tracks relationships between entities | Shows which agent owns which operation |
-| **🪪 Identity** | Provenance metadata embedded in outputs | Tracks who created what, when, and why |
-| **🔍 Scout** | Background worker for discovery tasks | Scans workspace for patterns |
-| **🧭 Router** | Policy enforcement and health monitoring | Routes requests to healthy agents |
-
----
-
-## 🔄 How It Works
-
-### The Flow
-
-```mermaid
-sequenceDiagram
-    participant Dev as ⭐ High Command
-    participant CLI as 🖥️ CLI
-    participant Captain as 🎖️ Captain
-    participant Router as 🧭 Router
-    participant Agent as 🤖 Agent
-    participant Output as 📄 Output
-    
-    Dev->>CLI: squad captain 123
-    CLI->>Captain: Coordinate issue #123
-    Captain->>Captain: Analyze & create operations
-    Captain->>Router: Route to best agent
-    Router->>Router: Check policy & health
-    Router->>Agent: Execute task
-    Agent->>Agent: Generate with skills
-    Agent->>Output: docs/prd/PRD-123.md
-    Agent->>CLI: ✅ Complete
-    CLI->>Dev: Success!
-```
-
-### Battle Plan Execution
-
-When you run a **Battle Plan**, the system orchestrates multiple agents automatically:
-
-```mermaid
-flowchart TB
-    subgraph "📜 Feature Battle Plan"
-        P1["Phase 1<br/>🎨 PM<br/>Create PRD"]
-        P2["Phase 2<br/>🧩 Architect<br/>Design Solution"]
-        P3["Phase 2 (Parallel)<br/>🎭 UX<br/>Design Interface"]
-        P4["Phase 3<br/>🔧 Engineer<br/>Implement"]
-        P5["Phase 4<br/>🛡️ Reviewer<br/>Review Code"]
-        
-        P1 -->|handoff| P2
-        P1 -->|handoff| P3
-        P2 -->|handoff| P4
-        P3 -->|handoff| P4
-        P4 -->|handoff| P5
-    end
-    
-    style P1 fill:#ec4899,color:#fff
-    style P2 fill:#f59e0b,color:#fff
-    style P3 fill:#8b5cf6,color:#fff
-    style P4 fill:#10b981,color:#fff
-    style P5 fill:#3b82f6,color:#fff
-```
-
-### Routing & Health
-
-The **Command Router** ensures reliable execution with policy enforcement and health monitoring:
-
-```mermaid
-flowchart TD
-    Req[🔄 Request] --> Policy{🧭 Policy Check}
-    Policy -->|Denied| Block[🚫 Blocked]
-    Policy -->|Allowed| Health{❤️ Health Check}
-    
-    Health --> Status{Status?}
-    Status -->|🟢 Healthy| Route[✅ Route to Agent]
-    Status -->|🟡 Throttled| Alt{Alternatives?}
-    Status -->|🔴 Circuit Open| CB[⚡ Circuit Breaker]
-    
-    Alt -->|Yes| Route
-    Alt -->|No| Fallback[⚠️ Fallback]
-    
-    style Route fill:#10b981,color:#fff
-    style Block fill:#ef4444,color:#fff
-    style CB fill:#ef4444,color:#fff
-    style Fallback fill:#f59e0b,color:#fff
-```
+| Component | Role | Description |
+|-----------|------|-------------|
+| **🎖️ Captain** | Meta-Coordinator | Analyzes issues, selects battle plans, orchestrates agents |
+| **📜 Battle Plan** | Workflow Template | Pre-defined sequences: `feature`, `bugfix`, `epic` |
+| **🎨 Product Manager** | Agent | Creates PRDs, breaks down epics, defines requirements |
+| **🧩 Architect** | Agent | Designs solutions, writes ADRs and technical specs |
+| **🔧 Engineer** | Agent | Implements features with tests (≥80% coverage) |
+| **🎭 UX Designer** | Agent | Wireframes, HTML prototypes, WCAG 2.1 AA compliance |
+| **🛡️ Reviewer** | Agent | Code review, security analysis, quality assurance |
+| **🚐 Convoy** | Parallel Executor | Processes multiple operations simultaneously |
+| **👋➡️ Handoff** | Work Transfer | Automatic context transfer between agents |
+| **📡 Signal** | Messaging | Inter-agent communication system |
+| **🧭 Router** | Health Monitor | Policy enforcement and circuit breaker logic |
 
 ---
 
@@ -169,145 +75,66 @@ flowchart TD
 
 ### Prerequisites
 
-Before installing AI-Squad, ensure you have:
+**Requirements:** Python 3.11+, Git, GitHub CLI, GitHub Account, GitHub Copilot subscription
 
-| Requirement | Version | Installation |
-|-------------|---------|-------------|
-| **Python** | 3.11+ | [python.org/downloads](https://www.python.org/downloads/) |
-| **pip** | Latest | Included with Python 3.11+ |
-| **Git** | 2.x+ | [git-scm.com](https://git-scm.com/) |
-| **GitHub CLI** | Latest | See below |
-| **GitHub Account** | Active | With repository access |
-| **GitHub Copilot** | Subscription | Individual ($10/mo) or Business ($39/mo) |
+**Install GitHub CLI:**
+- Windows: `winget install GitHub.cli`
+- macOS: `brew install gh`  
+- Linux: `sudo apt install gh` (Debian/Ubuntu) or [see installation guide](https://github.com/cli/cli#installation)
 
-#### Installing GitHub CLI
-
-**Windows:**
-```bash
-winget install GitHub.cli
-# or
-choco install gh
-```
-
-**macOS:**
-```bash
-brew install gh
-```
-
-**Linux (Debian/Ubuntu):**
-```bash
-sudo apt install gh
-```
-
-**Linux (Fedora/RHEL):**
-```bash
-sudo dnf install gh
-```
-
-For other platforms, see [GitHub CLI Installation Guide](https://github.com/cli/cli#installation).
-
-#### Verify Prerequisites
+### Installation & Setup
 
 ```bash
-# Check Python version (should be 3.11+)
-python --version
-
-# Check pip
-pip --version
-
-# Check Git
-git --version
-
-# Check GitHub CLI
-gh --version
-```
-
-### 1. Install AI-Squad
-
-```bash
+# 1. Install
 pip install ai-squad
-```
 
-### 2. Initialize in Your Project
-
-```bash
+# 2. Initialize project
 cd /path/to/your-project
 squad deploy
+
+# 3. Authenticate (if not already)
+gh auth login
 ```
 
-**Interactive Setup**: The init command will:
-- Create all necessary directories and files
-- Check your GitHub CLI authentication status
-- Guide you through OAuth setup with `gh auth login`
-- Show clear setup instructions if not authenticated
+**What `squad deploy` creates:**
+- `.github/agents/` (5 agent definitions), `.github/skills/` (18 production skills), `.github/templates/`
+- `squad.yaml` (configuration), `docs/` folders, `.squad/` (internal state)
 
-This creates:
-- ✅ `.github/agents/` - 5 agent definition files (pm, architect, engineer, ux, reviewer)
-- ✅ `.github/skills/` - 18 production skills
-- ✅ `.github/templates/` - 7 document templates
-- ✅ `.github/copilot-instructions.md` - GitHub Copilot integration instructions
-- ✅ `squad.yaml` - Configuration
-- ✅ `docs/` - Output directories (prd, adr, specs, ux, reviews)
-- ✅ `.squad/` - Internal state (graph, events, identity)
+### Usage
 
-### 3. Use Your Squad!
+**🎖️ Squad Mission Mode** (Full autonomous workflow):
 
-**🎖️ Squad Mission Mode (Recommended - Military-Themed Workflow):**
-
-> 💡 **New to Squad Mission Mode?** See the [Complete Autonomous Mode Guide](docs/AUTONOMOUS.md) for detailed workflows, examples, and best practices.
+> 💡 [Complete guide →](docs/AUTONOMOUS.md)
 
 ```bash
-# Provide mission brief and Squad DEPLOYS TO CAPTAIN:
-# 1. PM analyzes mission (validates as epic or feature)
-# 2. Creates Mission Brief in GitHub
-# 3. Breaks down into Mission Objectives
-# 4. 🎖️ DEPLOYS TO CAPTAIN for orchestration
-# 5. Captain selects Battle Plan (feature/epic workflow)
-# 6. Captain executes agents via collaboration: PM → Architect + UX (parallel) → Engineer → Reviewer
-# 7. Multi-agent team collaborates to complete mission!
+squad mission -p "Create a REST API for user management"
+# Creates GitHub issues, deploys to Captain, orchestrates all agents
 
-squad mission -p "Create a REST API for user management with authentication"
-
-# From a file
-squad mission -f mission-brief.txt
-
-# Interactive mode
-squad mission -i
-
-# Create mission brief only (manual Captain deployment)
-squad mission -p "Add payment integration" --plan-only
+squad mission -f brief.txt    # From file
+squad mission -i               # Interactive mode
+squad mission -p "..." --plan-only  # Create brief only, manual deployment
 ```
 
-**Individual Agent Commands:**
+**Individual Commands:**
 ```bash
-# Single agent commands (requires existing GitHub issue)
-squad pm 123           # Product Manager creates PRD
-squad architect 123    # Architect designs solution
-squad engineer 123     # Engineer implements feature
-squad ux 123           # UX Designer creates wireframes
-squad review 456       # Reviewer checks PR
+squad pm 123              # Product Manager: Create PRD
+squad architect 123       # Architect: Design solution (ADR + spec)
+squad engineer 123        # Engineer: Implement with tests
+squad ux 123              # UX Designer: Wireframes + prototype
+squad review 456          # Reviewer: Code review + security
 
-# Orchestration commands
-squad captain 123      # 🎖️ Captain coordinates everything
+squad captain 123         # Captain coordinates everything
 squad joint-op 100 pm architect  # Multi-agent collaboration
-squad patrol            # Auto-trigger on GitHub labels
-
-# Monitoring commands
-squad status           # View routing health
-squad ops             # List operations
-squad dashboard        # Launch web UI
+squad status              # View system health
+squad dashboard           # Launch web UI (http://127.0.0.1:5050)
 ```
 
-#### 💬 GitHub Copilot Chat Integration
-Your agents work naturally in Copilot Chat - just mention them by name:
-
+**GitHub Copilot Chat Integration:**
 ```
 "PM, create requirements for user authentication"
-"Architect, design a REST API for users"
+"Architect, design a REST API"
 "Engineer, implement JWT auth with tests"
 ```
-
-See `.github/copilot-instructions.md` and `.github/agents/` for agent definitions.
 
 ---
 
@@ -367,18 +194,7 @@ graph TB
     style Done fill:#28A745,stroke:#1E7E34,color:#fff
 ```
 
-### Key Components
-
-| Component | Role | Output |
-|-----------|------|--------|
-| **🎖️ Captain** | Meta-coordinator | Analyzes, plans, and orchestrates |
-| **📜 Battle Plan** | Workflow template | Defines agent sequence |
-| **💼 Operations** | Task tracking | Tracks status per issue |
-| **🚐 Convoy** | Parallel executor | Runs independent tasks simultaneously |
-| **🤝 Collaboration** | Multi-agent coordinator | Sequential execution or iterative dialogue |
-| **🔍 Patrol** | Monitoring command | Detects stale/stuck work (`squad patrol`) |
-| **🔍 Status** | Monitoring command | System status reports (`squad status`) |
-| **📊 Dashboard** | Monitoring UI | Web-based visualization (`squad dashboard`) |
+**Monitoring Tools** (available anytime): `squad patrol` | `squad status` | `squad dashboard`
 
 ---
 
