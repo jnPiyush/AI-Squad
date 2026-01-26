@@ -85,14 +85,10 @@ class CopilotProvider(AIProvider):
         
         self._initialized = True
         
-        # Quick check - don't block if CLI unavailable
-        try:
-            if not self._is_copilot_cli_available():
-                logger.debug("Copilot CLI not available or not authenticated")
-                return False
-        except Exception as e:
-            # Don't block on CLI check failures
-            logger.debug(f"Copilot CLI check failed: {e}")
+        # The Copilot SDK only needs GitHub authentication, not the copilot CLI
+        # Check if we have GitHub authentication
+        if not self._is_gh_authenticated():
+            logger.debug("GitHub not authenticated (required for Copilot SDK)")
             return False
         
         try:
@@ -133,6 +129,21 @@ class CopilotProvider(AIProvider):
             logger.warning("Copilot generation failed: %s", e)
             return None
 
+    @staticmethod
+    def _is_gh_authenticated() -> bool:
+        """Check if gh CLI is authenticated (required for SDK)"""
+        try:
+            auth = subprocess.run(
+                ["gh", "auth", "status"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            return auth.returncode == 0
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            return False
+
     def _is_copilot_cli_available(self) -> bool:
         """Check if Copilot CLI is available (fast, non-blocking check)"""
         # First, check if copilot command exists (fast check)
@@ -143,22 +154,12 @@ class CopilotProvider(AIProvider):
 
         # Only check authentication, skip version check to avoid hangs
         # If gh is authenticated, assume copilot can use it
-        return self._is_copilot_cli_authenticated()
+        return self._is_gh_authenticated()
 
     @staticmethod
     def _is_copilot_cli_authenticated() -> bool:
-        """Check if gh CLI is authenticated (required for both SDK and CLI)"""
-        try:
-            auth = subprocess.run(
-                ["gh", "auth", "status"],
-                capture_output=True,
-                text=True,
-                timeout=5,  # Reduced from 10 to avoid long hangs
-                check=False,
-            )
-            return auth.returncode == 0
-        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
-            return False
+        """Deprecated: use _is_gh_authenticated instead"""
+        return CopilotProvider._is_gh_authenticated()
 
     @staticmethod
     def _run_copilot_cli(copilot_path: str, args: List[str]) -> subprocess.CompletedProcess:

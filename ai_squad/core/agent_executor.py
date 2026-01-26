@@ -78,17 +78,17 @@ class AgentExecutor:
         try:
             # NOTE: The PyPI package 'github-copilot-sdk' provides the 'copilot' module
             # Import from 'copilot', NOT 'github_copilot_sdk'
-            from copilot import CopilotSDK as CopilotSDKRuntime
+            from copilot import CopilotClient
             sdk_available = True
         except ImportError:
-            CopilotSDKRuntime = None
+            CopilotClient = None
             sdk_available = False
 
-        if sdk_available and CopilotSDKRuntime:
+        if sdk_available and CopilotClient:
             try:
                 # Use OAuth authentication via gh CLI (no token parameter)
                 if self.has_gh_oauth:
-                    self.sdk = CopilotSDKRuntime()  # Uses gh CLI OAuth
+                    self.sdk = CopilotClient()  # Uses gh CLI OAuth
                     self._sdk_initialized = True
                 else:
                     # No valid auth available
