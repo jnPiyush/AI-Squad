@@ -157,7 +157,11 @@ class UXDesignerAgent(BaseAgent, ClarificationMixin):
         if not self.sdk:
             raise RuntimeError(
                 "AI provider required for UX design. No AI providers available.\n"
-                "Please configure at least one AI provider (see documentation)."
+                "Please configure at least one AI provider:\n"
+                "  - GitHub Copilot: Run 'gh auth login'\n"
+                "  - GitHub Models: Set GITHUB_TOKEN\n"
+                "  - OpenAI: Set OPENAI_API_KEY\n"
+                "  - Azure OpenAI: Configure Azure credentials"
             )
         
         ux_content = self._generate_with_sdk(issue, context, prd_content, template)

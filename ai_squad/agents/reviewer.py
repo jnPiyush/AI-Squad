@@ -162,11 +162,18 @@ class ReviewerAgent(BaseAgent, ClarificationMixin):
             "files": files,
         }
         
-        # Generate review
-        if self.sdk:
-            review_content = self._generate_review_with_sdk(review_context)
-        else:
-            review_content = self._generate_review_fallback(review_context)
+        # Generate review using AI
+        if not self.sdk:
+            raise RuntimeError(
+                "AI provider required for code review. No AI providers available.\n"
+                "Please configure at least one AI provider:\n"
+                "  - GitHub Copilot: Run 'gh auth login'\n"
+                "  - GitHub Models: Set GITHUB_TOKEN\n"
+                "  - OpenAI: Set OPENAI_API_KEY\n"
+                "  - Azure OpenAI: Configure Azure credentials"
+            )
+        
+        review_content = self._generate_review_with_sdk(review_context)
         
         # Save review
         output_path = self.get_output_path(pr_number)
@@ -232,19 +239,6 @@ End with a clear recommendation: APPROVE, REQUEST_CHANGES, or COMMENT.
             raise RuntimeError("AI generation failed for code review. All AI providers failed or timed out.")
         
         return result
-    
-    def _generate_review_fallback(self, context: Dict[str, Any]) -> str:
-        """Generate basic review without SDK"""
-        
-        pr = context["pr"]
-        template = self.templates.get_template("review")
-        
-        return self.templates.render(template, {
-            "pr_number": pr["number"],
-            "title": pr["title"],
-            "description": pr["body"] or "",
-            "files": self._format_files(context["files"]),
-        })
     
     def _format_files(self, files: list) -> str:
         """Format file list"""
