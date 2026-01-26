@@ -124,23 +124,23 @@ def _create_config(path: Path) -> None:
         "agents": {
             "pm": {
                 "enabled": True,
-                "model": "gpt-5.2",
+                "model": "gpt-5.2-codex",
             },
             "architect": {
                 "enabled": True,
-                "model": "gpt-5.2",
+                "model": "gpt-5.2-codex",
             },
             "engineer": {
                 "enabled": True,
-                "model": "gpt-5.2",
+                "model": "gpt-5.2-codex",
             },
             "ux": {
                 "enabled": True,
-                "model": "gpt-5.2",
+                "model": "gpt-5.2-codex",
             },
             "reviewer": {
                 "enabled": True,
-                "model": "gpt-5.2",
+                "model": "gpt-5.2-codex",
             },
         },
         "output": {

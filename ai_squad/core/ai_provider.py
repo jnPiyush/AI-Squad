@@ -214,7 +214,7 @@ class CopilotProvider(AIProvider):
         except (AttributeError, ValueError, OSError) as e:
             logger.debug("Copilot model discovery failed: %s", e)
 
-        self._model_cache = os.getenv("COPILOT_MODEL", "gpt-5.2")
+        self._model_cache = os.getenv("COPILOT_MODEL", "gpt-5.2-codex")
         return self._model_cache
 
     def _run_async(self, coroutine):
@@ -373,7 +373,8 @@ class GitHubModelsProvider(AIProvider):
         
         # Map common model names to GitHub Models equivalents
         model_mapping = {
-            "gpt-5.2": "gpt-4o",  # Map gpt-5.2 to best available model
+            "gpt-5.2-codex": "gpt-4o",  # Map gpt-5.2-codex to best available model
+            "gpt-5.2": "gpt-4o",
             "gpt-4": "gpt-4o",
             "gpt-3.5-turbo": "gpt-4o-mini",
             "claude-sonnet-4.5": "gpt-4o",  # GitHub Models doesn't have Claude
@@ -474,7 +475,7 @@ class OpenAIProvider(AIProvider):
         
         try:
             response = self._client.chat.completions.create(
-                model=model or "gpt-5.2",
+                model=model or "gpt-5.2-codex",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

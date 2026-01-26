@@ -16,11 +16,11 @@ class Config:
             "github_owner": None,
         },
         "agents": {
-            "pm": {"enabled": True, "model": "gpt-5.2"},
-            "architect": {"enabled": True, "model": "gpt-5.2"},
-            "engineer": {"enabled": True, "model": "gpt-5.2"},
-            "ux": {"enabled": True, "model": "gpt-5.2"},
-            "reviewer": {"enabled": True, "model": "gpt-5.2"},
+            "pm": {"enabled": True, "model": "gpt-5.2-codex"},
+            "architect": {"enabled": True, "model": "gpt-5.2-codex"},
+            "engineer": {"enabled": True, "model": "gpt-5.2-codex"},
+            "ux": {"enabled": True, "model": "gpt-5.2-codex"},
+            "reviewer": {"enabled": True, "model": "gpt-5.2-codex"},
         },
         "output": {
             "prd_dir": "docs/prd",

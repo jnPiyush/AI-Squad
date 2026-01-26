@@ -62,7 +62,8 @@ runtime:
 
 GitHub Models API uses different model names than other providers. AI-Squad automatically maps common model names:
 
-- `gpt-5.2` → `gpt-4o` (default)
+- `gpt-5.2-codex` → `gpt-4o` (default)
+- `gpt-5.2` → `gpt-4o`
 - `gpt-4` → `gpt-4o`
 - `gpt-3.5-turbo` → `gpt-4o-mini`  
 - `claude-sonnet-4.5` → `gpt-4o`

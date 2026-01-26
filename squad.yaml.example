@@ -16,27 +16,27 @@ agents:
   # Product Manager
   pm:
     enabled: true
-    model: gpt-5.2  # Options: gpt-5.2, gpt-4o, gpt-4o-mini
+    model: gpt-5.2-codex  # Options: gpt-5.2-codex, gpt-4o, gpt-4o-mini
   
   # Architect
   architect:
     enabled: true
-    model: gpt-5.2
+    model: gpt-5.2-codex
   
   # Engineer
   engineer:
     enabled: true
-    model: gpt-5.2
+    model: gpt-5.2-codex
   
   # UX Designer
   ux:
     enabled: true
-    model: gpt-5.2
+    model: gpt-5.2-codex
   
   # Reviewer
   reviewer:
     enabled: true
-    model: gpt-5.2
+    model: gpt-5.2-codex
 
 # Output directory configuration
 output:
