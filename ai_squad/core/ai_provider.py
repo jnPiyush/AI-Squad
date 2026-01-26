@@ -76,6 +76,7 @@ class CopilotProvider(AIProvider):
         self._sdk = None
         self._initialized = False
         self._model_cache: Optional[str] = None
+        self._cli_path: Optional[str] = None  # Store CLI path for reuse
         
     @property
     def provider_type(self) -> AIProviderType:
@@ -101,6 +102,9 @@ class CopilotProvider(AIProvider):
             if not cli_path:
                 logger.debug("Copilot CLI not found")
                 return False
+            
+            # Store CLI path for use in generation
+            self._cli_path = cli_path
             
             # Initialize with explicit path
             self._sdk = CopilotClient({"cli_path": cli_path})
@@ -161,7 +165,10 @@ class CopilotProvider(AIProvider):
                 )
             )
         except (RuntimeError, ValueError, OSError) as e:
-            logger.warning("Copilot generation failed: %s", e)
+            logger.warning("Copilot generation failed: %s", e, exc_info=True)
+            return None
+        except Exception as e:
+            logger.error("Unexpected Copilot generation error: %s", e, exc_info=True)
             return None
 
     @staticmethod
@@ -288,7 +295,12 @@ class CopilotProvider(AIProvider):
 
         _ = (temperature, max_tokens)
 
-        client = CopilotClient()
+        # Use stored CLI path from initialization
+        client_options = {}
+        if self._cli_path:
+            client_options["cli_path"] = self._cli_path
+            
+        client = CopilotClient(client_options)
         await client.start()
 
         model_name = self._select_model(model)
@@ -303,13 +315,19 @@ class CopilotProvider(AIProvider):
 
         def on_event(event):
             event_type = getattr(event.type, "value", event.type)
+            logger.debug("Copilot event: %s", event_type)
             if event_type == "assistant.message":
                 content = getattr(event.data, "content", None)
                 if content is None and isinstance(event.data, dict):
                     content = event.data.get("content")
                 if content:
                     last_message["content"] = content
+                    logger.debug("Got message content: %d chars", len(content))
             elif event_type == "session.idle":
+                logger.debug("Session idle - completing")
+                done.set()
+            elif event_type in ("error", "session.error"):
+                logger.error("Copilot session error: %s", event.data)
                 done.set()
 
         session.on(on_event)
@@ -321,6 +339,7 @@ class CopilotProvider(AIProvider):
         await client.stop()
 
         if last_message["content"]:
+            logger.debug("Copilot response received: %d chars", len(last_message["content"]))
             return AIResponse(
                 content=last_message["content"],
                 provider=AIProviderType.COPILOT,
@@ -328,6 +347,7 @@ class CopilotProvider(AIProvider):
                 usage=None
             )
 
+        logger.warning("Copilot returned no content")
         return None
 
 
