@@ -79,13 +79,20 @@ class CopilotProvider(AIProvider):
         return AIProviderType.COPILOT
     
     def is_available(self) -> bool:
+        """Check if Copilot provider is available (non-blocking)"""
         if self._initialized:
             return self._sdk is not None
         
         self._initialized = True
         
-        if not self._is_copilot_cli_available():
-            logger.debug("Copilot CLI not available or not authenticated")
+        # Quick check - don't block if CLI unavailable
+        try:
+            if not self._is_copilot_cli_available():
+                logger.debug("Copilot CLI not available or not authenticated")
+                return False
+        except Exception as e:
+            # Don't block on CLI check failures
+            logger.debug(f"Copilot CLI check failed: {e}")
             return False
         
         try:
@@ -127,27 +134,31 @@ class CopilotProvider(AIProvider):
             return None
 
     def _is_copilot_cli_available(self) -> bool:
+        """Check if Copilot CLI is available (optional, fallback to SDK)"""
         copilot_path = shutil.which("copilot")
         if not copilot_path:
             return False
 
         try:
+            # Quick check with short timeout to avoid hanging
             version = self._run_copilot_cli(copilot_path, ["--version"])
             if version.returncode != 0:
                 return False
         except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            # CLI not available or timed out - this is OK, SDK will handle it
             return False
 
         return self._is_copilot_cli_authenticated()
 
     @staticmethod
     def _is_copilot_cli_authenticated() -> bool:
+        """Check if gh CLI is authenticated (required for both SDK and CLI)"""
         try:
             auth = subprocess.run(
                 ["gh", "auth", "status"],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=5,  # Reduced from 10 to avoid long hangs
                 check=False,
             )
             return auth.returncode == 0
@@ -156,12 +167,13 @@ class CopilotProvider(AIProvider):
 
     @staticmethod
     def _run_copilot_cli(copilot_path: str, args: List[str]) -> subprocess.CompletedProcess:
+        """Run Copilot CLI command with timeout protection"""
         if copilot_path.lower().endswith(".ps1"):
             return subprocess.run(
                 ["pwsh", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", copilot_path, *args],
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=5,  # Reduced from 10 to fail fast
                 check=False,
             )
 
@@ -169,7 +181,7 @@ class CopilotProvider(AIProvider):
             [copilot_path, *args],
             capture_output=True,
             text=True,
-            timeout=10,
+            timeout=5,  # Reduced from 10 to fail fast
             check=False,
         )
 
