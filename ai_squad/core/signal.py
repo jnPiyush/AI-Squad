@@ -158,9 +158,11 @@ class SignalManager:
     """
     Manages agent Signales and message routing.
     
-    Persists messages to .squad/Signal/ directory.
+    Uses SQLite for persistent storage via PersistentStorage.
+    Falls back to JSON for migration of legacy data.
     """
     
+    # Legacy JSON paths (for migration only)
     Signal_DIR = "Signal"
     MESSAGES_FILE = "messages.json"
     SignalES_FILE = "Signales.json"
@@ -170,91 +172,107 @@ class SignalManager:
         workspace_root: Optional[Path] = None,
         config: Optional[Dict[str, Any]] = None,
         base_dir: Optional[str] = None,
+        storage: Optional["PersistentStorage"] = None,
     ):
         """
         Initialize Signal manager.
         
         Args:
             workspace_root: Root directory of the workspace (defaults to cwd)
+            config: Optional configuration dict
+            base_dir: Optional base directory override
+            storage: Optional PersistentStorage instance (for testing/DI)
         """
         self.workspace_root = workspace_root or Path.cwd()
         runtime_dir = resolve_runtime_dir(self.workspace_root, config=config, base_dir=base_dir)
         self.Signal_dir = runtime_dir / self.Signal_DIR
         
-        self._messages: Dict[str, Message] = {}
-        self._Signales: Dict[str, Signal] = {}
+        # Use SQLite storage
+        if storage:
+            self._storage = storage
+        else:
+            from ai_squad.core.storage import get_storage
+            db_path = str(runtime_dir / "history.db")
+            self._storage = get_storage(db_path)
+        
+        # In-memory cache for handlers only
         self._handlers: Dict[str, List[MessageHandler]] = {}
         
-        self._load_state()
+        # Migrate legacy JSON data if present
+        self._migrate_legacy_data()
     
-    def _ensure_Signal_dir(self) -> None:
-        """Create Signal directory if it doesn't exist"""
-        self.Signal_dir.mkdir(parents=True, exist_ok=True)
-    
-    def _load_state(self) -> None:
-        """Load Signal state from disk"""
-        # Load messages
+    def _migrate_legacy_data(self) -> None:
+        """Migrate legacy JSON data to SQLite (one-time operation)"""
         messages_file = self.Signal_dir / self.MESSAGES_FILE
-        if messages_file.exists():
-            try:
+        signales_file = self.Signal_dir / self.SignalES_FILE
+        
+        if not messages_file.exists() and not signales_file.exists():
+            return  # No legacy data
+        
+        migrated_marker = self.Signal_dir / ".migrated_to_sqlite"
+        if migrated_marker.exists():
+            return  # Already migrated
+        
+        logger.info("Migrating legacy JSON data to SQLite...")
+        
+        try:
+            # Migrate messages
+            if messages_file.exists():
                 data = json.loads(messages_file.read_text(encoding="utf-8"))
-                self._messages = {
-                    msg_id: Message.from_dict(msg_data)
-                    for msg_id, msg_data in data.items()
-                }
-                logger.info("Loaded %d messages", len(self._messages))
-            except (json.JSONDecodeError, KeyError) as e:
-                logger.error("Failed to load messages: %s", e)
-                self._messages = {}
-        
-        # Load Signales
-        Signales_file = self.Signal_dir / self.SignalES_FILE
-        if Signales_file.exists():
-            try:
-                data = json.loads(Signales_file.read_text(encoding="utf-8"))
-                self._Signales = {
-                    owner: Signal.from_dict(mb_data)
-                    for owner, mb_data in data.items()
-                }
-                logger.info("Loaded %d Signales", len(self._Signales))
-            except (json.JSONDecodeError, KeyError) as e:
-                logger.error("Failed to load Signales: %s", e)
-                self._Signales = {}
-    
-    def _save_state(self) -> None:
-        """Save Signal state to disk"""
-        self._ensure_Signal_dir()
-        
-        # Save messages
-        messages_file = self.Signal_dir / self.MESSAGES_FILE
-        messages_data = {
-            msg_id: msg.to_dict()
-            for msg_id, msg in self._messages.items()
-        }
-        messages_file.write_text(
-            json.dumps(messages_data, indent=2),
-            encoding="utf-8"
-        )
-        
-        # Save Signales
-        Signales_file = self.Signal_dir / self.SignalES_FILE
-        Signales_data = {
-            owner: mb.to_dict()
-            for owner, mb in self._Signales.items()
-        }
-        Signales_file.write_text(
-            json.dumps(Signales_data, indent=2),
-            encoding="utf-8"
-        )
+                for msg_id, msg_data in data.items():
+                    # Convert to new format
+                    self._storage.save_signal_message(msg_data)
+                logger.info("Migrated %d messages", len(data))
+            
+            # Migrate signals (inbox/outbox)
+            if signales_file.exists():
+                data = json.loads(signales_file.read_text(encoding="utf-8"))
+                for owner, signal_data in data.items():
+                    for msg_id in signal_data.get("inbox", []):
+                        self._storage.add_to_signal_box(owner, msg_id, "inbox")
+                    for msg_id in signal_data.get("outbox", []):
+                        self._storage.add_to_signal_box(owner, msg_id, "outbox")
+                    for msg_id in signal_data.get("archived", []):
+                        self._storage.add_to_signal_box(owner, msg_id, "archived")
+                logger.info("Migrated %d signal boxes", len(data))
+            
+            # Mark as migrated
+            self.Signal_dir.mkdir(parents=True, exist_ok=True)
+            migrated_marker.write_text("Migrated on " + datetime.now().isoformat())
+            
+            # Optionally backup and remove old files
+            if messages_file.exists():
+                messages_file.rename(messages_file.with_suffix(".json.bak"))
+            if signales_file.exists():
+                signales_file.rename(signales_file.with_suffix(".json.bak"))
+            
+            logger.info("Legacy data migration complete")
+            
+        except (json.JSONDecodeError, KeyError, OSError) as e:
+            logger.error("Migration failed: %s", e)
     
     def _get_or_create_Signal(self, owner: str) -> Signal:
-        """Get or create a Signal for an owner"""
-        if owner not in self._Signales:
-            self._Signales[owner] = Signal(owner=owner)
-        return self._Signales[owner]
+        """Get or create a Signal for an owner (returns in-memory representation)"""
+        # Build Signal from database
+        inbox_msgs = self._storage.get_signal_box(owner, "inbox")
+        outbox_msgs = self._storage.get_signal_box(owner, "outbox")
+        archived_msgs = self._storage.get_signal_box(owner, "archived")
+        
+        return Signal(
+            owner=owner,
+            inbox=[m["id"] for m in inbox_msgs],
+            outbox=[m["id"] for m in outbox_msgs],
+            archived=[m["id"] for m in archived_msgs]
+        )
 
     def get_or_create_signal(self, owner: str) -> Signal:
-        """Public wrapper for creating or retrieving a Signal."""
+        """Public wrapper for creating or retrieving a Signal.
+        
+        This also registers the owner as a known agent for broadcast purposes.
+        """
+        # Register the owner in the database by creating a placeholder entry
+        # This ensures get_signal_owners() returns this owner for broadcasts
+        self._storage.register_signal_owner(owner)
         return self._get_or_create_Signal(owner)
     
     # Message Operations
@@ -306,6 +324,8 @@ class SignalManager:
                 datetime.now() + timedelta(minutes=ttl_minutes)
             ).isoformat()
         
+        effective_thread_id = thread_id or message_id
+        
         message = Message(
             id=message_id,
             sender=sender,
@@ -315,7 +335,7 @@ class SignalManager:
             priority=priority,
             work_item_id=work_item_id,
             convoy_id=convoy_id,
-            thread_id=thread_id or message_id,  # Use message ID as thread if not specified
+            thread_id=effective_thread_id,
             reply_to=reply_to,
             requires_ack=requires_ack,
             expires_at=expires_at,
@@ -323,27 +343,30 @@ class SignalManager:
             attachments=attachments or []
         )
         
-        # Store message
-        self._messages[message_id] = message
-
-        sender_signal = self._get_or_create_Signal(sender)
-        sender_signal.outbox.append(message_id)
+        # Store message in SQLite
+        self._storage.save_signal_message(message.to_dict())
+        
+        # Add to sender's outbox
+        self._storage.add_to_signal_box(sender, message_id, "outbox")
         
         # Route message
         if recipient == "broadcast":
-            # Broadcast to all agents
-            for owner in self._Signales:
+            # Broadcast to all known agents
+            for owner in self._storage.get_signal_owners():
                 if owner != sender:
-                    signal = self._Signales[owner]
-                    signal.inbox.append(message_id)
+                    self._storage.add_to_signal_box(owner, message_id, "inbox")
+            # Mark as delivered
+            self._storage.update_signal_message_status(
+                message_id, MessageStatus.DELIVERED.value, "delivered_at"
+            )
             message.mark_delivered()
         else:
             # Direct message
-            recipient_Signal = self._get_or_create_Signal(recipient)
-            recipient_Signal.inbox.append(message_id)
+            self._storage.add_to_signal_box(recipient, message_id, "inbox")
+            self._storage.update_signal_message_status(
+                message_id, MessageStatus.DELIVERED.value, "delivered_at"
+            )
             message.mark_delivered()
-        
-        self._save_state()
         
         # Trigger handlers
         self._trigger_handlers(recipient, message)
@@ -357,7 +380,10 @@ class SignalManager:
     
     def get_message(self, message_id: str) -> Optional[Message]:
         """Get a message by ID"""
-        return self._messages.get(message_id)
+        data = self._storage.get_signal_message(message_id)
+        if not data:
+            return None
+        return Message.from_dict(data)
     
     def get_inbox(
         self,
@@ -376,89 +402,56 @@ class SignalManager:
         Returns:
             List of messages
         """
-        signal = self._get_or_create_Signal(owner)
-        messages = []
+        priority_val = priority.value if priority else None
+        messages_data = self._storage.get_signal_box(
+            owner, "inbox", unread_only=unread_only, priority=priority_val
+        )
         
-        for msg_id in signal.inbox:
-            msg = self._messages.get(msg_id)
-            if not msg:
-                continue
-            
+        messages = []
+        for data in messages_data:
+            msg = Message.from_dict(data)
             # Check expiry
             if msg.is_expired():
-                msg.status = MessageStatus.EXPIRED
+                self._storage.update_signal_message_status(
+                    msg.id, MessageStatus.EXPIRED.value
+                )
                 continue
-            
-            # Apply filters
-            if unread_only and msg.status not in (
-                MessageStatus.PENDING, MessageStatus.DELIVERED
-            ):
-                continue
-            
-            if priority and msg.priority != priority:
-                continue
-            
             messages.append(msg)
-        
-        # Sort by priority (urgent first) then by created_at
-        priority_order = {
-            MessagePriority.URGENT: 0,
-            MessagePriority.HIGH: 1,
-            MessagePriority.NORMAL: 2,
-            MessagePriority.LOW: 3
-        }
-        
-        messages.sort(
-            key=lambda m: (priority_order[m.priority], m.created_at)
-        )
         
         return messages
     
     def get_outbox(self, owner: str) -> List[Message]:
         """Get messages sent by an agent"""
-        signal = self._get_or_create_Signal(owner)
-        return [
-            self._messages[msg_id]
-            for msg_id in signal.outbox
-            if msg_id in self._messages
-        ]
+        messages_data = self._storage.get_signal_box(owner, "outbox")
+        return [Message.from_dict(data) for data in messages_data]
     
     def get_thread(self, thread_id: str) -> List[Message]:
         """Get all messages in a thread"""
-        messages = [
-            msg for msg in self._messages.values()
-            if msg.thread_id == thread_id
-        ]
-        return sorted(messages, key=lambda m: m.created_at)
+        messages_data = self._storage.get_signal_thread(thread_id)
+        return [Message.from_dict(data) for data in messages_data]
     
     def mark_read(self, message_id: str, reader: str) -> bool:
         """Mark a message as read"""
-        message = self.get_message(message_id)
-        if not message:
+        # Verify reader has access (message in their inbox)
+        inbox = self._storage.get_signal_box(reader, "inbox")
+        if not any(m["id"] == message_id for m in inbox):
             return False
         
-        # Verify reader has access
-        signal = self._get_or_create_Signal(reader)
-        if message_id not in signal.inbox:
-            return False
-        
-        message.mark_read()
-        self._save_state()
+        self._storage.update_signal_message_status(
+            message_id, MessageStatus.READ.value, "read_at"
+        )
         return True
     
     def acknowledge(self, message_id: str, acknowledger: str) -> bool:
         """Acknowledge a message"""
-        message = self.get_message(message_id)
-        if not message:
-            return False
-        
         # Verify acknowledger has access
-        signal = self._get_or_create_Signal(acknowledger)
-        if message_id not in signal.inbox:
+        inbox = self._storage.get_signal_box(acknowledger, "inbox")
+        if not any(m["id"] == message_id for m in inbox):
             return False
         
-        message.mark_acknowledged()
-        self._save_state()
+        self._storage.update_signal_message_status(
+            message_id, MessageStatus.ACKNOWLEDGED.value, "acknowledged_at"
+        )
         
         logger.info(
             "Message acknowledged: %s by %s",
@@ -501,34 +494,12 @@ class SignalManager:
         )
     
     def archive(self, owner: str, message_id: str) -> bool:
-        """Archive a message"""
-        signal = self._get_or_create_Signal(owner)
-        
-        if message_id in signal.inbox:
-            signal.inbox.remove(message_id)
-            signal.archived.append(message_id)
-            self._save_state()
-            return True
-        
-        return False
+        """Archive a message (move from inbox to archived)"""
+        return self._storage.move_signal_box(owner, message_id, "inbox", "archived")
     
     def delete_message(self, message_id: str) -> bool:
         """Delete a message permanently"""
-        if message_id not in self._messages:
-            return False
-        
-        # Remove from all Signales
-        for signal in self._Signales.values():
-            if message_id in signal.inbox:
-                signal.inbox.remove(message_id)
-            if message_id in signal.outbox:
-                signal.outbox.remove(message_id)
-            if message_id in signal.archived:
-                signal.archived.remove(message_id)
-        
-        del self._messages[message_id]
-        self._save_state()
-        return True
+        return self._storage.delete_signal_message(message_id)
     
     # Handler Registration
     
@@ -598,44 +569,42 @@ class SignalManager:
         return len(self.get_inbox(owner, unread_only=True))
     
     def cleanup_expired(self) -> int:
-        """Clean up expired messages"""
+        """Clean up expired messages by marking them as expired in SQLite"""
+        # This is now handled automatically during get_inbox queries
+        # But we can do a batch cleanup here for efficiency
         expired_count = 0
         
-        for msg in list(self._messages.values()):
-            if msg.is_expired():
-                msg.status = MessageStatus.EXPIRED
-                expired_count += 1
+        for owner in self._storage.get_signal_owners():
+            inbox_msgs = self._storage.get_signal_box(owner, "inbox")
+            for data in inbox_msgs:
+                msg = Message.from_dict(data)
+                if msg.is_expired() and msg.status != MessageStatus.EXPIRED:
+                    self._storage.update_signal_message_status(
+                        msg.id, MessageStatus.EXPIRED.value
+                    )
+                    expired_count += 1
         
         if expired_count > 0:
-            self._save_state()
             logger.info("Marked %d messages as expired", expired_count)
         
         return expired_count
     
     def get_stats(self) -> Dict[str, Any]:
-        """Get Signal statistics"""
-        total_messages = len(self._messages)
+        """Get Signal statistics from SQLite"""
+        stats = self._storage.get_signal_stats()
         
-        status_counts = {}
-        for status in MessageStatus:
-            status_counts[status.value] = len([
-                m for m in self._messages.values()
-                if m.status == status
-            ])
-        
-        Signal_stats = {}
-        for owner, signal in self._Signales.items():
-            Signal_stats[owner] = {
-                "inbox": len(signal.inbox),
-                "outbox": len(signal.outbox),
-                "archived": len(signal.archived),
+        # Add unread counts
+        by_signal = {}
+        for owner, box_counts in stats.get("by_owner", {}).items():
+            by_signal[owner] = {
+                **box_counts,
                 "unread": self.get_unread_count(owner)
             }
         
         return {
-            "total_messages": total_messages,
-            "by_status": status_counts,
-            "by_signal": Signal_stats
+            "total_messages": stats.get("total_messages", 0),
+            "by_status": stats.get("by_status", {}),
+            "by_signal": by_signal
         }
 
 

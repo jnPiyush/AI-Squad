@@ -190,21 +190,26 @@ squad review <pr-number>      # Reviewer: Review PR
 
 ### Agent Skills
 
-All agents have access to these skills from `ai_squad/skills/`:
-- Core principles (SOLID, DRY, KISS)
-- Testing strategies
-- Security best practices
-- Performance optimization
-- Documentation standards
-- Version control best practices
+All agents have access to 25 production skills organized in 4 categories under `.github/skills/`:
 
-### Agent-Specific Skills (from `ai_squad/skills/`)
+| Category | Skills Count | Examples |
+|----------|--------------|----------|
+| **Architecture** | 7 | `core-principles`, `api-design`, `database`, `performance`, `scalability`, `security`, `error-handling`, `code-organization` |
+| **Development** | 13 | `testing`, `python`, `csharp`, `react`, `blazor`, `postgresql`, `sql-server`, `frontend-ui`, `type-safety`, `configuration`, `logging-monitoring` |
+| **Operations** | 3 | `security`, `version-control`, `remote-git-operations` |
+| **AI Systems** | 1 | `ai-agent-development` |
 
-- **PM**: `core-principles`, `documentation`
-- **Architect**: `api-design`, `database`, `scalability`, `security`
-- **Engineer**: `testing`, `error-handling`, `code-organization`, `type-safety`
-- **UX**: `documentation`, `core-principles`
-- **Reviewer**: `code-review-and-audit`, `security`, `performance`, `testing`
+📖 See **[Skills.md](../Skills.md)** for full index with task-based routing.
+
+### Agent-Specific Skills
+
+| Agent | Primary Skills |
+|-------|---------------|
+| **PM** | `core-principles`, `documentation` |
+| **Architect** | `api-design`, `database`, `scalability`, `security` |
+| **Engineer** | `testing`, `error-handling`, `code-organization`, `type-safety`, `python`, `csharp` |
+| **UX** | `documentation`, `frontend-ui`, `react`, `blazor` |
+| **Reviewer** | `code-review-and-audit`, `security`, `performance`, `testing` |
 
 ---
 

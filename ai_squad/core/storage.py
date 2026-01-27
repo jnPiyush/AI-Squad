@@ -92,6 +92,53 @@ class PersistentStorage:
                 )
             """)
             
+            # Signal messages table (for SignalManager)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS signal_messages (
+                    id TEXT PRIMARY KEY,
+                    sender TEXT NOT NULL,
+                    recipient TEXT NOT NULL,
+                    subject TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    priority TEXT NOT NULL DEFAULT 'normal',
+                    status TEXT NOT NULL DEFAULT 'pending',
+                    work_item_id TEXT,
+                    convoy_id TEXT,
+                    thread_id TEXT,
+                    metadata TEXT,
+                    attachments TEXT,
+                    created_at TEXT NOT NULL,
+                    delivered_at TEXT,
+                    read_at TEXT,
+                    acknowledged_at TEXT,
+                    expires_at TEXT,
+                    reply_to TEXT,
+                    requires_ack INTEGER DEFAULT 0,
+                    FOREIGN KEY (reply_to) REFERENCES signal_messages(id)
+                )
+            """)
+            
+            # Agent signals (inbox/outbox tracking)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS agent_signals (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    owner TEXT NOT NULL,
+                    message_id TEXT NOT NULL,
+                    box_type TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    UNIQUE(owner, message_id, box_type),
+                    FOREIGN KEY (message_id) REFERENCES signal_messages(id)
+                )
+            """)
+            
+            # Registered signal owners (for broadcast support)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS signal_owners (
+                    owner TEXT PRIMARY KEY,
+                    registered_at TEXT NOT NULL
+                )
+            """)
+            
             # Create indexes
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_messages_issue 
@@ -106,6 +153,31 @@ class PersistentStorage:
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_transitions_issue 
                 ON status_transitions(issue_number)
+            """)
+            
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signal_messages_sender 
+                ON signal_messages(sender)
+            """)
+            
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signal_messages_recipient 
+                ON signal_messages(recipient)
+            """)
+            
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signal_messages_thread 
+                ON signal_messages(thread_id)
+            """)
+            
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_signal_messages_status 
+                ON signal_messages(status)
+            """)
+            
+            cursor.execute("""
+                CREATE INDEX IF NOT EXISTS idx_agent_signals_owner 
+                ON agent_signals(owner, box_type)
             """)
             
             cursor.execute("""
@@ -453,8 +525,353 @@ class PersistentStorage:
                 WHERE started_at < ?
             """, (cutoff.isoformat(),))
             deleted += cursor.rowcount
+            
+            # Delete old signal messages
+            cursor.execute("""
+                DELETE FROM signal_messages 
+                WHERE created_at < ?
+            """, (cutoff.isoformat(),))
+            deleted += cursor.rowcount
+            
+            # Delete orphaned agent_signals entries
+            cursor.execute("""
+                DELETE FROM agent_signals 
+                WHERE message_id NOT IN (SELECT id FROM signal_messages)
+            """)
+            deleted += cursor.rowcount
         
         return deleted
+
+    # ============================================================
+    # Signal Message Operations (for SignalManager SQLite backend)
+    # ============================================================
+    
+    def save_signal_message(self, message: "SignalMessage") -> bool:
+        """
+        Save a signal message to database
+        
+        Args:
+            message: SignalMessage dict or object with to_dict()
+            
+        Returns:
+            True if successful
+        """
+        try:
+            data = message if isinstance(message, dict) else message.to_dict()
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR REPLACE INTO signal_messages 
+                    (id, sender, recipient, subject, body, priority, status,
+                     work_item_id, convoy_id, thread_id, metadata, attachments,
+                     created_at, delivered_at, read_at, acknowledged_at, 
+                     expires_at, reply_to, requires_ack)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    data["id"],
+                    data["sender"],
+                    data["recipient"],
+                    data["subject"],
+                    data["body"],
+                    data["priority"],
+                    data["status"],
+                    data.get("work_item_id"),
+                    data.get("convoy_id"),
+                    data.get("thread_id"),
+                    json.dumps(data.get("metadata", {})),
+                    json.dumps(data.get("attachments", [])),
+                    data["created_at"],
+                    data.get("delivered_at"),
+                    data.get("read_at"),
+                    data.get("acknowledged_at"),
+                    data.get("expires_at"),
+                    data.get("reply_to"),
+                    1 if data.get("requires_ack") else 0
+                ))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error saving signal message: {e}")
+            return False
+    
+    def get_signal_message(self, message_id: str) -> Optional[Dict[str, Any]]:
+        """Get a signal message by ID"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM signal_messages WHERE id = ?
+            """, (message_id,))
+            row = cursor.fetchone()
+            return self._row_to_signal_message(row) if row else None
+    
+    def update_signal_message_status(
+        self, 
+        message_id: str, 
+        status: str,
+        timestamp_field: Optional[str] = None
+    ) -> bool:
+        """
+        Update signal message status
+        
+        Args:
+            message_id: Message ID
+            status: New status value
+            timestamp_field: Optional timestamp field to update (delivered_at, read_at, acknowledged_at)
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                if timestamp_field:
+                    cursor.execute(f"""
+                        UPDATE signal_messages 
+                        SET status = ?, {timestamp_field} = ?
+                        WHERE id = ?
+                    """, (status, datetime.now().isoformat(), message_id))
+                else:
+                    cursor.execute("""
+                        UPDATE signal_messages 
+                        SET status = ?
+                        WHERE id = ?
+                    """, (status, message_id))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error updating signal message: {e}")
+            return False
+    
+    def add_to_signal_box(
+        self, 
+        owner: str, 
+        message_id: str, 
+        box_type: str
+    ) -> bool:
+        """
+        Add message to agent's inbox/outbox/archived
+        
+        Args:
+            owner: Agent name
+            message_id: Message ID
+            box_type: 'inbox', 'outbox', or 'archived'
+        """
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR IGNORE INTO agent_signals 
+                    (owner, message_id, box_type, created_at)
+                    VALUES (?, ?, ?, ?)
+                """, (owner, message_id, box_type, datetime.now().isoformat()))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error adding to signal box: {e}")
+            return False
+    
+    def remove_from_signal_box(
+        self, 
+        owner: str, 
+        message_id: str, 
+        box_type: str
+    ) -> bool:
+        """Remove message from agent's inbox/outbox/archived"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM agent_signals 
+                    WHERE owner = ? AND message_id = ? AND box_type = ?
+                """, (owner, message_id, box_type))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error removing from signal box: {e}")
+            return False
+    
+    def move_signal_box(
+        self, 
+        owner: str, 
+        message_id: str, 
+        from_box: str, 
+        to_box: str
+    ) -> bool:
+        """Move message between boxes (e.g., inbox -> archived)"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                # Remove from source
+                cursor.execute("""
+                    DELETE FROM agent_signals 
+                    WHERE owner = ? AND message_id = ? AND box_type = ?
+                """, (owner, message_id, from_box))
+                # Add to destination
+                cursor.execute("""
+                    INSERT OR IGNORE INTO agent_signals 
+                    (owner, message_id, box_type, created_at)
+                    VALUES (?, ?, ?, ?)
+                """, (owner, message_id, to_box, datetime.now().isoformat()))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error moving signal: {e}")
+            return False
+    
+    def get_signal_box(
+        self, 
+        owner: str, 
+        box_type: str,
+        unread_only: bool = False,
+        priority: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Get messages in an agent's inbox/outbox/archived
+        
+        Args:
+            owner: Agent name
+            box_type: 'inbox', 'outbox', or 'archived'
+            unread_only: Only return unread messages
+            priority: Filter by priority
+        """
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            query = """
+                SELECT sm.* FROM signal_messages sm
+                JOIN agent_signals asig ON sm.id = asig.message_id
+                WHERE asig.owner = ? AND asig.box_type = ?
+            """
+            params: List[Any] = [owner, box_type]
+            
+            if unread_only:
+                query += " AND sm.status IN ('pending', 'delivered')"
+            
+            if priority:
+                query += " AND sm.priority = ?"
+                params.append(priority)
+            
+            # Sort: urgent first, then by created_at
+            query += """
+                ORDER BY 
+                    CASE sm.priority 
+                        WHEN 'urgent' THEN 0 
+                        WHEN 'high' THEN 1 
+                        WHEN 'normal' THEN 2 
+                        WHEN 'low' THEN 3 
+                    END,
+                    sm.created_at ASC
+            """
+            
+            cursor.execute(query, params)
+            return [self._row_to_signal_message(row) for row in cursor.fetchall()]
+    
+    def get_signal_thread(self, thread_id: str) -> List[Dict[str, Any]]:
+        """Get all messages in a thread"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM signal_messages 
+                WHERE thread_id = ?
+                ORDER BY created_at ASC
+            """, (thread_id,))
+            return [self._row_to_signal_message(row) for row in cursor.fetchall()]
+    
+    def register_signal_owner(self, owner: str) -> bool:
+        """Register an agent as a signal owner (for broadcast support)"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT OR IGNORE INTO signal_owners (owner, registered_at)
+                    VALUES (?, ?)
+                """, (owner, datetime.now().isoformat()))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error registering signal owner: {e}")
+            return False
+    
+    def get_signal_owners(self) -> List[str]:
+        """Get all registered signal owners"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            # Get from both registered owners and those with messages
+            cursor.execute("""
+                SELECT owner FROM signal_owners
+                UNION
+                SELECT DISTINCT owner FROM agent_signals
+            """)
+            return [row["owner"] for row in cursor.fetchall()]
+    
+    def delete_signal_message(self, message_id: str) -> bool:
+        """Delete a signal message and all references"""
+        try:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                # Delete from agent_signals first (foreign key)
+                cursor.execute("""
+                    DELETE FROM agent_signals WHERE message_id = ?
+                """, (message_id,))
+                # Delete the message
+                cursor.execute("""
+                    DELETE FROM signal_messages WHERE id = ?
+                """, (message_id,))
+            return True
+        except sqlite3.Error as e:
+            print(f"Error deleting signal message: {e}")
+            return False
+    
+    def get_signal_stats(self) -> Dict[str, Any]:
+        """Get signal system statistics"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Total messages
+            cursor.execute("SELECT COUNT(*) as count FROM signal_messages")
+            total = cursor.fetchone()["count"]
+            
+            # By status
+            cursor.execute("""
+                SELECT status, COUNT(*) as count 
+                FROM signal_messages 
+                GROUP BY status
+            """)
+            by_status = {row["status"]: row["count"] for row in cursor.fetchall()}
+            
+            # By owner
+            cursor.execute("""
+                SELECT owner, box_type, COUNT(*) as count 
+                FROM agent_signals 
+                GROUP BY owner, box_type
+            """)
+            by_owner: Dict[str, Dict[str, int]] = {}
+            for row in cursor.fetchall():
+                owner = row["owner"]
+                if owner not in by_owner:
+                    by_owner[owner] = {"inbox": 0, "outbox": 0, "archived": 0}
+                by_owner[owner][row["box_type"]] = row["count"]
+            
+            return {
+                "total_messages": total,
+                "by_status": by_status,
+                "by_owner": by_owner
+            }
+    
+    def _row_to_signal_message(self, row: sqlite3.Row) -> Dict[str, Any]:
+        """Convert database row to signal message dict"""
+        return {
+            "id": row["id"],
+            "sender": row["sender"],
+            "recipient": row["recipient"],
+            "subject": row["subject"],
+            "body": row["body"],
+            "priority": row["priority"],
+            "status": row["status"],
+            "work_item_id": row["work_item_id"],
+            "convoy_id": row["convoy_id"],
+            "thread_id": row["thread_id"],
+            "metadata": json.loads(row["metadata"]) if row["metadata"] else {},
+            "attachments": json.loads(row["attachments"]) if row["attachments"] else [],
+            "created_at": row["created_at"],
+            "delivered_at": row["delivered_at"],
+            "read_at": row["read_at"],
+            "acknowledged_at": row["acknowledged_at"],
+            "expires_at": row["expires_at"],
+            "reply_to": row["reply_to"],
+            "requires_ack": bool(row["requires_ack"])
+        }
 
 
 @lru_cache(maxsize=None)
