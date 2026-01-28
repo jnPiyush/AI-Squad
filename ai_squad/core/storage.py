@@ -2,9 +2,15 @@
 Persistent Storage for Message History and Status Transitions
 
 SQLite-based storage for agent communications and workflow audit trail.
+
+Enhanced with Phase 2 improvements:
+- Connection pooling for high concurrency (100+ agents)
+- Backpressure monitoring to prevent overload
+- Thread-safe operations
 """
 import sqlite3
 import json
+import os
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -16,32 +22,89 @@ from ai_squad.core.status import StatusTransition, IssueStatus
 
 
 class PersistentStorage:
-    """SQLite-based persistent storage"""
+    """
+    SQLite-based persistent storage with connection pooling.
     
-    def __init__(self, db_path: str = ".ai_squad/history.db"):
+    Enhanced with Phase 2 improvements for 100+ concurrent agents:
+    - Connection pooling (20 connections default)
+    - Backpressure monitoring (queue depth tracking)
+    - Thread-safe operations
+    
+    Usage:
+        storage = PersistentStorage(
+            db_path=".ai_squad/history.db",
+            use_pooling=True  # Enable connection pooling
+        )
+    """
+    
+    def __init__(
+        self,
+        db_path: str = ".ai_squad/history.db",
+        use_pooling: bool = None,
+        pool_size: int = 20
+    ):
         """
         Initialize persistent storage
         
         Args:
             db_path: Path to SQLite database file
+            use_pooling: Enable connection pooling (auto-detect if None)
+            pool_size: Connection pool size (default 20)
         """
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Auto-detect pooling based on environment or agent count
+        if use_pooling is None:
+            # Enable pooling if environment variable set or multiple agents expected
+            use_pooling = os.environ.get("AI_SQUAD_USE_POOLING", "").lower() == "true"
+        
+        self.use_pooling = use_pooling
+        self._pool = None
+        
+        # Initialize connection pool if enabled
+        if self.use_pooling:
+            try:
+                from ai_squad.core.connection_pool import ConnectionPool
+                self._pool = ConnectionPool(
+                    db_path=str(self.db_path),
+                    pool_size=pool_size,
+                    timeout=30.0
+                )
+            except ImportError:
+                # Fallback to basic connections if pooling not available
+                self.use_pooling = False
+        
         self._init_database()
     
     @contextmanager
     def _get_connection(self):
-        """Get database connection context manager"""
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-            conn.commit()
-        except Exception:  # noqa: BLE001 - rollback should run on any failure
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+        """
+        Get database connection context manager.
+        
+        Uses connection pool if enabled, otherwise creates new connection.
+        """
+        if self.use_pooling and self._pool:
+            # Use pooled connection
+            with self._pool.get_connection() as conn:
+                try:
+                    yield conn
+                    # Auto-commit handled by isolation_level=None in pool
+                except Exception:
+                    conn.rollback()
+                    raise
+        else:
+            # Legacy: create new connection
+            conn = sqlite3.connect(str(self.db_path))
+            conn.row_factory = sqlite3.Row
+            try:
+                yield conn
+                conn.commit()
+            except Exception:  # noqa: BLE001 - rollback should run on any failure
+                conn.rollback()
+                raise
+            finally:
+                conn.close()
     
     def _init_database(self):
         """Initialize database schema"""
@@ -872,9 +935,24 @@ class PersistentStorage:
             "reply_to": row["reply_to"],
             "requires_ack": bool(row["requires_ack"])
         }
+    
+    def close(self):
+        """Close connection pool (cleanup on shutdown)"""
+        if self._pool:
+            self._pool.close()
+    
+    def get_pool_stats(self) -> Optional[Dict]:
+        """Get connection pool statistics (if pooling enabled)"""
+        if self._pool:
+            return self._pool.get_stats()
+        return None
 
 
 @lru_cache(maxsize=None)
 def get_storage(db_path: str = ".ai_squad/history.db") -> PersistentStorage:
-    """Get or create storage instance"""
+    """
+    Get or create storage instance (singleton with connection pooling).
+    
+    Note: Pooling auto-enabled via AI_SQUAD_USE_POOLING env var.
+    """
     return PersistentStorage(db_path)

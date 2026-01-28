@@ -13,6 +13,8 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, Dict, List, Optional
 
 from .workstate import WorkStateManager, WorkStatus
+from .resource_monitor import get_global_monitor
+from .metrics import get_global_collector, ConvoyMetrics, AgentMetrics, ResourceMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +73,12 @@ class Convoy:
     max_parallel: int = 5            # Max concurrent agents
     timeout_minutes: int = 60        # Overall timeout
     stop_on_first_failure: bool = False  # Fail fast mode
+    
+    # Auto-tuning settings
+    enable_auto_tuning: bool = True   # Enable resource-based auto-tuning
+    baseline_parallel: int = 5         # Minimum parallelism (safety floor)
+    cpu_threshold: float = 80.0        # CPU threshold for throttling (%)
+    memory_threshold: float = 85.0     # Memory threshold for throttling (%)
     
     # Metadata
     issue_number: Optional[int] = None
@@ -192,6 +200,10 @@ class ConvoyManager:
         max_parallel: int = 5,
         timeout_minutes: int = 60,
         stop_on_first_failure: bool = False,
+        enable_auto_tuning: bool = True,
+        baseline_parallel: int = 5,
+        cpu_threshold: float = 80.0,
+        memory_threshold: float = 85.0,
         issue_number: Optional[int] = None,
         plan_execution_id: Optional[str] = None
     ) -> Convoy:
@@ -205,6 +217,10 @@ class ConvoyManager:
             max_parallel: Maximum concurrent agents
             timeout_minutes: Timeout in minutes
             stop_on_first_failure: Whether to stop on first failure
+            enable_auto_tuning: Enable resource-based auto-tuning
+            baseline_parallel: Minimum safe parallelism (safety floor)
+            cpu_threshold: CPU threshold for throttling (%)
+            memory_threshold: Memory threshold for throttling (%)
             issue_number: Optional GitHub issue number
             plan_execution_id: Optional battle plan execution ID
             
@@ -220,6 +236,10 @@ class ConvoyManager:
             max_parallel=max_parallel,
             timeout_minutes=timeout_minutes,
             stop_on_first_failure=stop_on_first_failure,
+            enable_auto_tuning=enable_auto_tuning,
+            baseline_parallel=baseline_parallel,
+            cpu_threshold=cpu_threshold,
+            memory_threshold=memory_threshold,
             issue_number=issue_number,
             plan_execution_id=plan_execution_id
         )
@@ -328,13 +348,74 @@ class ConvoyManager:
         convoy.status = ConvoyStatus.RUNNING
         convoy.started_at = datetime.now().isoformat()
         
+        # Initialize metrics collection
+        metrics_collector = get_global_collector()
+        convoy_metrics = ConvoyMetrics(
+            convoy_id=convoy_id,
+            convoy_name=convoy.name,
+            started_at=datetime.now().timestamp(),
+            total_members=len(convoy.members)
+        )
+        
+        # Determine initial parallelism
+        if convoy.enable_auto_tuning:
+            # Get resource monitor
+            monitor = get_global_monitor(auto_sample=True, sample_interval=5.0)
+            
+            # Calculate optimal parallelism based on current resources
+            optimal_parallel = monitor.calculate_optimal_parallelism(
+                max_parallel=convoy.max_parallel,
+                baseline=convoy.baseline_parallel
+            )
+            
+            convoy_metrics.initial_parallelism = optimal_parallel
+            convoy_metrics.max_parallelism_used = optimal_parallel
+            
+            logger.info(
+                "Auto-tuning enabled: using %d parallel workers (max=%d, baseline=%d)",
+                optimal_parallel, convoy.max_parallel, convoy.baseline_parallel
+            )
+        else:
+            optimal_parallel = convoy.max_parallel
+            convoy_metrics.initial_parallelism = optimal_parallel
+            convoy_metrics.max_parallelism_used = optimal_parallel
+            logger.info("Using fixed parallelism: %d workers", optimal_parallel)
+        
+        # Record convoy start
+        metrics_collector.record_convoy_start(convoy_metrics)
+        
         # Create semaphore for parallel limit
-        semaphore = asyncio.Semaphore(convoy.max_parallel)
+        semaphore = asyncio.Semaphore(optimal_parallel)
         
         async def execute_member(member: ConvoyMember) -> None:
-            """Execute a single member with semaphore control"""
+            """Execute a single member with semaphore control and adaptive throttling"""
             async with semaphore:
                 try:
+                    # Dynamic throttling check (if auto-tuning enabled)
+                    if convoy.enable_auto_tuning:
+                        monitor = get_global_monitor()
+                        
+                        # Check if system is under load
+                        if monitor.should_throttle(
+                            cpu_threshold=convoy.cpu_threshold,
+                            memory_threshold=convoy.memory_threshold
+                        ):
+                            throttle_factor = monitor.get_throttle_factor(
+                                cpu_threshold=convoy.cpu_threshold,
+                                memory_threshold=convoy.memory_threshold
+                            )
+                            
+                            # Add delay based on throttle factor
+                            # 0.0 (full throttle) = 5s delay, 1.0 (no throttle) = 0s delay
+                            delay = (1.0 - throttle_factor) * 5.0
+                            
+                            if delay > 0.1:
+                                logger.warning(
+                                    "System under load (throttle=%.2f), delaying %s by %.1fs",
+                                    throttle_factor, member.work_item_id, delay
+                                )
+                                await asyncio.sleep(delay)
+                    
                     member.status = "running"
                     member.started_at = datetime.now().isoformat()
                     
@@ -427,14 +508,37 @@ class ConvoyManager:
             else:
                 convoy.status = ConvoyStatus.FAILED
         
+        # Update convoy metrics
+        convoy_metrics.completed_members = progress["completed"]
+        convoy_metrics.failed_members = progress["failed"]
+        convoy_metrics.status = convoy.status.value
+        
+        # Get final resource usage
+        if convoy.enable_auto_tuning:
+            monitor = get_global_monitor()
+            current_metrics = monitor.get_current_metrics()
+            convoy_metrics.peak_cpu_percent = max(
+                convoy_metrics.peak_cpu_percent,
+                current_metrics.cpu_percent
+            )
+            convoy_metrics.peak_memory_percent = max(
+                convoy_metrics.peak_memory_percent,
+                current_metrics.memory_percent
+            )
+        
+        # Mark metrics as complete
+        convoy_metrics.mark_complete()
+        metrics_collector.record_convoy_complete(convoy_metrics)
+        
         # Collect results
         for member in convoy.members:
             if member.result:
                 convoy.results[member.work_item_id] = member.result
         
         logger.info(
-            "Convoy %s finished with status %s",
-            convoy_id, convoy.status.value
+            "Convoy %s finished with status %s (duration=%.2fs, completed=%d/%d)",
+            convoy_id, convoy.status.value, convoy_metrics.duration_seconds or 0,
+            convoy_metrics.completed_members, convoy_metrics.total_members
         )
 
         if self.report_manager:
