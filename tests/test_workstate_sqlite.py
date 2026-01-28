@@ -10,6 +10,7 @@ Tests cover:
 """
 import asyncio
 import json
+import logging
 import pytest
 import sqlite3
 import tempfile
@@ -18,6 +19,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ai_squad.core.workstate import WorkStatus, WorkItem
+
+logger = logging.getLogger(__name__)
 from ai_squad.core.workstate_sqlite import (
     SQLiteWorkStateBackend,
     ConcurrentUpdateError
