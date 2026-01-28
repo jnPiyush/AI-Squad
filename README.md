@@ -23,7 +23,7 @@
 
 AI-Squad is a **CLI tool** that brings **five specialized AI agents** orchestrated by a **Captain** using military-inspired workflows. Install once, use everywhere. No hosting required.
 
-**Latest:** v0.6.0 with enhanced monitoring and operational tracking.
+**Latest:** v0.7.0 with enhanced monitoring and operational tracking.
 
 ### Squad Components
 
