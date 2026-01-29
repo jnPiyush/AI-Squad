@@ -14,11 +14,11 @@ include pyproject.toml
 # Include templates
 recursive-include ai_squad/templates *.md
 recursive-include ai_squad/templates *.yaml
-recursive-include ai_squad/templates *.json
+recursive-include ai_squad/templates *.txt
 
 # Include skills
 recursive-include ai_squad/skills *.md
-recursive-include ai_squad/skills *.yaml
+recursive-include ai_squad/skills *.txt
 
 # Include prompts (agent system prompts)
 recursive-include ai_squad/prompts *.md
@@ -30,7 +30,6 @@ recursive-include ai_squad/dashboard/static *
 # Include agent definitions from .github (CRITICAL for installation)
 recursive-include .github/agents *.md
 recursive-include .github/skills *.md
-recursive-include .github/skills *.yaml
 recursive-include .github/templates *.md
 recursive-include .github/templates *.yaml
 include .github/copilot-instructions.md
