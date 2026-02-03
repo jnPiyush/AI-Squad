@@ -1,0 +1,79 @@
+Found VS Code Copilot session: 48582ff5...
+Detected VS Code Copilot session (enterprise license may apply)
+Copilot SDK initialized with CLI at: C:\Users\piyushj\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli\copilot.bat
+Γ£ô Enterprise license detected from VS Code session
+AI Provider available: copilot
+Γ£ô Copilot provider using VS Code enterprise license
+GitHub Models API available
+AI Provider available: github_models
+Primary AI Provider: copilot
+Using Copilot with enterprise license from VS Code
+Found VS Code Copilot session: 48582ff5...
+Detected VS Code Copilot session (enterprise license may apply)
+Copilot SDK initialized with CLI at: C:\Users\piyushj\AppData\Roaming\Code\User\globalStorage\github.copilot-chat\copilotCli\copilot.bat
+Γ£ô Enterprise license detected from VS Code session
+AI Provider available: copilot
+Γ£ô Copilot provider using VS Code enterprise license
+GitHub Models API available
+AI Provider available: github_models
+Primary AI Provider: copilot
+Using Copilot with enterprise license from VS Code
+ProductManagerAgent: Using copilot for AI generation
+Registered agent: pm with 4 capabilities
+Registered agent: architect with 4 capabilities
+Registered agent: engineer with 5 capabilities
+Registered agent: ux with 4 capabilities
+Registered agent: reviewer with 4 capabilities
+Registered agent: captain with 3 capabilities
+AI generation successful using copilot
+================================================================================
+LIVE TEST: Idea Management Platform
+================================================================================
+
+REQUIREMENT:
+
+Create a centralized Idea Management platform that captures ideas with structured 
+business case information including:
+
+1. ROI (Return on Investment) estimation
+2. Effort estimation (hours/story points)
+3. Risk assessment (low/medium/high)
+4. Priority scoring
+
+The platform should enable users to submit ideas with complete business case data
+and store them in a searchable, filterable format.
+
+
+================================================================================
+Testing Product Manager Agent
+================================================================================
+
+Γ£ô Active AI Provider: copilot
+Γ£ô Available Providers: copilot, github_models
+
+================================================================================
+Generating PRD...
+================================================================================
+
+Γ£ô PRD Generated using copilot
+Γ£ô Model: gpt-5.2-codex
+
+================================================================================
+GENERATED PRD (Full Content)
+================================================================================
+
+Please provide the GitHub issue number so I can run `squad pm <issue-number>` to generate the PRD.
+
+================================================================================
+Γ£à TEST SUCCESSFUL
+================================================================================
+
+Total Length: 98 characters
+
+Key Points Covered:
+  Γ£ù ROI estimation
+  Γ£ù Effort estimation
+  Γ£ù Risk assessment
+  Γ£ù Business case
+  Γ£ù User stories
+  Γ£ù Acceptance criteria
