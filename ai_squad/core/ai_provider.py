@@ -77,6 +77,8 @@ class CopilotProvider(AIProvider):
         self._initialized = False
         self._model_cache: Optional[str] = None
         self._cli_path: Optional[str] = None  # Store CLI path for reuse
+        self._enterprise_detected = False
+        self._vscode_session = None
         
     @property
     def provider_type(self) -> AIProviderType:
@@ -89,26 +91,43 @@ class CopilotProvider(AIProvider):
         
         self._initialized = True
         
-        # The Copilot SDK only needs GitHub authentication, not the copilot CLI
-        # Check if we have GitHub authentication
+        # PRIORITY 1: Try to use VS Code's Copilot session (includes enterprise license)
+        vscode_session = self._detect_vscode_copilot_session()
+        if vscode_session:
+            logger.info("Detected VS Code Copilot session (enterprise license may apply)")
+            self._enterprise_detected = True
+        
+        # The Copilot SDK uses GitHub authentication
         if not self._is_gh_authenticated():
             logger.debug("GitHub not authenticated (required for Copilot SDK)")
             return False
         
         try:
             from copilot import CopilotClient
+            
             # Find copilot CLI executable
             cli_path = self._find_copilot_cli()
             if not cli_path:
                 logger.debug("Copilot CLI not found")
-                return False
+                # Try to initialize without explicit CLI path (uses default)
+                try:
+                    self._sdk = CopilotClient()
+                    logger.info("Copilot SDK initialized (using default CLI path)")
+                    return True
+                except Exception as e:
+                    logger.debug(f"Could not initialize with default path: {e}")
+                    return False
             
             # Store CLI path for use in generation
             self._cli_path = cli_path
             
-            # Initialize with explicit path
+            # Initialize with explicit CLI path
             self._sdk = CopilotClient({"cli_path": cli_path})
-            logger.info("Copilot SDK initialized successfully with CLI at: %s", cli_path)
+            logger.info("Copilot SDK initialized with CLI at: %s", cli_path)
+            
+            if self._enterprise_detected:
+                logger.info("✓ Enterprise license detected from VS Code session")
+            
             return True
         except ImportError:
             logger.debug("Copilot SDK not installed")
@@ -116,6 +135,36 @@ class CopilotProvider(AIProvider):
         except (OSError, RuntimeError, ValueError) as e:
             logger.warning("Copilot SDK initialization failed: %s", e)
             return False
+    
+    def _detect_vscode_copilot_session(self) -> Optional[str]:
+        """Detect VS Code Copilot session ID (includes enterprise license info)"""
+        try:
+            # Check VS Code Copilot Chat workspace sessions
+            vscode_storage = os.path.expanduser(
+                r"~\AppData\Roaming\Code\User\globalStorage\github.copilot-chat"
+            )
+            if not os.path.exists(vscode_storage):
+                return None
+            
+            # Look for workspace session files
+            for filename in os.listdir(vscode_storage):
+                if filename.startswith("copilot.cli.workspaceSessions.") and filename.endswith(".json"):
+                    session_file = os.path.join(vscode_storage, filename)
+                    try:
+                        with open(session_file, 'r') as f:
+                            session_id = f.read().strip()
+                            if session_id:
+                                logger.info(f"Found VS Code Copilot session: {session_id[:8]}...")
+                                self._vscode_session = session_id
+                                return session_id
+                    except Exception as e:
+                        logger.debug(f"Could not read session file {filename}: {e}")
+                        continue
+            
+            return None
+        except Exception as e:
+            logger.debug(f"Error detecting VS Code Copilot session: {e}")
+            return None
     
     @staticmethod
     def _find_copilot_cli() -> Optional[str]:
@@ -762,12 +811,21 @@ class AIProviderChain:
                 if available[0]:
                     self._providers.append(provider)
                     logger.info("AI Provider available: %s", name)
+                    
+                    # Log enterprise license detection for Copilot
+                    if name == "copilot" and hasattr(provider, '_enterprise_detected') and provider._enterprise_detected:
+                        logger.info("✓ Copilot provider using VS Code enterprise license")
             except (OSError, RuntimeError, ValueError, TimeoutError) as e:
                 logger.debug("AI Provider %s initialization error: %s", name, e)
         
         if self._providers:
             self._active_provider = self._providers[0]
             logger.info("Primary AI Provider: %s", self._active_provider.provider_type.value)
+            
+            # Display enterprise info if Copilot is primary
+            if self._active_provider.provider_type == AIProviderType.COPILOT:
+                if hasattr(self._active_provider, '_enterprise_detected') and self._active_provider._enterprise_detected:
+                    logger.info("Using Copilot with enterprise license from VS Code")
         else:
             logger.warning("No AI providers available. Using template fallback.")
     
