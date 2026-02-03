@@ -37,6 +37,9 @@ class SDKExecutionError(RuntimeError):
 class BaseAgent(ABC):
     """Base class for all agents"""
     
+    # Override in subclasses with agent-specific card
+    _agent_card = None
+    
     def __init__(
         self, 
         config: Config, 
@@ -88,6 +91,8 @@ class BaseAgent(ABC):
             provider_name = self.ai_provider.provider_type.value
             logger.info("%s: Using %s for AI generation", self.__class__.__name__, provider_name)
         
+        # A2A Protocol: Register agent with registry
+        self._register_with_registry()
         
         # Execution mode: "manual" (CLI) or "automated" (watch mode)
         self.execution_mode = "manual"
@@ -95,6 +100,65 @@ class BaseAgent(ABC):
         # Lazy load status manager and validator
         self._status_manager = None
         self._workflow_validator = None
+    
+    def _register_with_registry(self) -> None:
+        """Register this agent instance with the global registry (A2A-aligned)"""
+        try:
+            from ai_squad.core.agent_registry import get_registry
+            from ai_squad.core.agent_card import DEFAULT_AGENT_CARDS
+            
+            registry = get_registry()
+            
+            # Use class-level card or default
+            card = self._agent_card or DEFAULT_AGENT_CARDS.get(self.agent_type)
+            
+            if card:
+                # Register handler for this agent
+                registry.register_handler(
+                    self.agent_type,
+                    self._handle_message,
+                )
+                logger.debug("Registered %s with AgentRegistry", self.agent_type)
+        except ImportError:
+            pass  # Registry not available
+    
+    def _handle_message(self, message: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle incoming message (A2A-aligned message handler).
+        
+        Override in subclasses for custom message handling.
+        
+        Args:
+            message: Incoming message dict with keys:
+                - message_id: Message ID
+                - from_agent: Sender agent name
+                - content: Message content
+                - context: Additional context
+                - issue_number: Related issue number
+                
+        Returns:
+            Response dict with keys:
+                - response: Response content
+                - status: "success" or "error"
+        """
+        # Default implementation - subclasses can override
+        return {
+            "response": f"Received by {self.agent_type}",
+            "status": "success",
+            "agent": self.agent_type,
+        }
+    
+    @classmethod
+    def get_agent_card(cls):
+        """Get the agent's capability card (A2A-aligned)"""
+        from ai_squad.core.agent_card import DEFAULT_AGENT_CARDS
+        
+        if cls._agent_card:
+            return cls._agent_card
+        
+        # Derive agent type from class name
+        agent_type = cls.__name__.replace("Agent", "").lower()
+        return DEFAULT_AGENT_CARDS.get(agent_type)
     
     @property
     def status_manager(self):

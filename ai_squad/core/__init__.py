@@ -13,6 +13,21 @@ from ai_squad.core.ai_provider import (
     generate_content,
 )
 
+# A2A Protocol alignment - Agent discovery and capability-based routing
+from ai_squad.core.agent_card import (
+    AgentCard,
+    AgentCapability,
+    InputSchema,
+    OutputSchema,
+    DEFAULT_AGENT_CARDS,
+)
+from ai_squad.core.agent_registry import (
+    AgentRegistry,
+    AgentInstance,
+    get_registry,
+    reset_registry,
+)
+
 # AI-Squad orchestration modules
 from ai_squad.core.workstate import WorkItem, WorkStateManager, WorkStatus
 from ai_squad.core.hooks import HookManager

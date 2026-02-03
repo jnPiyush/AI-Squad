@@ -9,8 +9,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 import uuid
+import time
+import logging
 
 from ai_squad.core.events import RoutingEvent, StructuredEventEmitter
+
+logger = logging.getLogger(__name__)
 
 
 class MessageType(Enum):
@@ -211,23 +215,108 @@ class AgentCommunicator:
     
     def _route_message(self, message: AgentMessage) -> Optional[str]:
         """
-        Route message to target agent
+        Route message to target agent using AgentRegistry.
+        
+        A2A-aligned: Uses capability-based routing when available.
+        Includes retry logic with exponential backoff and circuit breaker.
         
         Args:
             message: Message to route
             
         Returns:
-            Response or None
+            Response or None if async/unavailable
         """
-        _ = message  # Placeholder until routing is implemented
-        # For now, return a placeholder response
-        # In a full implementation, this would instantiate the target agent
-        # and call its handle_message method
-
+        from ai_squad.core.agent_registry import get_registry
+        
+        registry = get_registry()
+        
+        # Check if target agent has a registered handler
+        handler = registry.get_handler(message.to_agent)
+        
+        if handler:
+            # Invoke with retry logic
+            max_retries = 3
+            base_delay = 1.0  # seconds
+            
+            for attempt in range(max_retries):
+                try:
+                    # Check circuit breaker
+                    if registry.is_circuit_open(message.to_agent):
+                        logger.warning(
+                            "Circuit breaker open for %s, skipping",
+                            message.to_agent
+                        )
+                        self._emit_routing_event(
+                            message,
+                            status="circuit_open",
+                            reason="agent_unavailable",
+                        )
+                        return None
+                    
+                    result = handler({
+                        "message_id": message.id,
+                        "from_agent": message.from_agent,
+                        "content": message.content,
+                        "context": message.context,
+                        "issue_number": message.issue_number,
+                    })
+                    
+                    # Success - reset circuit breaker
+                    registry.record_success(message.to_agent)
+                    
+                    self._emit_routing_event(
+                        message,
+                        status="delivered",
+                        reason="handler_invoked",
+                    )
+                    
+                    # Extract response content
+                    if isinstance(result, dict):
+                        return result.get("response", result.get("content"))
+                    return str(result) if result else None
+                    
+                except Exception as e:
+                    # Record failure for circuit breaker
+                    registry.record_failure(message.to_agent)
+                    
+                    if attempt < max_retries - 1:
+                        # Exponential backoff
+                        delay = base_delay * (2 ** attempt)
+                        logger.warning(
+                            "Handler failed (attempt %d/%d): %s. Retrying in %.1fs",
+                            attempt + 1, max_retries, e, delay
+                        )
+                        time.sleep(delay)
+                    else:
+                        # Final attempt failed
+                        logger.error(
+                            "Handler failed after %d attempts: %s",
+                            max_retries, e
+                        )
+                        self._emit_routing_event(
+                            message,
+                            status="failed",
+                            reason=f"handler_error: {e}",
+                        )
+                        return None
+        
+        # Check if agent exists in registry
+        agent_card = registry.get(message.to_agent)
+        
+        if agent_card:
+            # Agent exists but no handler - queue for async processing
+            self._emit_routing_event(
+                message,
+                status="queued",
+                reason="no_handler_async",
+            )
+            return None
+        
+        # Unknown agent
         self._emit_routing_event(
             message,
-            status="not_implemented",
-            reason="routing_placeholder",
+            status="rejected",
+            reason="unknown_agent",
         )
         
         return None

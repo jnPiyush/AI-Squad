@@ -45,7 +45,16 @@ class WorkStatus(str, Enum):
 class WorkItem:
     """
     A unit of work that can be assigned to agents.
-    Core AI-Squad Work Item concept.
+    
+    Aligned with Google A2A Protocol Task schema for interoperability.
+    See: https://google.github.io/A2A/
+    
+    A2A Task Mapping:
+        - id → task.id
+        - status → task.status (mapped via WorkStatus)
+        - artifacts → task.artifacts
+        - history → derived from audit events
+        - message → title + description
     """
     id: str
     title: str
@@ -62,7 +71,7 @@ class WorkItem:
     # Arbitrary metadata for orchestration
     metadata: Dict[str, Any] = field(default_factory=dict)
     
-    # Related artifacts
+    # Related artifacts (A2A-aligned: file outputs from task)
     artifacts: List[str] = field(default_factory=list)
     
     # Dependencies (other work item IDs)
@@ -75,6 +84,13 @@ class WorkItem:
     # Metadata
     labels: List[str] = field(default_factory=list)
     priority: int = 0  # Higher = more important
+    
+    # A2A Protocol alignment fields
+    session_id: Optional[str] = None  # A2A session tracking
+    parent_task_id: Optional[str] = None  # For subtask relationships
+    
+    # History/audit trail (A2A: task.history)
+    history: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def assigned_to(self) -> Optional[str]:
@@ -134,6 +150,125 @@ class WorkItem:
     def is_complete(self) -> bool:
         """Check if work is done"""
         return self.status in (WorkStatus.DONE, WorkStatus.FAILED)
+    
+    # A2A Protocol alignment methods
+    
+    def add_history_entry(
+        self,
+        action: str,
+        agent: str,
+        details: Optional[str] = None,
+    ) -> None:
+        """
+        Add an entry to the task history (A2A-aligned).
+        
+        Args:
+            action: Action performed (e.g., "created", "assigned", "completed")
+            agent: Agent that performed the action
+            details: Optional details
+        """
+        self.history.append({
+            "timestamp": datetime.now().isoformat(),
+            "action": action,
+            "agent": agent,
+            "details": details,
+        })
+        self.updated_at = datetime.now().isoformat()
+    
+    def to_a2a_task(self) -> Dict[str, Any]:
+        """
+        Convert to A2A Protocol Task format.
+        
+        Returns:
+            A2A-compatible task dictionary
+        """
+        # Map internal status to A2A status
+        a2a_status_map = {
+            WorkStatus.BACKLOG: "submitted",
+            WorkStatus.READY: "submitted",
+            WorkStatus.IN_PROGRESS: "working",
+            WorkStatus.HOOKED: "working",
+            WorkStatus.BLOCKED: "input-required",
+            WorkStatus.IN_REVIEW: "working",
+            WorkStatus.DONE: "completed",
+            WorkStatus.FAILED: "failed",
+        }
+        
+        return {
+            "id": self.id,
+            "sessionId": self.session_id or self.id,
+            "status": {
+                "state": a2a_status_map.get(self.status, "unknown"),
+                "timestamp": self.updated_at,
+            },
+            "message": {
+                "role": "user",
+                "parts": [{"text": f"{self.title}\n\n{self.description}"}],
+            },
+            "artifacts": [
+                {"name": path, "uri": path}
+                for path in self.artifacts
+            ],
+            "history": self.history,
+            "metadata": {
+                **self.metadata,
+                "issue_number": self.issue_number,
+                "agent_assignee": self.agent_assignee,
+                "priority": self.priority,
+                "labels": self.labels,
+            },
+        }
+    
+    @classmethod
+    def from_a2a_task(cls, task: Dict[str, Any]) -> "WorkItem":
+        """
+        Create WorkItem from A2A Protocol Task format.
+        
+        Args:
+            task: A2A task dictionary
+            
+        Returns:
+            WorkItem instance
+        """
+        # Map A2A status to internal status
+        status_map = {
+            "submitted": WorkStatus.BACKLOG,
+            "working": WorkStatus.IN_PROGRESS,
+            "input-required": WorkStatus.BLOCKED,
+            "completed": WorkStatus.DONE,
+            "failed": WorkStatus.FAILED,
+            "canceled": WorkStatus.FAILED,
+        }
+        
+        a2a_state = task.get("status", {}).get("state", "submitted")
+        status = status_map.get(a2a_state, WorkStatus.BACKLOG)
+        
+        # Extract message
+        message = task.get("message", {})
+        parts = message.get("parts", [])
+        text = parts[0].get("text", "") if parts else ""
+        lines = text.split("\n\n", 1)
+        title = lines[0] if lines else "Untitled"
+        description = lines[1] if len(lines) > 1 else ""
+        
+        # Extract metadata
+        metadata = task.get("metadata", {})
+        
+        return cls(
+            id=task.get("id", str(uuid.uuid4())),
+            title=title,
+            description=description,
+            status=status,
+            session_id=task.get("sessionId"),
+            issue_number=metadata.get("issue_number"),
+            agent_assignee=metadata.get("agent_assignee"),
+            priority=metadata.get("priority", 0),
+            labels=metadata.get("labels", []),
+            artifacts=[a.get("uri", a.get("name", "")) for a in task.get("artifacts", [])],
+            history=task.get("history", []),
+            metadata={k: v for k, v in metadata.items() 
+                     if k not in ("issue_number", "agent_assignee", "priority", "labels")},
+        )
 
 
 class WorkStateManager:
